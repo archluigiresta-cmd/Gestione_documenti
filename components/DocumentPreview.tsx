@@ -139,17 +139,51 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }
                 </p>
 
                 {/* Handover Docs History */}
-                {(project.handoverDocs.projectApprovalNumber || project.handoverDocs.deliveryDate) && (
-                   <p>
-                     - sono stati consegnati all'appaltatore i seguenti documenti:
-                     <br/>
-                     {project.handoverDocs.projectApprovalNumber && `• elaborati progettuali esecutivi approvati con ${project.handoverDocs.projectApprovalType} n. ${project.handoverDocs.projectApprovalNumber} del ${formatShortDate(project.handoverDocs.projectApprovalDate)};`}
-                     <br/>
-                     {project.handoverDocs.deliveryDate && `• Verbale di consegna ${project.handoverDocs.deliveryType === 'anticipated' ? 'anticipata' : 'ordinaria'} dei lavori in data ${formatShortDate(project.handoverDocs.deliveryDate)};`}
-                     <br/>
-                     {project.handoverDocs.ainopProtocol && `• Comunicazione di inizio lavori strutturale giusto REPORT DEPOSITO IN AINOP Protocollo n° ${project.handoverDocs.ainopProtocol} del ${formatShortDate(project.handoverDocs.ainopDate)}, acquisito agli atti del Comune con Protocollo N. ${project.handoverDocs.municipalityProtocol} del ${formatShortDate(project.handoverDocs.municipalityDate)}.`}
-                   </p>
-                )}
+                <p>
+                  - sono stati consegnati all'appaltatore i seguenti documenti:
+                  <br/>
+                  {project.handoverDocs.projectApprovalNumber && `• elaborati progettuali esecutivi approvati con ${project.handoverDocs.projectApprovalType} n. ${project.handoverDocs.projectApprovalNumber} del ${formatShortDate(project.handoverDocs.projectApprovalDate)};`}
+                  <br/>
+                  {project.handoverDocs.deliveryDate && `• Verbale di consegna ${project.handoverDocs.deliveryType === 'anticipated' ? 'anticipata' : 'ordinaria'} dei lavori in data ${formatShortDate(project.handoverDocs.deliveryDate)};`}
+                  <br/>
+                  {project.handoverDocs.ainopProtocol && `• Comunicazione di inizio lavori strutturale giusto REPORT DEPOSITO IN AINOP Protocollo n° ${project.handoverDocs.ainopProtocol} del ${formatShortDate(project.handoverDocs.ainopDate)}, acquisito agli atti del Comune con Protocollo N. ${project.handoverDocs.municipalityProtocol} del ${formatShortDate(project.handoverDocs.municipalityDate)};`}
+                  
+                  {/* New Handover Docs logic */}
+                  {(project.handoverDocs.preliminaryNotifNumber || project.handoverDocs.preliminaryNotifDate) && (
+                    <>
+                      <br/>
+                      {`• Notifica preliminare n. ${project.handoverDocs.preliminaryNotifNumber || '...'} del ${formatShortDate(project.handoverDocs.preliminaryNotifDate)};`}
+                    </>
+                  )}
+
+                  {project.handoverDocs.hasWasteNotes && (
+                    <>
+                      <br/>
+                      {`• Bolle di conferimento a discarica del materiale da scavo;`}
+                    </>
+                  )}
+
+                  {project.handoverDocs.hasUpdatedPOS && (
+                    <>
+                      <br/>
+                      {`• POS aggiornato;`}
+                    </>
+                  )}
+
+                  {project.handoverDocs.hasUpdatedSchedule && (
+                    <>
+                      <br/>
+                      {`• Cronoprogramma dei lavori aggiornato;`}
+                    </>
+                  )}
+
+                  {project.handoverDocs.hasOtherDocs && project.handoverDocs.otherDocsDescription && (
+                    <>
+                      <br/>
+                      {`• ${project.handoverDocs.otherDocsDescription};`}
+                    </>
+                  )}
+                </p>
 
                 {doc.premis}
              </div>

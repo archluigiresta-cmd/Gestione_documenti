@@ -59,7 +59,16 @@ export const createEmptyProject = (): ProjectConstants => ({
     ainopProtocol: '',
     ainopDate: '',
     municipalityProtocol: '',
-    municipalityDate: ''
+    municipalityDate: '',
+    
+    // New fields
+    hasWasteNotes: false,
+    hasUpdatedPOS: false,
+    hasUpdatedSchedule: false,
+    preliminaryNotifNumber: '',
+    preliminaryNotifDate: '',
+    hasOtherDocs: false,
+    otherDocsDescription: ''
   }
 });
 

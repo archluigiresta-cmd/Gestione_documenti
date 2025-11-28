@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { ProjectConstants } from '../types';
-import { Save, Calculator, Building, UserCheck, HardHat, FileSignature, FolderOpen, Briefcase, FileText } from 'lucide-react';
+import { Save, Calculator, Building, UserCheck, HardHat, FileSignature, FolderOpen, Briefcase, FileText, CheckSquare, ShieldCheck } from 'lucide-react';
 
 interface ProjectFormProps {
   data: ProjectConstants;
@@ -557,6 +557,89 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
                        value={data.handoverDocs.municipalityDate}
                        onChange={(e) => handleChange('handoverDocs', 'municipalityDate', e.target.value)}
                      />
+                   </div>
+                 </div>
+               </div>
+
+               <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                 <h3 className="text-md font-bold text-slate-800 mb-4 flex items-center gap-2">
+                   <ShieldCheck className="w-4 h-4"/> Altri Documenti e Sicurezza
+                 </h3>
+                 
+                 <div className="space-y-4">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-b border-slate-200 pb-4">
+                     <div>
+                       <label className="block text-sm font-medium text-slate-700">Notifica Preliminare N.</label>
+                       <input
+                         type="text"
+                         className="w-full p-3 border border-slate-300 rounded-lg mt-1"
+                         value={data.handoverDocs.preliminaryNotifNumber}
+                         onChange={(e) => handleChange('handoverDocs', 'preliminaryNotifNumber', e.target.value)}
+                       />
+                     </div>
+                     <div>
+                       <label className="block text-sm font-medium text-slate-700">Data Notifica</label>
+                       <input
+                         type="date"
+                         className="w-full p-3 border border-slate-300 rounded-lg mt-1"
+                         value={data.handoverDocs.preliminaryNotifDate}
+                         onChange={(e) => handleChange('handoverDocs', 'preliminaryNotifDate', e.target.value)}
+                       />
+                     </div>
+                   </div>
+
+                   <div className="grid grid-cols-1 gap-4 pt-2">
+                     <label className="flex items-center gap-3 p-2 hover:bg-slate-100 rounded cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          className="w-5 h-5 text-blue-600 rounded"
+                          checked={data.handoverDocs.hasWasteNotes}
+                          onChange={(e) => handleChange('handoverDocs', 'hasWasteNotes', e.target.checked)}
+                        />
+                        <span className="text-sm font-medium text-slate-700">Bolle di conferimento a discarica del materiale da scavo</span>
+                     </label>
+
+                     <label className="flex items-center gap-3 p-2 hover:bg-slate-100 rounded cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          className="w-5 h-5 text-blue-600 rounded"
+                          checked={data.handoverDocs.hasUpdatedPOS}
+                          onChange={(e) => handleChange('handoverDocs', 'hasUpdatedPOS', e.target.checked)}
+                        />
+                        <span className="text-sm font-medium text-slate-700">POS aggiornato</span>
+                     </label>
+
+                     <label className="flex items-center gap-3 p-2 hover:bg-slate-100 rounded cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          className="w-5 h-5 text-blue-600 rounded"
+                          checked={data.handoverDocs.hasUpdatedSchedule}
+                          onChange={(e) => handleChange('handoverDocs', 'hasUpdatedSchedule', e.target.checked)}
+                        />
+                        <span className="text-sm font-medium text-slate-700">Cronoprogramma dei lavori aggiornato</span>
+                     </label>
+
+                     <div>
+                       <label className="flex items-center gap-3 p-2 hover:bg-slate-100 rounded cursor-pointer">
+                          <input 
+                            type="checkbox"
+                            className="w-5 h-5 text-blue-600 rounded"
+                            checked={data.handoverDocs.hasOtherDocs}
+                            onChange={(e) => handleChange('handoverDocs', 'hasOtherDocs', e.target.checked)}
+                          />
+                          <span className="text-sm font-medium text-slate-700">Altro Documento (Specificare)</span>
+                       </label>
+                       {data.handoverDocs.hasOtherDocs && (
+                         <div className="ml-10 mt-2">
+                           <textarea
+                             className="w-full p-3 border border-slate-300 rounded-lg text-sm"
+                             placeholder="Descrivi qui il documento aggiuntivo..."
+                             value={data.handoverDocs.otherDocsDescription}
+                             onChange={(e) => handleChange('handoverDocs', 'otherDocsDescription', e.target.value)}
+                           />
+                         </div>
+                       )}
+                     </div>
                    </div>
                  </div>
                </div>

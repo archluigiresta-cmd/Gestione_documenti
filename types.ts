@@ -78,6 +78,17 @@ export interface ProjectConstants {
     ainopDate: string;
     municipalityProtocol: string;
     municipalityDate: string;
+
+    // Altri Documenti (New)
+    hasWasteNotes: boolean; // Bolle conferimento discarica
+    hasUpdatedPOS: boolean; // POS aggiornato
+    hasUpdatedSchedule: boolean; // Cronoprogramma aggiornato
+    
+    preliminaryNotifNumber: string; // Notifica preliminare N.
+    preliminaryNotifDate: string; // Notifica preliminare Data
+
+    hasOtherDocs: boolean; // Flag per attivare campo libero
+    otherDocsDescription: string; // Descrizione libera
   };
 }
 
