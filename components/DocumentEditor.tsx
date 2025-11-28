@@ -1,6 +1,7 @@
+
 import React, { useState, useRef } from 'react';
 import { DocumentVariables, PhotoAttachment } from '../types';
-import { Plus, Trash2, Wand2, Loader2, Calendar, Clock, Hash, ImagePlus, X } from 'lucide-react';
+import { Plus, Trash2, Wand2, Loader2, Calendar, Clock, Hash, ImagePlus, X, Mail } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 
 interface DocumentEditorProps {
@@ -140,6 +141,17 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ data, onChange }
               readOnly
               title="Per cambiare numero crea un nuovo verbale o modifica quello precedente"
             />
+          </div>
+          <div className="md:col-span-3">
+             <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-1">
+               <Mail className="w-4 h-4" /> Dettagli Convocazione
+             </label>
+             <textarea
+               className="w-full p-3 border border-slate-300 rounded-lg h-20 text-sm"
+               placeholder="Es: via PEC, in data 10/10/2025, o a seguito di comunicazione per le vie brevi..."
+               value={data.convocationDetails || ''}
+               onChange={(e) => onChange({ ...data, convocationDetails: e.target.value })}
+             />
           </div>
         </div>
       </div>

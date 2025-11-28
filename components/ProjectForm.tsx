@@ -151,8 +151,17 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
               onChange={(e) => handleChange('contractor', 'address', e.target.value)}
             />
           </div>
-           <div>
-            <label className="block text-sm font-medium text-slate-700">Rappresentante Legale</label>
+          <div>
+            <label className="block text-sm font-medium text-slate-700">P. IVA / C.F.</label>
+            <input
+              type="text"
+              className="w-full p-3 border border-slate-300 rounded-lg mt-1"
+              value={data.contractor.vat}
+              onChange={(e) => handleChange('contractor', 'vat', e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700">Rappresentante Legale (Nome)</label>
             <input
               type="text"
               className="w-full p-3 border border-slate-300 rounded-lg mt-1"
@@ -161,12 +170,13 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700">P. IVA / C.F.</label>
+            <label className="block text-sm font-medium text-slate-700">Ruolo Rappresentante</label>
             <input
               type="text"
+              placeholder="Es. Direttore Tecnico, Socio..."
               className="w-full p-3 border border-slate-300 rounded-lg mt-1"
-              value={data.contractor.vat}
-              onChange={(e) => handleChange('contractor', 'vat', e.target.value)}
+              value={data.contractor.repRole}
+              onChange={(e) => handleChange('contractor', 'repRole', e.target.value)}
             />
           </div>
         </div>

@@ -15,6 +15,18 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }
     return date.toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
   };
 
+  const formatVerboseDate = (dateStr: string) => {
+      if (!dateStr) return { day: '...', month: '...', year: '...' };
+      const date = new Date(dateStr);
+      return {
+          day: date.getDate().toString().padStart(2, '0'),
+          month: date.toLocaleDateString('it-IT', { month: 'long' }),
+          year: date.getFullYear().toString()
+      };
+  };
+
+  const verboseDate = formatVerboseDate(doc.date);
+
   return (
     <div className="font-serif-print text-black leading-normal">
       
@@ -81,15 +93,16 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }
         {/* Body */}
         <div className="text-sm text-justify space-y-4">
           <p>
-            Il giorno <strong>{formatDate(doc.date)}</strong>, alle ore {doc.time}, presso il luogo dei lavori in {project.location}, ha avvio la {doc.visitNumber}° visita di collaudo in corso d'opera.
+            Il giorno <strong>{verboseDate.day}</strong> del mese di <strong>{verboseDate.month}</strong> {verboseDate.year}, alle ore {doc.time} presso il luogo dei lavori in {project.location}, ha avvio la {doc.visitNumber}° visita di collaudo in corso d'opera convocata {doc.convocationDetails ? doc.convocationDetails : 'per le vie brevi'}.
           </p>
 
           <p>
-            Sono presenti, oltre al sottoscritto Collaudatore, <strong>{project.staff.collaudatore}:</strong>
+            Sono presenti, oltre al sottoscritto Collaudatore, <strong>{project.staff.collaudatore}</strong>:
           </p>
-          <ul className="list-disc pl-8 space-y-1 mb-4">
-            <li>per l'ufficio di Direzione Lavori: {project.staff.direttoreLavori} / {project.staff.ispettoreCantiere};</li>
-            <li>per l'Impresa {project.contractor.name}: {project.contractor.repName}.</li>
+          <ul className="list-none pl-0 space-y-1 mb-4">
+            <li>per l'ufficio di Direzione Lavori, il Direttore dei Lavori: {project.staff.direttoreLavori};</li>
+            <li>per l'ufficio di Direzione Lavori, l'Ispettore di Cantiere: {project.staff.ispettoreCantiere};</li>
+            <li>per l'Impresa {project.contractor.name}, Il Sig. {project.contractor.repName}, in qualità di {project.contractor.repRole || 'Rappresentante Legale'};</li>
           </ul>
 
           <div className="mb-4">

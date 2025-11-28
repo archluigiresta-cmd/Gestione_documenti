@@ -13,7 +13,8 @@ export const createEmptyProject = (): ProjectConstants => ({
     name: '',
     address: '',
     vat: '',
-    repName: ''
+    repName: '',
+    repRole: ''
   },
   contract: {
     repNumber: '',
@@ -41,6 +42,7 @@ export const createInitialDocument = (projectId: string): DocumentVariables => (
   visitNumber: 1,
   date: new Date().toISOString().split('T')[0],
   time: '09:00',
+  convocationDetails: '',
   attendees: ['Collaudatore', 'Direttore dei Lavori', 'Ispettore di Cantiere', 'Impresa'],
   premis: '',
   worksExecuted: [],

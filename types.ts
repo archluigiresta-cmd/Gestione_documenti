@@ -13,6 +13,7 @@ export interface ProjectConstants {
     address: string;
     vat: string; // P.IVA
     repName: string; // Legal representative
+    repRole: string; // Role of the representative (e.g. Direttore Tecnico)
   };
   contract: {
     repNumber: string;
@@ -48,6 +49,7 @@ export interface DocumentVariables {
   visitNumber: number;
   date: string;
   time: string;
+  convocationDetails: string; // Details about how the visit was called (PEC, etc.)
   attendees: string[]; // List of people present
   premis: string; // The "Premesso che..." section
   worksExecuted: string[]; // List of specific works done specifically FOR THIS visit
