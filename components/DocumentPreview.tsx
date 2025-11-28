@@ -15,6 +15,12 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }
     return date.toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
   };
 
+  const formatShortDate = (dateStr: string) => {
+    if (!dateStr) return '...';
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('it-IT');
+  };
+
   const formatVerboseDate = (dateStr: string) => {
       if (!dateStr) return { day: '...', month: '...', year: '...' };
       const date = new Date(dateStr);
@@ -26,6 +32,13 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }
   };
 
   const verboseDate = formatVerboseDate(doc.date);
+  
+  // Construct assignment string
+  const assignmentTypes = [];
+  if (project.testerAppointment.isStatic) assignmentTypes.push("statico");
+  if (project.testerAppointment.isAdmin) assignmentTypes.push("tecnico-amministrativo");
+  if (project.testerAppointment.isFunctional) assignmentTypes.push("funzionale degli impianti");
+  const assignmentString = assignmentTypes.join(", ");
 
   return (
     <div className="font-serif-print text-black leading-normal">
@@ -48,7 +61,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }
           </div>
 
           <h2 className="font-bold text-lg uppercase my-8 border-b-2 border-black pb-2 inline-block">
-            VERBALE DI VISITA DI COLLAUDO TECNICO AMMINISTRATIVO E STATICO IN CORSO D'OPERA N. {doc.visitNumber}
+            VERBALE DI VISITA DI COLLAUDO {assignmentString.toUpperCase()} IN CORSO D'OPERA N. {doc.visitNumber}
           </h2>
         </div>
 
@@ -61,19 +74,24 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }
 
           <div className="grid grid-cols-[180px_1fr] gap-4">
             <div className="font-bold">Contratto d'appalto:</div>
-            <div>stipulato in data {project.contract.date}, giusto Rep. N. {project.contract.repNumber}, {project.contract.registeredAt}</div>
+            <div>
+              stipulato in data {formatShortDate(project.contract.date)}, giusto Rep. N. {project.contract.repNumber}
+              {project.contract.regPlace && `, registrato a ${project.contract.regPlace} il ${project.contract.regDate}, al n. ${project.contract.regNumber}, Serie ${project.contract.regSeries}`}.
+            </div>
           </div>
 
           <div className="grid grid-cols-[180px_1fr] gap-4">
             <div className="font-bold">Importo Contrattuale:</div>
             <div className="text-justify">
-              {project.contract.totalAmount}, di cui euro {project.contract.netAmount} per lavori, euro {project.contract.securityCosts} oneri sicurezza.
+              euro {project.contract.totalAmount}, di cui euro {project.contract.securityCosts} per oneri della sicurezza, oltre IVA.
             </div>
           </div>
 
           <div className="grid grid-cols-[180px_1fr] gap-4">
-            <div className="font-bold">Scadenza contrattuale:</div>
-            <div>Ultimazione prevista entro il {project.contract.deadline}</div>
+            <div className="font-bold">Scadenza contrattuale lavori:</div>
+            <div className="text-justify">
+               giorni {project.contract.durationDays} naturali e consecutivi, per l'esecuzione di tutte le lavorazioni, decorrenti dalla data del verbale di consegna dei lavori e quindi dal {formatShortDate(project.contract.handoverDate)} per cui l'ultimazione dovrà avvenire entro il {formatShortDate(project.contract.deadline)}.
+            </div>
           </div>
 
           <div className="mt-4 pt-2 border-t border-slate-200">
@@ -93,28 +111,53 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }
         {/* Body */}
         <div className="text-sm text-justify space-y-4">
           <p>
-            Il giorno <strong>{verboseDate.day}</strong> del mese di <strong>{verboseDate.month}</strong> {verboseDate.year}, alle ore {doc.time} presso il luogo dei lavori in {project.location}, ha avvio la {doc.visitNumber}° visita di collaudo in corso d'opera convocata {doc.convocationDetails ? doc.convocationDetails : 'per le vie brevi'}.
+            Il giorno <strong>{verboseDate.day}</strong> del mese di <strong>{verboseDate.month}</strong> {verboseDate.year}, alle ore {doc.time} presso il luogo dei lavori in {project.location}, ha avvio la {doc.visitNumber}° visita di collaudo {assignmentString} in corso d'opera convocata {doc.convocationDetails ? doc.convocationDetails : 'per le vie brevi'}.
           </p>
 
           <p>
-            Sono presenti, oltre al sottoscritto Collaudatore, <strong>{project.staff.collaudatore}</strong>:
+            Sono presenti, oltre al sottoscritto Collaudatore, <strong>{project.testerAppointment.qualification} {project.testerAppointment.name}</strong>:
           </p>
-          <ul className="list-none pl-0 space-y-1 mb-4">
-            <li>per l'ufficio di Direzione Lavori, il Direttore dei Lavori: {project.staff.direttoreLavori};</li>
-            <li>per l'ufficio di Direzione Lavori, l'Ispettore di Cantiere: {project.staff.ispettoreCantiere};</li>
-            <li>per l'Impresa {project.contractor.name}, Il Sig. {project.contractor.repName}, in qualità di {project.contractor.repRole || 'Rappresentante Legale'};</li>
-          </ul>
+          
+          {/* Dynamic Attendees List */}
+          <div className="whitespace-pre-line pl-4 mb-4">
+            {doc.attendees ? doc.attendees : (
+              <ul className="list-none pl-0 space-y-1">
+                 <li>per l'ufficio di Direzione Lavori, il Direttore dei Lavori: {project.staff.direttoreLavori};</li>
+                 <li>per l'ufficio di Direzione Lavori, l'Ispettore di Cantiere: {project.staff.ispettoreCantiere};</li>
+                 <li>per l'Impresa {project.contractor.name}, Il Sig. {project.contractor.repName}, in qualità di {project.contractor.repRole || 'Rappresentante Legale'};</li>
+              </ul>
+            )}
+          </div>
 
           <div className="mb-4">
              <p className="font-bold underline mb-2">Premesso che:</p>
-             <div className="whitespace-pre-line pl-2 border-l-2 border-slate-200">
+             <div className="whitespace-pre-line pl-2 border-l-2 border-slate-200 space-y-3">
+                <p>
+                   - con {project.testerAppointment.nominationType} n. {project.testerAppointment.nominationNumber} del {formatShortDate(project.testerAppointment.nominationDate)}
+                   {project.testerAppointment.contractRep && `, e successivo contratto repertorio n. ${project.testerAppointment.contractRep} del ${formatShortDate(project.testerAppointment.contractDate)}`}, 
+                   la {project.entity} ha affidato, ai sensi dell'art. 116 del D. Lgs. 36/2023, allo scrivente {project.testerAppointment.qualification} {project.testerAppointment.name}, l'incarico professionale di collaudo {assignmentString} relativo all'intervento in oggetto;
+                </p>
+
+                {/* Handover Docs History */}
+                {(project.handoverDocs.projectApprovalNumber || project.handoverDocs.deliveryDate) && (
+                   <p>
+                     - sono stati consegnati all'appaltatore i seguenti documenti:
+                     <br/>
+                     {project.handoverDocs.projectApprovalNumber && `• elaborati progettuali esecutivi approvati con ${project.handoverDocs.projectApprovalType} n. ${project.handoverDocs.projectApprovalNumber} del ${formatShortDate(project.handoverDocs.projectApprovalDate)};`}
+                     <br/>
+                     {project.handoverDocs.deliveryDate && `• Verbale di consegna ${project.handoverDocs.deliveryType === 'anticipated' ? 'anticipata' : 'ordinaria'} dei lavori in data ${formatShortDate(project.handoverDocs.deliveryDate)};`}
+                     <br/>
+                     {project.handoverDocs.ainopProtocol && `• Comunicazione di inizio lavori strutturale giusto REPORT DEPOSITO IN AINOP Protocollo n° ${project.handoverDocs.ainopProtocol} del ${formatShortDate(project.handoverDocs.ainopDate)}, acquisito agli atti del Comune con Protocollo N. ${project.handoverDocs.municipalityProtocol} del ${formatShortDate(project.handoverDocs.municipalityDate)}.`}
+                   </p>
+                )}
+
                 {doc.premis}
              </div>
           </div>
 
           <div className="mb-4">
             <p className="font-bold underline mb-2">
-              in data {formatDate(doc.date)}, con verbale di visita di collaudo n. {doc.visitNumber} sottoscritto in pari data, lo scrivente Collaudatore ha preso atto dell'andamento dei lavori:
+              in data {formatShortDate(doc.date)}, con verbale di visita di collaudo n. {doc.visitNumber} sottoscritto in pari data, lo scrivente Collaudatore, ha preso atto dell'andamento dei lavori eseguiti da data a data, così come dettagliati dal Direttore dei Lavori e di seguito riportate:
             </p>
             <ol className="list-decimal pl-8 space-y-1">
               {doc.worksExecuted.map((work, idx) => (
@@ -153,7 +196,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }
           <div className="space-y-16 text-right">
              <div>
                <p className="mb-4">Il Collaudatore:</p>
-               <p className="font-bold">{project.staff.collaudatore}</p>
+               <p className="font-bold">{project.testerAppointment.name}</p>
              </div>
              <div>
                <p className="mb-4">L'Impresa:</p>
@@ -167,7 +210,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }
       {doc.photos && doc.photos.length > 0 && (
         <div className="max-w-[21cm] mx-auto bg-white shadow-lg p-[2cm] min-h-[29.7cm] print-page break-before-page">
            <h2 className="font-bold text-lg uppercase mb-8 text-center border-b pb-4">
-            Allegato Fotografico - Verbale n. {doc.visitNumber} del {formatDate(doc.date)}
+            Allegato Fotografico - Verbale n. {doc.visitNumber} del {formatShortDate(doc.date)}
           </h2>
           
           <div className="grid grid-cols-2 gap-8">

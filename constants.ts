@@ -19,18 +19,47 @@ export const createEmptyProject = (): ProjectConstants => ({
   contract: {
     repNumber: '',
     date: '',
-    registeredAt: '',
+    
+    regPlace: '',
+    regDate: '',
+    regNumber: '',
+    regSeries: '',
+
     totalAmount: '',
-    netAmount: '',
     securityCosts: '',
+    
+    handoverDate: '',
+    durationDays: 0,
     deadline: ''
   },
   staff: {
     rup: '',
     direttoreLavori: '',
-    collaudatore: '',
     ispettoreCantiere: '',
     cse: ''
+  },
+  testerAppointment: {
+    name: '',
+    qualification: 'Arch.',
+    nominationType: 'Determina Dirigenziale',
+    nominationNumber: '',
+    nominationDate: '',
+    contractRep: '',
+    contractDate: '',
+    isStatic: true,
+    isAdmin: true,
+    isFunctional: false
+  },
+  handoverDocs: {
+    projectApprovalType: 'Determina',
+    projectApprovalNumber: '',
+    projectApprovalDate: '',
+    deliveryDate: '',
+    deliveryType: 'ordinary',
+    ainopProtocol: '',
+    ainopDate: '',
+    municipalityProtocol: '',
+    municipalityDate: ''
   }
 });
 
@@ -43,7 +72,7 @@ export const createInitialDocument = (projectId: string): DocumentVariables => (
   date: new Date().toISOString().split('T')[0],
   time: '09:00',
   convocationDetails: '',
-  attendees: ['Collaudatore', 'Direttore dei Lavori', 'Ispettore di Cantiere', 'Impresa'],
+  attendees: '', // Starts empty, populated dynamically in App logic
   premis: '',
   worksExecuted: [],
   observations: '',
