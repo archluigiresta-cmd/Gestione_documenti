@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { DocumentVariables, PhotoAttachment } from '../types';
 import { Plus, Trash2, Wand2, Loader2, Calendar, Clock, Hash, ImagePlus, X, Mail } from 'lucide-react';
@@ -14,16 +13,30 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ data, onChange }
   const [workInput, setWorkInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Helper to safely get API Key without crashing if process is undefined
+  const getApiKey = () => {
+    try {
+      if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+        return process.env.API_KEY;
+      }
+    } catch (e) {
+      console.warn("Process env not available");
+    }
+    return null;
+  };
+
   // Gemini Integration for polishing text
   const polishText = async (field: 'premis' | 'observations') => {
-    if (!process.env.API_KEY) {
-      alert("API Key mancante. Impossibile usare l'IA.");
+    const apiKey = getApiKey();
+    
+    if (!apiKey) {
+      alert("API Key mancante o non accessibile. Impossibile usare l'IA.");
       return;
     }
     
     setIsGenerating(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey });
       const prompt = `
         Agisci come un esperto Collaudatore di Opere Pubbliche italiano.
         Riscrivi il seguente testo in un linguaggio tecnico, formale e burocratico appropriato per un Verbale di Collaudo.
@@ -138,8 +151,8 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ data, onChange }
               type="number"
               className="w-full p-3 border border-slate-300 rounded-lg bg-slate-50"
               value={data.visitNumber}
-              readOnly
-              title="Per cambiare numero crea un nuovo verbale o modifica quello precedente"
+              onChange={(e) => onChange({ ...data, visitNumber: parseInt(e.target.value) || 0 })}
+              title="Puoi modificare manualmente il numero se necessario"
             />
           </div>
           <div className="md:col-span-3">
@@ -152,6 +165,18 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ data, onChange }
                value={data.convocationDetails || ''}
                onChange={(e) => onChange({ ...data, convocationDetails: e.target.value })}
              />
+          </div>
+          <div className="md:col-span-3">
+             <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-1">
+               <UserCheck className="w-4 h-4" /> Soggetti Presenti
+             </label>
+             <textarea
+               className="w-full p-3 border border-slate-300 rounded-lg h-32 text-sm whitespace-pre-wrap"
+               placeholder="Elenco dei presenti..."
+               value={data.attendees || ''}
+               onChange={(e) => onChange({ ...data, attendees: e.target.value })}
+             />
+             <p className="text-xs text-slate-500 mt-1">Puoi modificare liberamente questo elenco.</p>
           </div>
         </div>
       </div>
@@ -297,7 +322,17 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ data, onChange }
           )}
         </div>
       </div>
+      
+       <div className="flex items-center justify-end">
+        <div className="text-xs text-green-600 font-medium flex items-center gap-1 bg-green-50 px-3 py-1.5 rounded-full border border-green-100">
+           <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+           Dati salvati in locale
+        </div>
+      </div>
 
     </div>
   );
 };
+
+// Import missing icon that was causing errors in previous versions
+import { UserCheck } from 'lucide-react';
