@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
-import { ProjectConstants } from '../types';
-import { Save, Calculator, Building, UserCheck, HardHat, FileSignature, FolderOpen, Briefcase, FileText, CheckSquare, ShieldCheck } from 'lucide-react';
+import { ProjectConstants, ContactInfo } from '../types';
+import { Save, Calculator, Building, UserCheck, HardHat, FileSignature, FolderOpen, Briefcase, FileText, ShieldCheck, Mail, Phone, MapPin, User } from 'lucide-react';
 
 interface ProjectFormProps {
   data: ProjectConstants;
@@ -30,6 +30,41 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
     }
   };
 
+  // Helper for deeply nested updates (staff.rup.email)
+  const handleDeepChange = (section: 'staff' | 'contractor' | 'testerAppointment', subSection: string | null, field: keyof ContactInfo, value: string) => {
+    if (section === 'staff' && subSection) {
+       onChange({
+         ...data,
+         staff: {
+           ...data.staff,
+           [subSection]: {
+             ...(data.staff as any)[subSection],
+             [field]: value
+           }
+         }
+       });
+    } else if (section === 'contractor') {
+       onChange({
+         ...data,
+         contractor: {
+           ...data.contractor,
+           [field]: value
+         }
+       });
+    } else if (section === 'testerAppointment') {
+       onChange({
+          ...data,
+          testerAppointment: {
+             ...data.testerAppointment,
+             contact: {
+                ...data.testerAppointment.contact,
+                [field]: value
+             }
+          }
+       });
+    }
+  };
+
   // Auto-calculate deadline
   useEffect(() => {
     if (data.contract.handoverDate && data.contract.durationDays) {
@@ -49,7 +84,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
   const TabButton = ({ id, label, icon: Icon }: { id: TabType, label: string, icon: any }) => (
     <button
       onClick={() => setActiveTab(id)}
-      className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
+      className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
         activeTab === id 
           ? 'border-blue-600 text-blue-600 bg-blue-50/50' 
           : 'border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
@@ -60,17 +95,75 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
     </button>
   );
 
+  const ContactFields = ({ 
+    label, 
+    contact, 
+    onChange 
+  }: { 
+    label: string, 
+    contact: ContactInfo, 
+    onChange: (field: keyof ContactInfo, val: string) => void 
+  }) => (
+    <div className="bg-slate-50 p-5 rounded-lg border border-slate-200">
+      <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+         <User className="w-4 h-4 text-blue-500"/> {label}
+      </h4>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+         <div className="md:col-span-2">
+            <label className="text-xs font-semibold text-slate-500 uppercase">Nome / Ragione Sociale</label>
+            <input type="text" className="w-full p-2 border border-slate-300 rounded mt-1" value={contact.name} onChange={e => onChange('name', e.target.value)} />
+         </div>
+         {contact.title !== undefined && (
+             <div>
+                <label className="text-xs font-semibold text-slate-500 uppercase">Titolo</label>
+                <input type="text" placeholder="Arch. / Ing." className="w-full p-2 border border-slate-300 rounded mt-1" value={contact.title} onChange={e => onChange('title', e.target.value)} />
+             </div>
+         )}
+         <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase">Email</label>
+            <div className="relative">
+              <Mail className="absolute left-2 top-2.5 w-4 h-4 text-slate-400"/>
+              <input type="email" className="w-full p-2 pl-8 border border-slate-300 rounded mt-1" value={contact.email || ''} onChange={e => onChange('email', e.target.value)} />
+            </div>
+         </div>
+         <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase">PEC</label>
+            <div className="relative">
+              <ShieldCheck className="absolute left-2 top-2.5 w-4 h-4 text-slate-400"/>
+              <input type="email" className="w-full p-2 pl-8 border border-slate-300 rounded mt-1" value={contact.pec || ''} onChange={e => onChange('pec', e.target.value)} />
+            </div>
+         </div>
+         <div>
+            <label className="text-xs font-semibold text-slate-500 uppercase">Telefono</label>
+            <div className="relative">
+              <Phone className="absolute left-2 top-2.5 w-4 h-4 text-slate-400"/>
+              <input type="tel" className="w-full p-2 pl-8 border border-slate-300 rounded mt-1" value={contact.phone || ''} onChange={e => onChange('phone', e.target.value)} />
+            </div>
+         </div>
+         {contact.address !== undefined && (
+            <div className="md:col-span-2">
+                <label className="text-xs font-semibold text-slate-500 uppercase">Indirizzo</label>
+                <div className="relative">
+                  <MapPin className="absolute left-2 top-2.5 w-4 h-4 text-slate-400"/>
+                  <input type="text" className="w-full p-2 pl-8 border border-slate-300 rounded mt-1" value={contact.address || ''} onChange={e => onChange('address', e.target.value)} />
+                </div>
+            </div>
+         )}
+      </div>
+    </div>
+  );
+
   return (
-    <div className="max-w-6xl mx-auto pb-20">
+    <div className="max-w-6xl mx-auto pb-20 animate-in fade-in duration-500">
       
       <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-slate-800">Dati Appalto</h2>
-            <p className="text-slate-500 text-sm mt-1">Gestisci tutte le informazioni costanti del progetto.</p>
+            <p className="text-slate-500 text-sm mt-1">Gestisci le informazioni costanti e i contatti.</p>
           </div>
           <div className="flex items-center gap-2">
              <span className="text-xs text-green-600 font-medium flex items-center gap-1 bg-green-50 px-2 py-1 rounded">
-               <Save className="w-3 h-3" /> Dati salvati
+               <Save className="w-3 h-3" /> Salvataggio automatico
              </span>
           </div>
       </div>
@@ -86,11 +179,11 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
           <TabButton id="documenti" label="Documenti Consegna" icon={FolderOpen} />
         </div>
 
-        <div className="p-8">
+        <div className="p-8 bg-slate-50/30">
           
           {/* --- TAB GENERALE --- */}
           {activeTab === 'generale' && (
-            <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="space-y-6">
               <div className="grid grid-cols-1 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-slate-700">Ente Appaltante</label>
@@ -136,80 +229,44 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
 
           {/* --- TAB SOGGETTI --- */}
           {activeTab === 'soggetti' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
-              <div>
-                <label className="block text-sm font-medium text-slate-700">RUP (Responsabile Unico)</label>
-                <input
-                  type="text"
-                  className="w-full p-3 border border-slate-300 rounded-lg mt-1"
-                  value={data.staff.rup}
-                  onChange={(e) => handleChange('staff', 'rup', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Direttore dei Lavori</label>
-                <input
-                  type="text"
-                  className="w-full p-3 border border-slate-300 rounded-lg mt-1"
-                  value={data.staff.direttoreLavori}
-                  onChange={(e) => handleChange('staff', 'direttoreLavori', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Ispettore di Cantiere</label>
-                <input
-                  type="text"
-                  className="w-full p-3 border border-slate-300 rounded-lg mt-1"
-                  value={data.staff.ispettoreCantiere}
-                  onChange={(e) => handleChange('staff', 'ispettoreCantiere', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">CSE (Sicurezza)</label>
-                <input
-                  type="text"
-                  className="w-full p-3 border border-slate-300 rounded-lg mt-1"
-                  value={data.staff.cse}
-                  onChange={(e) => handleChange('staff', 'cse', e.target.value)}
-                />
-              </div>
-              <div className="col-span-2 bg-blue-50 p-4 rounded-lg text-sm text-blue-800 flex items-center gap-2">
-                 <FileSignature className="w-4 h-4" />
-                 Per modificare i dati del Collaudatore, vai alla scheda "Dati Collaudatore".
-              </div>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <ContactFields 
+                label="RUP (Responsabile Unico)" 
+                contact={data.staff.rup} 
+                onChange={(f, v) => handleDeepChange('staff', 'rup', f, v)} 
+              />
+              <ContactFields 
+                label="Direttore dei Lavori" 
+                contact={data.staff.direttoreLavori} 
+                onChange={(f, v) => handleDeepChange('staff', 'direttoreLavori', f, v)} 
+              />
+              <ContactFields 
+                label="Ispettore di Cantiere" 
+                contact={data.staff.ispettoreCantiere} 
+                onChange={(f, v) => handleDeepChange('staff', 'ispettoreCantiere', f, v)} 
+              />
+              <ContactFields 
+                label="CSE (Sicurezza)" 
+                contact={data.staff.cse} 
+                onChange={(f, v) => handleDeepChange('staff', 'cse', f, v)} 
+              />
             </div>
           )}
 
-          {/* --- TAB COLLAUDATORE (NEW) --- */}
+          {/* --- TAB COLLAUDATORE --- */}
           {activeTab === 'collaudatore' && (
-            <div className="space-y-6 animate-in fade-in duration-300">
-               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                 <div className="md:col-span-1">
-                   <label className="block text-sm font-medium text-slate-700">Titolo</label>
-                   <input
-                     type="text"
-                     placeholder="Arch. / Ing."
-                     className="w-full p-3 border border-slate-300 rounded-lg mt-1"
-                     value={data.testerAppointment.qualification}
-                     onChange={(e) => handleChange('testerAppointment', 'qualification', e.target.value)}
-                   />
-                 </div>
-                 <div className="md:col-span-3">
-                   <label className="block text-sm font-medium text-slate-700">Nome e Cognome Collaudatore</label>
-                   <input
-                     type="text"
-                     className="w-full p-3 border border-slate-300 rounded-lg mt-1"
-                     value={data.testerAppointment.name}
-                     onChange={(e) => handleChange('testerAppointment', 'name', e.target.value)}
-                   />
-                 </div>
-               </div>
+            <div className="space-y-6">
+               <ContactFields 
+                label="Dati Collaudatore" 
+                contact={data.testerAppointment.contact} 
+                onChange={(f, v) => handleDeepChange('testerAppointment', null, f, v)} 
+               />
 
-               <div className="border-t border-slate-200 pt-4">
-                 <h4 className="font-bold text-slate-800 mb-4">Nomina e Incarico</h4>
+               <div className="bg-white p-6 rounded-lg border border-slate-200">
+                 <h4 className="font-bold text-slate-800 mb-4">Dettagli Nomina</h4>
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700">Tipo Atto Nomina</label>
+                      <label className="block text-sm font-medium text-slate-700">Tipo Atto</label>
                       <input
                         type="text"
                         placeholder="Determina Dirigenziale"
@@ -238,7 +295,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
                     </div>
                  </div>
 
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 pt-4 border-t border-slate-100">
                    <div>
                       <label className="block text-sm font-medium text-slate-700">Rep. Contratto Incarico (Opzionale)</label>
                       <input
@@ -258,38 +315,24 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
                       />
                    </div>
                  </div>
-               </div>
 
-               <div className="border-t border-slate-200 pt-4">
-                 <h4 className="font-bold text-slate-800 mb-4">Tipologia Incarico (Seleziona)</h4>
-                 <div className="flex flex-wrap gap-4">
-                   <label className="flex items-center gap-2 border border-slate-200 p-3 rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100">
-                     <input
-                       type="checkbox"
-                       checked={data.testerAppointment.isStatic}
-                       onChange={(e) => handleChange('testerAppointment', 'isStatic', e.target.checked)}
-                       className="w-5 h-5 text-blue-600 rounded"
-                     />
-                     <span className="text-sm font-medium">Collaudo Statico</span>
-                   </label>
-                   <label className="flex items-center gap-2 border border-slate-200 p-3 rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100">
-                     <input
-                       type="checkbox"
-                       checked={data.testerAppointment.isAdmin}
-                       onChange={(e) => handleChange('testerAppointment', 'isAdmin', e.target.checked)}
-                       className="w-5 h-5 text-blue-600 rounded"
-                     />
-                     <span className="text-sm font-medium">Collaudo Tecnico Amministrativo</span>
-                   </label>
-                   <label className="flex items-center gap-2 border border-slate-200 p-3 rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100">
-                     <input
-                       type="checkbox"
-                       checked={data.testerAppointment.isFunctional}
-                       onChange={(e) => handleChange('testerAppointment', 'isFunctional', e.target.checked)}
-                       className="w-5 h-5 text-blue-600 rounded"
-                     />
-                     <span className="text-sm font-medium">Funzionale Impianti</span>
-                   </label>
+                 <div className="mt-4 pt-4 border-t border-slate-100">
+                   <label className="block text-sm font-medium text-slate-700 mb-2">Tipologia Incarico</label>
+                   <div className="flex flex-wrap gap-4">
+                     {['isStatic', 'isAdmin', 'isFunctional'].map(type => (
+                       <label key={type} className="flex items-center gap-2 border border-slate-200 p-3 rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100">
+                         <input
+                           type="checkbox"
+                           checked={(data.testerAppointment as any)[type]}
+                           onChange={(e) => handleChange('testerAppointment', type, e.target.checked)}
+                           className="w-5 h-5 text-blue-600 rounded"
+                         />
+                         <span className="text-sm font-medium">
+                            {type === 'isStatic' ? 'Statico' : type === 'isAdmin' ? 'Tecnico-Amm.' : 'Funzionale'}
+                         </span>
+                       </label>
+                     ))}
+                   </div>
                  </div>
                </div>
             </div>
@@ -297,60 +340,52 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
 
           {/* --- TAB IMPRESA --- */}
           {activeTab === 'impresa' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-300">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-slate-700">Ragione Sociale</label>
-                <input
-                  type="text"
-                  className="w-full p-3 border border-slate-300 rounded-lg mt-1"
-                  value={data.contractor.name}
-                  onChange={(e) => handleChange('contractor', 'name', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Indirizzo Sede</label>
-                <input
-                  type="text"
-                  className="w-full p-3 border border-slate-300 rounded-lg mt-1"
-                  value={data.contractor.address}
-                  onChange={(e) => handleChange('contractor', 'address', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">P. IVA / C.F.</label>
-                <input
-                  type="text"
-                  className="w-full p-3 border border-slate-300 rounded-lg mt-1"
-                  value={data.contractor.vat}
-                  onChange={(e) => handleChange('contractor', 'vat', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Rappresentante Legale (Nome)</label>
-                <input
-                  type="text"
-                  className="w-full p-3 border border-slate-300 rounded-lg mt-1"
-                  value={data.contractor.repName}
-                  onChange={(e) => handleChange('contractor', 'repName', e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700">Ruolo Rappresentante</label>
-                <input
-                  type="text"
-                  placeholder="Es. Direttore Tecnico"
-                  className="w-full p-3 border border-slate-300 rounded-lg mt-1"
-                  value={data.contractor.repRole}
-                  onChange={(e) => handleChange('contractor', 'repRole', e.target.value)}
-                />
-              </div>
+            <div className="space-y-6">
+               <ContactFields 
+                label="Dati Azienda" 
+                contact={data.contractor} 
+                onChange={(f, v) => handleDeepChange('contractor', null, f, v)} 
+               />
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-6 rounded-lg border border-slate-200">
+                  <div className="md:col-span-2">
+                     <h4 className="font-bold text-slate-800 mb-2">Rappresentante Legale</h4>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700">Nome e Cognome</label>
+                    <input
+                      type="text"
+                      className="w-full p-3 border border-slate-300 rounded-lg mt-1"
+                      value={data.contractor.repName}
+                      onChange={(e) => handleChange('contractor', 'repName', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700">Ruolo / Qualifica</label>
+                    <input
+                      type="text"
+                      placeholder="Es. Direttore Tecnico"
+                      className="w-full p-3 border border-slate-300 rounded-lg mt-1"
+                      value={data.contractor.repRole || ''}
+                      onChange={(e) => handleChange('contractor', 'repRole', e.target.value)}
+                    />
+                  </div>
+                   <div>
+                    <label className="block text-sm font-medium text-slate-700">P. IVA / C.F.</label>
+                    <input
+                      type="text"
+                      className="w-full p-3 border border-slate-300 rounded-lg mt-1"
+                      value={data.contractor.vat}
+                      onChange={(e) => handleChange('contractor', 'vat', e.target.value)}
+                    />
+                  </div>
+               </div>
             </div>
           )}
 
           {/* --- TAB CONTRATTO --- */}
           {activeTab === 'contratto' && (
-            <div className="space-y-6 animate-in fade-in duration-300">
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-6 rounded-lg border border-slate-200">
                 <div>
                   <label className="block text-sm font-medium text-slate-700">Data Stipula</label>
                   <input
@@ -371,8 +406,8 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
                 </div>
               </div>
 
-              <div className="bg-slate-50 p-4 rounded-lg">
-                <h4 className="text-sm font-bold text-slate-700 mb-3">Dettagli Registrazione</h4>
+              <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
+                <h4 className="text-sm font-bold text-slate-700 mb-3 uppercase tracking-wide">Dettagli Registrazione</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-slate-500 uppercase">Luogo</label>
@@ -425,7 +460,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-white p-6 rounded-lg border border-slate-200">
                 <div>
                   <label className="block text-sm font-medium text-slate-700">Importo Contrattuale (€)</label>
                   <input
@@ -448,10 +483,10 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
             </div>
           )}
 
-          {/* --- TAB DOCUMENTI CONSEGNA (NEW) --- */}
+          {/* --- TAB DOCUMENTI CONSEGNA --- */}
           {activeTab === 'documenti' && (
-            <div className="space-y-6 animate-in fade-in duration-300">
-               <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+            <div className="space-y-6">
+               <div className="bg-white p-6 rounded-lg border border-slate-200">
                  <h3 className="text-md font-bold text-slate-800 mb-4 flex items-center gap-2">
                    <FolderOpen className="w-4 h-4"/> Approvazione Progetto Esecutivo
                  </h3>
@@ -487,7 +522,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
                  </div>
                </div>
 
-               <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+               <div className="bg-white p-6 rounded-lg border border-slate-200">
                  <h3 className="text-md font-bold text-slate-800 mb-4 flex items-center gap-2">
                    <HardHat className="w-4 h-4"/> Verbale Consegna Lavori
                  </h3>
@@ -515,7 +550,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
                  </div>
                </div>
 
-               <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+               <div className="bg-white p-6 rounded-lg border border-slate-200">
                  <h3 className="text-md font-bold text-slate-800 mb-4 flex items-center gap-2">
                    <FileText className="w-4 h-4"/> Inizio Lavori Strutturale (AINOP)
                  </h3>
@@ -561,14 +596,14 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
                  </div>
                </div>
 
-               <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+               <div className="bg-white p-6 rounded-lg border border-slate-200">
                  <h3 className="text-md font-bold text-slate-800 mb-4 flex items-center gap-2">
                    <ShieldCheck className="w-4 h-4"/> Altri Documenti e Sicurezza
                  </h3>
                  
                  <div className="space-y-4">
-                   {/* 4. Bolle Discarica */}
-                   <label className="flex items-center gap-3 p-2 hover:bg-slate-100 rounded cursor-pointer">
+                   {/* Bolle Discarica */}
+                   <label className="flex items-center gap-3 p-3 bg-slate-50 rounded cursor-pointer border border-transparent hover:border-blue-200 transition-colors">
                       <input 
                         type="checkbox"
                         className="w-5 h-5 text-blue-600 rounded"
@@ -578,8 +613,8 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
                       <span className="text-sm font-medium text-slate-700">4. Bolle di conferimento a discarica del materiale da scavo</span>
                    </label>
 
-                   {/* 5. POS Aggiornato */}
-                   <label className="flex items-center gap-3 p-2 hover:bg-slate-100 rounded cursor-pointer">
+                   {/* POS */}
+                   <label className="flex items-center gap-3 p-3 bg-slate-50 rounded cursor-pointer border border-transparent hover:border-blue-200 transition-colors">
                       <input 
                         type="checkbox"
                         className="w-5 h-5 text-blue-600 rounded"
@@ -589,8 +624,8 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
                       <span className="text-sm font-medium text-slate-700">5. POS aggiornato</span>
                    </label>
 
-                   {/* 6. Cronoprogramma Aggiornato */}
-                   <label className="flex items-center gap-3 p-2 hover:bg-slate-100 rounded cursor-pointer">
+                   {/* Cronoprogramma */}
+                   <label className="flex items-center gap-3 p-3 bg-slate-50 rounded cursor-pointer border border-transparent hover:border-blue-200 transition-colors">
                       <input 
                         type="checkbox"
                         className="w-5 h-5 text-blue-600 rounded"
@@ -600,9 +635,9 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
                       <span className="text-sm font-medium text-slate-700">6. Cronoprogramma dei lavori aggiornato</span>
                    </label>
 
-                   {/* 7. Notifica Preliminare */}
-                   <div>
-                      <label className="flex items-center gap-3 p-2 hover:bg-slate-100 rounded cursor-pointer">
+                   {/* Notifica Preliminare */}
+                   <div className="bg-slate-50 rounded border border-transparent hover:border-blue-200 transition-colors">
+                      <label className="flex items-center gap-3 p-3 cursor-pointer">
                         <input 
                           type="checkbox"
                           className="w-5 h-5 text-blue-600 rounded"
@@ -613,9 +648,9 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
                       </label>
                       
                       {data.handoverDocs.hasPreliminaryNotification && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 ml-8 mt-2 p-4 bg-white border border-slate-200 rounded-lg">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 pt-0 ml-8">
                            <div>
-                             <label className="block text-sm font-medium text-slate-700">Notifica N.</label>
+                             <label className="block text-xs font-medium text-slate-500 uppercase">Notifica N.</label>
                              <input
                                type="text"
                                className="w-full p-2 border border-slate-300 rounded mt-1 text-sm"
@@ -624,7 +659,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
                              />
                            </div>
                            <div>
-                             <label className="block text-sm font-medium text-slate-700">Data Notifica</label>
+                             <label className="block text-xs font-medium text-slate-500 uppercase">Data Notifica</label>
                              <input
                                type="date"
                                className="w-full p-2 border border-slate-300 rounded mt-1 text-sm"
@@ -636,8 +671,8 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
                       )}
                    </div>
 
-                   <div>
-                     <label className="flex items-center gap-3 p-2 hover:bg-slate-100 rounded cursor-pointer">
+                   <div className="bg-slate-50 rounded border border-transparent hover:border-blue-200 transition-colors">
+                     <label className="flex items-center gap-3 p-3 cursor-pointer">
                         <input 
                           type="checkbox"
                           className="w-5 h-5 text-blue-600 rounded"
@@ -647,9 +682,9 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange }) => {
                         <span className="text-sm font-medium text-slate-700">Altro Documento (Specificare)</span>
                      </label>
                      {data.handoverDocs.hasOtherDocs && (
-                       <div className="ml-8 mt-2">
+                       <div className="p-3 pt-0 ml-8">
                          <textarea
-                           className="w-full p-3 border border-slate-300 rounded-lg text-sm"
+                           className="w-full p-2 border border-slate-300 rounded-lg text-sm"
                            placeholder="Descrivi qui il documento aggiuntivo..."
                            value={data.handoverDocs.otherDocsDescription}
                            onChange={(e) => handleChange('handoverDocs', 'otherDocsDescription', e.target.value)}

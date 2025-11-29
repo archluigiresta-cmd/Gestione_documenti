@@ -1,4 +1,18 @@
 
+
+export interface ContactInfo {
+  name: string; // Nome e Cognome o Ragione Sociale
+  title?: string; // Arch., Ing., Geom.
+  role?: string; // Ruolo specifico (es. Direttore Tecnico)
+  address?: string;
+  email?: string;
+  pec?: string;
+  phone?: string;
+  vat?: string; // P.IVA / C.F.
+  repName?: string; // Rappresentante Legale Name
+  repRole?: string; // Rappresentante Legale Role
+}
+
 // Data that remains constant throughout the project lifecycle
 export interface ProjectConstants {
   id: string; // Unique ID for the project
@@ -10,13 +24,7 @@ export interface ProjectConstants {
   cig?: string; // Codice Identificativo Gara
   
   // Impresa
-  contractor: {
-    name: string;
-    address: string;
-    vat: string; // P.IVA
-    repName: string; // Legal representative
-    repRole: string; // Role of the representative (e.g. Direttore Tecnico)
-  };
+  contractor: ContactInfo;
 
   // Contratto Appalto
   contract: {
@@ -39,18 +47,16 @@ export interface ProjectConstants {
 
   // Soggetti
   staff: {
-    rup: string; // Responsabile Unico Procedimento
-    direttoreLavori: string;
-    ispettoreCantiere: string;
-    cse: string; // Coordinatore Sicurezza Esecuzione
-    // Collaudatore name is now linked with appointment details below, 
-    // but kept here for backwards compatibility in some views if needed
+    rup: ContactInfo;
+    direttoreLavori: ContactInfo;
+    ispettoreCantiere: ContactInfo;
+    cse: ContactInfo;
   };
 
   // Dati Collaudatore e Nomina
   testerAppointment: {
-    name: string; // Nome Collaudatore
-    qualification: string; // Arch. / Ing.
+    contact: ContactInfo; // Includes name, title, address, pec, etc.
+    
     nominationType: string; // Es. Determina Dirigenziale
     nominationNumber: string;
     nominationDate: string;
@@ -79,7 +85,7 @@ export interface ProjectConstants {
     municipalityProtocol: string;
     municipalityDate: string;
 
-    // Altri Documenti (New)
+    // Altri Documenti
     hasWasteNotes: boolean; // Bolle conferimento discarica
     hasUpdatedPOS: boolean; // POS aggiornato
     hasUpdatedSchedule: boolean; // Cronoprogramma aggiornato
@@ -100,20 +106,33 @@ export interface PhotoAttachment {
   description: string;
 }
 
+export type DocumentType = 
+  | 'VERBALE_COLLAUDO' 
+  | 'VERBALE_CONSEGNA' 
+  | 'SOSPENSIONE_LAVORI' 
+  | 'RIPRESA_LAVORI' 
+  | 'SAL' 
+  | 'RELAZIONE_FINALE'
+  | 'CERTIFICATO_REGOLARE_ESECUZIONE';
+
 // Data that changes with every specific document/visit
 export interface DocumentVariables {
   id: string;
   projectId: string; // Link to the parent project
   createdAt: number; // Timestamp for sorting
-  type: 'VERBALE_COLLAUDO' | 'RELAZIONE_STRUTTURA' | 'SAL';
   visitNumber: number;
+  
+  // Specifics
   date: string;
   time: string;
   convocationDetails: string; // Details about how the visit was called (PEC, etc.)
   attendees: string; // List of people present (free text)
+  
+  // Content
   premis: string; // The "Premesso che..." section
   worksExecuted: string[]; // List of specific works done specifically FOR THIS visit
   observations: string; // General notes or "Si dà atto che..."
+  
   photos: PhotoAttachment[];
 }
 

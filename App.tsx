@@ -2,18 +2,21 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ProjectForm } from './components/ProjectForm';
-import { DocumentEditor } from './components/DocumentEditor';
-import { DocumentPreview } from './components/DocumentPreview';
+import { WorksManager } from './components/WorksManager';
+import { PhotoManager } from './components/PhotoManager';
+import { ExportManager } from './components/ExportManager';
 import { Dashboard } from './components/Dashboard';
 import { ProjectConstants, DocumentVariables } from './types';
 import { createEmptyProject, createInitialDocument } from './constants';
 import { db } from './db';
-import { Printer } from 'lucide-react';
+
+type ViewType = 'dashboard' | 'workspace';
+type TabType = 'project' | 'works' | 'photos' | 'export';
 
 const App: React.FC = () => {
   // Navigation State
-  const [view, setView] = useState<'dashboard' | 'project'>('dashboard');
-  const [activeTab, setActiveTab] = useState<'project' | 'editor' | 'preview'>('project');
+  const [view, setView] = useState<ViewType>('dashboard');
+  const [activeTab, setActiveTab] = useState<TabType>('project');
   
   // Data State
   const [projectList, setProjectList] = useState<ProjectConstants[]>([]);
@@ -57,14 +60,13 @@ const App: React.FC = () => {
         setDocuments(docs);
         setCurrentDocId(docs[docs.length - 1].id); // Select latest
       } else {
-        // Recover if no docs found (shouldn't happen with correct creation flow)
         const initialDoc = createInitialDocument(project.id);
         await db.saveDocument(initialDoc);
         setDocuments([initialDoc]);
         setCurrentDocId(initialDoc.id);
       }
       setActiveTab('project');
-      setView('project');
+      setView('workspace');
     } catch (error) {
       console.error("Error loading project documents", error);
     }
@@ -79,13 +81,13 @@ const App: React.FC = () => {
       }
   };
 
-  // --- Project View Logic ---
+  // --- Workspace Logic ---
 
   const handleBackToDashboard = () => {
     setView('dashboard');
     setCurrentProject(null);
     setDocuments([]);
-    loadProjects(); // Refresh list to update "last modified" or other details
+    loadProjects(); 
   };
 
   const handleProjectUpdate = async (newData: ProjectConstants) => {
@@ -99,7 +101,6 @@ const App: React.FC = () => {
     setDocuments(newDocs);
     await db.saveDocument(updatedDoc);
     
-    // Also update project lastModified timestamp
     if (currentProject) {
         const updatedProject = { ...currentProject, lastModified: Date.now() };
         setCurrentProject(updatedProject);
@@ -110,22 +111,15 @@ const App: React.FC = () => {
   const createNewVerbale = async () => {
     if (!currentProject) return;
 
-    // 1. Find the latest document to calculate progressives
     const lastDoc = documents.reduce((prev, current) => (prev.visitNumber > current.visitNumber) ? prev : current);
-
-    // 2. Format the date of the previous verbale
     const lastDate = new Date(lastDoc.date).toLocaleDateString('it-IT');
 
-    // 3. Generate the historical text block
+    // Historical logic
     let historicalAddition = '';
     if (lastDoc.worksExecuted.length > 0) {
-      historicalAddition = `\n\n- in data ${lastDate}, con verbale di visita di collaudo tecnico amministrativo e statico in corso d'opera n. ${lastDoc.visitNumber} sottoscritto in pari data, lo scrivente Collaudatore, con la scorta del progetto, dei documenti contabili, ha compiuto, insieme ai presenti, un esame generale del carteggio relativo al progetto... ed ha preso atto dell'andamento dei lavori eseguiti dalla consegna a detta data, così come dettagliati dal Direttore dei Lavori e di seguito riportate:\n`;
-      lastDoc.worksExecuted.forEach((work, idx) => {
-        historicalAddition += `${idx + 1}. ${work};\n`;
-      });
+      historicalAddition = `\n\n- in data ${lastDate}, con verbale n. ${lastDoc.visitNumber}, si è preso atto delle seguenti lavorazioni: ${lastDoc.worksExecuted.join(', ')};\n`;
     }
 
-    // 4. Create new document
     const newDoc: DocumentVariables = {
       ...createInitialDocument(currentProject.id),
       visitNumber: lastDoc.visitNumber + 1,
@@ -134,8 +128,6 @@ const App: React.FC = () => {
 
     setDocuments([...documents, newDoc]);
     setCurrentDocId(newDoc.id);
-    setActiveTab('editor');
-    
     await db.saveDocument(newDoc);
   };
 
@@ -150,12 +142,6 @@ const App: React.FC = () => {
       setCurrentDocId(newDocs[newDocs.length - 1].id);
       await db.deleteDocument(id);
     }
-  };
-
-  const currentDoc = documents.find(d => d.id === currentDocId) || documents[0];
-
-  const handlePrint = () => {
-    window.print();
   };
 
   // --- RENDER ---
@@ -173,57 +159,51 @@ const App: React.FC = () => {
     );
   }
 
-  // Project View
   if (!currentProject) return null;
 
   return (
-    <div className="flex bg-slate-50 min-h-screen">
+    <div className="flex bg-slate-100 min-h-screen">
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
-        documents={documents}
-        currentDocId={currentDocId || ''}
-        setCurrentDocId={(id) => setCurrentDocId(id)}
-        onNewDocument={createNewVerbale}
-        onDeleteDocument={handleDeleteDocument}
         onBackToDashboard={handleBackToDashboard}
+        projectName={currentProject.projectName}
       />
       
-      <main className="ml-64 flex-1 p-8 h-screen overflow-y-auto">
-        
-        {activeTab === 'preview' && (
-          <div className="fixed top-6 right-8 z-20 no-print">
-            <button
-              onClick={handlePrint}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 font-semibold transition-all"
-            >
-              <Printer className="w-5 h-5" />
-              Stampa / Salva PDF
-            </button>
-          </div>
-        )}
-
-        <div className={activeTab === 'preview' ? 'print-container' : 'max-w-5xl mx-auto'}>
+      <main className="ml-64 flex-1 p-8 h-screen overflow-y-auto print:ml-0 print:p-0">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
           
           {activeTab === 'project' && (
             <ProjectForm data={currentProject} onChange={handleProjectUpdate} />
           )}
 
-          {activeTab === 'editor' && currentDoc && (
-            <DocumentEditor 
-              data={currentDoc} 
-              onChange={handleDocumentUpdate} 
+          {activeTab === 'works' && currentDocId && (
+            <WorksManager 
+              documents={documents}
+              currentDocId={currentDocId}
+              onSelectDocument={setCurrentDocId}
+              onUpdateDocument={handleDocumentUpdate}
+              onNewDocument={createNewVerbale}
+              onDeleteDocument={handleDeleteDocument}
             />
           )}
 
-          {activeTab === 'preview' && currentDoc && (
-            <div className="flex flex-col items-center">
-               <div className="mb-6 text-center no-print text-slate-500 text-sm bg-yellow-50 border border-yellow-200 p-4 rounded-lg max-w-lg">
-                  <strong>Modalità Stampa:</strong> Le foto sono visualizzate qui se caricate in questa sessione. 
-                  Usa "Salva come PDF" dal browser per archiviare il verbale completo.
-               </div>
-               <DocumentPreview project={currentProject} doc={currentDoc} />
-            </div>
+          {activeTab === 'photos' && currentDocId && (
+            <PhotoManager
+              documents={documents}
+              currentDocId={currentDocId}
+              onSelectDocument={setCurrentDocId}
+              onUpdateDocument={handleDocumentUpdate}
+            />
+          )}
+
+          {activeTab === 'export' && currentDocId && (
+            <ExportManager
+              project={currentProject}
+              documents={documents}
+              currentDocId={currentDocId}
+              onSelectDocument={setCurrentDocId}
+            />
           )}
 
         </div>

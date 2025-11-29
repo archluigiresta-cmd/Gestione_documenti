@@ -5,7 +5,7 @@ import { ProjectConstants, DocumentVariables } from './types';
 export const createEmptyProject = (): ProjectConstants => ({
   id: crypto.randomUUID(),
   lastModified: Date.now(),
-  entity: 'PROVINCIA DI TARANTO', // Default value
+  entity: 'PROVINCIA DI TARANTO', 
   projectName: '',
   location: '',
   cup: '',
@@ -14,7 +14,10 @@ export const createEmptyProject = (): ProjectConstants => ({
     address: '',
     vat: '',
     repName: '',
-    repRole: ''
+    role: 'Legale Rappresentante',
+    email: '',
+    pec: '',
+    phone: ''
   },
   contract: {
     repNumber: '',
@@ -33,14 +36,20 @@ export const createEmptyProject = (): ProjectConstants => ({
     deadline: ''
   },
   staff: {
-    rup: '',
-    direttoreLavori: '',
-    ispettoreCantiere: '',
-    cse: ''
+    rup: { name: '', title: '', email: '', pec: '', phone: '' },
+    direttoreLavori: { name: '', title: '', email: '', pec: '', phone: '' },
+    ispettoreCantiere: { name: '', title: '', email: '', pec: '', phone: '' },
+    cse: { name: '', title: '', email: '', pec: '', phone: '' }
   },
   testerAppointment: {
-    name: '',
-    qualification: 'Arch.',
+    contact: { 
+      name: '', 
+      title: 'Arch.', 
+      address: '', 
+      email: '', 
+      pec: '', 
+      phone: '' 
+    },
     nominationType: 'Determina Dirigenziale',
     nominationNumber: '',
     nominationDate: '',
@@ -79,12 +88,11 @@ export const createInitialDocument = (projectId: string): DocumentVariables => (
   id: crypto.randomUUID(),
   projectId,
   createdAt: Date.now(),
-  type: 'VERBALE_COLLAUDO',
   visitNumber: 1,
   date: new Date().toISOString().split('T')[0],
   time: '09:00',
   convocationDetails: '',
-  attendees: '', // Starts empty, populated dynamically in App logic
+  attendees: '', 
   premis: '',
   worksExecuted: [],
   observations: '',
