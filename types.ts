@@ -84,6 +84,7 @@ export interface ProjectConstants {
     hasUpdatedPOS: boolean; // POS aggiornato
     hasUpdatedSchedule: boolean; // Cronoprogramma aggiornato
     
+    hasPreliminaryNotification: boolean; // Flag presenza notifica
     preliminaryNotifNumber: string; // Notifica preliminare N.
     preliminaryNotifDate: string; // Notifica preliminare Data
 

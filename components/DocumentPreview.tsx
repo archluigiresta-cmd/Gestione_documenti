@@ -142,20 +142,18 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }
                 <p>
                   - sono stati consegnati all'appaltatore i seguenti documenti:
                   <br/>
+                  {/* 1. Project Approval */}
                   {project.handoverDocs.projectApprovalNumber && `• elaborati progettuali esecutivi approvati con ${project.handoverDocs.projectApprovalType} n. ${project.handoverDocs.projectApprovalNumber} del ${formatShortDate(project.handoverDocs.projectApprovalDate)};`}
                   <br/>
+                  
+                  {/* 2. Handover */}
                   {project.handoverDocs.deliveryDate && `• Verbale di consegna ${project.handoverDocs.deliveryType === 'anticipated' ? 'anticipata' : 'ordinaria'} dei lavori in data ${formatShortDate(project.handoverDocs.deliveryDate)};`}
                   <br/>
+                  
+                  {/* 3. AINOP */}
                   {project.handoverDocs.ainopProtocol && `• Comunicazione di inizio lavori strutturale giusto REPORT DEPOSITO IN AINOP Protocollo n° ${project.handoverDocs.ainopProtocol} del ${formatShortDate(project.handoverDocs.ainopDate)}, acquisito agli atti del Comune con Protocollo N. ${project.handoverDocs.municipalityProtocol} del ${formatShortDate(project.handoverDocs.municipalityDate)};`}
                   
-                  {/* New Handover Docs logic */}
-                  {(project.handoverDocs.preliminaryNotifNumber || project.handoverDocs.preliminaryNotifDate) && (
-                    <>
-                      <br/>
-                      {`• Notifica preliminare n. ${project.handoverDocs.preliminaryNotifNumber || '...'} del ${formatShortDate(project.handoverDocs.preliminaryNotifDate)};`}
-                    </>
-                  )}
-
+                  {/* 4. Bolle Discarica */}
                   {project.handoverDocs.hasWasteNotes && (
                     <>
                       <br/>
@@ -163,6 +161,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }
                     </>
                   )}
 
+                  {/* 5. POS */}
                   {project.handoverDocs.hasUpdatedPOS && (
                     <>
                       <br/>
@@ -170,6 +169,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }
                     </>
                   )}
 
+                  {/* 6. Cronoprogramma */}
                   {project.handoverDocs.hasUpdatedSchedule && (
                     <>
                       <br/>
@@ -177,6 +177,15 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }
                     </>
                   )}
 
+                  {/* 7. Notifica Preliminare */}
+                  {project.handoverDocs.hasPreliminaryNotification && (
+                    <>
+                      <br/>
+                      {`• Notifica preliminare n. ${project.handoverDocs.preliminaryNotifNumber || '...'} del ${formatShortDate(project.handoverDocs.preliminaryNotifDate)};`}
+                    </>
+                  )}
+
+                  {/* 8. Altro */}
                   {project.handoverDocs.hasOtherDocs && project.handoverDocs.otherDocsDescription && (
                     <>
                       <br/>

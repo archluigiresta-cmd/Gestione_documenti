@@ -65,8 +65,11 @@ export const createEmptyProject = (): ProjectConstants => ({
     hasWasteNotes: false,
     hasUpdatedPOS: false,
     hasUpdatedSchedule: false,
+    
+    hasPreliminaryNotification: false,
     preliminaryNotifNumber: '',
     preliminaryNotifDate: '',
+    
     hasOtherDocs: false,
     otherDocsDescription: ''
   }
