@@ -1,16 +1,25 @@
 
 import React from 'react';
-import { ProjectConstants } from '../types';
-import { FolderPlus, FileText, MapPin, Calendar, HardHat, Trash2, Building2 } from 'lucide-react';
+import { ProjectConstants, User } from '../types';
+import { FolderPlus, FileText, MapPin, Calendar, HardHat, Trash2, Building2, Share2, Shield } from 'lucide-react';
 
 interface DashboardProps {
   projects: ProjectConstants[];
   onSelectProject: (project: ProjectConstants) => void;
   onNewProject: () => void;
   onDeleteProject: (id: string) => void;
+  onShareProject: (id: string) => void; // NEW
+  currentUser: User | null;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ projects, onSelectProject, onNewProject, onDeleteProject }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ 
+  projects, 
+  onSelectProject, 
+  onNewProject, 
+  onDeleteProject, 
+  onShareProject,
+  currentUser
+}) => {
   return (
     <div className="max-w-6xl mx-auto p-8">
       <div className="flex items-center justify-between mb-8">
@@ -41,7 +50,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ projects, onSelectProject,
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.sort((a,b) => b.lastModified - a.lastModified).map((project) => (
+          {projects.sort((a,b) => b.lastModified - a.lastModified).map((project) => {
+            const isOwner = project.ownerId === currentUser?.id;
+
+            return (
             <div 
               key={project.id} 
               className="group bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer relative overflow-hidden"
@@ -49,21 +61,42 @@ export const Dashboard: React.FC<DashboardProps> = ({ projects, onSelectProject,
             >
               <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+                  <div className="p-2 bg-blue-50 text-blue-600 rounded-lg relative">
                     <FileText className="w-6 h-6" />
+                    {!isOwner && (
+                        <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-[10px] px-1.5 rounded-full border border-white">
+                            Shared
+                        </span>
+                    )}
                   </div>
-                  <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        if(confirm('Sei sicuro di voler eliminare questo appalto e tutti i verbali associati?')) {
-                            onDeleteProject(project.id);
-                        }
-                    }}
-                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-slate-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-                    title="Elimina Appalto"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                      {isOwner && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onShareProject(project.id);
+                            }}
+                            className="p-2 text-slate-400 hover:text-blue-500 hover:bg-slate-50 rounded-full transition-colors"
+                            title="Condividi"
+                        >
+                            <Share2 className="w-5 h-5" />
+                        </button>
+                      )}
+                      {isOwner && (
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if(confirm('Sei sicuro di voler eliminare questo appalto e tutti i verbali associati?')) {
+                                    onDeleteProject(project.id);
+                                }
+                            }}
+                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-slate-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                            title="Elimina Appalto"
+                        >
+                            <Trash2 className="w-5 h-5" />
+                        </button>
+                      )}
+                  </div>
                 </div>
                 
                 {/* Entity Badge */}
@@ -84,8 +117,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ projects, onSelectProject,
                     <span className="truncate">{project.location || 'Luogo non definito'}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-slate-400" />
-                    <span>Modificato il {new Date(project.lastModified).toLocaleDateString('it-IT')}</span>
+                     <Shield className="w-4 h-4 text-slate-400" />
+                     <span className={isOwner ? 'text-green-600 font-medium' : 'text-amber-600 font-medium'}>
+                         {isOwner ? 'Proprietario' : 'Condiviso con te'}
+                     </span>
                   </div>
                 </div>
               </div>
@@ -94,7 +129,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ projects, onSelectProject,
                  <span className="text-xs text-blue-600 font-medium group-hover:translate-x-1 transition-transform">Apri &rarr;</span>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

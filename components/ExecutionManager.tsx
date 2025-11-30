@@ -14,6 +14,7 @@ interface ExecutionManagerProps {
   onUpdateDocument: (d: DocumentVariables) => void;
   onNewDocument: () => void;
   onDeleteDocument: (id: string) => void;
+  readOnly?: boolean; // NEW
 }
 
 export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
@@ -24,13 +25,15 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
   onSelectDocument,
   onUpdateDocument,
   onNewDocument,
-  onDeleteDocument
+  onDeleteDocument,
+  readOnly = false
 }) => {
   const [tab, setTab] = useState<'acts' | 'works' | 'photos'>('acts');
   const [actsSubTab, setActsSubTab] = useState<'dates' | 'suspensions' | 'docs'>('dates');
 
   // Helper to safely update execution phase
   const updateExec = (field: string, value: any) => {
+    if (readOnly) return;
     onUpdateProject({
         ...project,
         executionPhase: {
@@ -96,12 +99,12 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">Consegna Lavori (Data)</label>
-                            <input type="date" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
+                            <input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
                                 value={execPhase.deliveryDate || ''} onChange={(e) => updateExec('deliveryDate', e.target.value)} />
                         </div>
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">Ultimazione Lavori (Data)</label>
-                            <input type="date" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
+                            <input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
                                 value={execPhase.completionDate || ''} onChange={(e) => updateExec('completionDate', e.target.value)} />
                         </div>
                     </div>
@@ -114,7 +117,7 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
                     <div className="p-10 bg-slate-50 rounded-xl text-center border border-dashed border-slate-300">
                         <FileClock className="w-12 h-12 text-slate-300 mx-auto mb-3"/>
                         <p className="text-slate-500 mb-2">Gestione cronologica di Sospensioni, Riprese e Varianti.</p>
-                        <button className="text-blue-600 font-medium hover:underline">Aggiungi Evento +</button>
+                        {!readOnly && <button className="text-blue-600 font-medium hover:underline">Aggiungi Evento +</button>}
                     </div>
                 </div>
             )}
@@ -125,7 +128,7 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Prot. AINOP</label>
-                            <input type="text" className="w-full p-3 border border-slate-300 rounded-lg mt-1" 
+                            <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
                             value={execPhase.handoverDocs?.ainopProtocol || ''} 
                             onChange={e => {
                                 const hd = { ...execPhase.handoverDocs, ainopProtocol: e.target.value };
@@ -134,7 +137,7 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
                         </div>
                         <div>
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Data AINOP</label>
-                            <input type="date" className="w-full p-3 border border-slate-300 rounded-lg mt-1" 
+                            <input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
                             value={execPhase.handoverDocs?.ainopDate || ''} 
                             onChange={e => {
                                 const hd = { ...execPhase.handoverDocs, ainopDate: e.target.value };
@@ -143,7 +146,7 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
                         </div>
                         <div className="col-span-2 pt-4 border-t border-slate-100">
                             <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-lg transition-colors">
-                            <input type="checkbox" className="w-5 h-5 text-blue-600 rounded"
+                            <input disabled={readOnly} type="checkbox" className="w-5 h-5 text-blue-600 rounded"
                                 checked={execPhase.handoverDocs?.hasUpdatedPOS || false}
                                 onChange={e => {
                                     const hd = { ...execPhase.handoverDocs, hasUpdatedPOS: e.target.checked };
@@ -167,6 +170,7 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
             onUpdateDocument={onUpdateDocument}
             onNewDocument={onNewDocument}
             onDeleteDocument={onDeleteDocument}
+            readOnly={readOnly}
          />
        )}
 
@@ -176,6 +180,7 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
             currentDocId={currentDocId}
             onSelectDocument={onSelectDocument}
             onUpdateDocument={onUpdateDocument}
+            readOnly={readOnly}
          />
        )}
     </div>

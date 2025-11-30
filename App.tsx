@@ -6,7 +6,9 @@ import { ExecutionManager } from './components/ExecutionManager';
 import { TestingManager } from './components/TestingManager';
 import { ExportManager } from './components/ExportManager';
 import { Dashboard } from './components/Dashboard';
-import { ProjectConstants, DocumentVariables } from './types';
+import { AuthScreen } from './components/AuthScreen'; // NEW
+import { ProjectSharing } from './components/ProjectSharing'; // NEW
+import { ProjectConstants, DocumentVariables, User, PermissionRole } from './types';
 import { createEmptyProject, createInitialDocument } from './constants';
 import { db } from './db';
 
@@ -14,29 +16,57 @@ type ViewType = 'dashboard' | 'workspace';
 type TabType = 'general' | 'design' | 'subjects' | 'tender' | 'contractor' | 'execution' | 'testing' | 'export';
 
 const App: React.FC = () => {
+  const [currentUser, setCurrentUser] = useState<User | null>(null); // AUTH STATE
+
   const [view, setView] = useState<ViewType>('dashboard');
   const [activeTab, setActiveTab] = useState<TabType>('general');
   
   const [projectList, setProjectList] = useState<ProjectConstants[]>([]);
   const [currentProject, setCurrentProject] = useState<ProjectConstants | null>(null);
+  
+  // Permissions for current project
+  const [userRole, setUserRole] = useState<PermissionRole>('viewer');
+
   const [documents, setDocuments] = useState<DocumentVariables[]>([]);
   const [currentDocId, setCurrentDocId] = useState<string | null>(null);
 
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [projectToShare, setProjectToShare] = useState<string | null>(null);
+
   useEffect(() => {
-    loadProjects();
+    // Check localStorage for persisted session (optional, for now simple session)
+    // if(localStorage.getItem('user')) ...
   }, []);
 
+  useEffect(() => {
+    if (currentUser) {
+      loadProjects();
+    }
+  }, [currentUser]);
+
   const loadProjects = async () => {
+    if (!currentUser) return;
     try {
-      const projects = await db.getProjects();
+      const projects = await db.getProjectsForUser(currentUser.id, currentUser.email);
       setProjectList(projects);
     } catch (error) {
       console.error("Failed to load projects", error);
     }
   };
 
+  const handleLogin = (user: User) => {
+      setCurrentUser(user);
+  };
+
+  const handleLogout = () => {
+      setCurrentUser(null);
+      setView('dashboard');
+      setProjectList([]);
+  };
+
   const handleNewProject = async () => {
-    const newProject = createEmptyProject();
+    if (!currentUser) return;
+    const newProject = createEmptyProject(currentUser.id);
     newProject.projectName = "Nuovo Intervento";
     const initialDoc = createInitialDocument(newProject.id);
     await db.saveProject(newProject);
@@ -46,34 +76,39 @@ const App: React.FC = () => {
   };
 
   const handleSelectProject = async (project: ProjectConstants) => {
-    // CRITICAL FIX: Deep merge to ensure all new fields exist even in old projects
-    const emptyTemplate = createEmptyProject();
-    
-    // safeMerge ensures that if 'project' is missing a new object (like designPhase), 
-    // it takes it from the empty template instead of leaving it undefined.
+    // 1. Determine Permission Role
+    let role: PermissionRole = 'viewer';
+    if (currentUser?.id === project.ownerId) {
+        role = 'admin';
+    } else {
+        // Fetch permission from DB
+        const perms = await db.getUserPermissions(currentUser?.email || '');
+        const p = perms.find(perm => perm.projectId === project.id);
+        if (p) role = p.role;
+    }
+    setUserRole(role);
+
+    // 2. Deep Merge (Safe Loading)
+    const emptyTemplate = createEmptyProject(project.ownerId);
     const completeProject: ProjectConstants = {
         ...emptyTemplate,
         ...project,
         contract: { ...emptyTemplate.contract, ...(project.contract || {}) },
-        // Ensure new Design Phase exists
         designPhase: { 
             docfap: { ...emptyTemplate.designPhase.docfap, ...(project.designPhase?.docfap || {}) },
             dip: { ...emptyTemplate.designPhase.dip, ...(project.designPhase?.dip || {}) },
             pfte: { ...emptyTemplate.designPhase.pfte, ...(project.designPhase?.pfte || {}) },
             executive: { ...emptyTemplate.designPhase.executive, ...(project.designPhase?.executive || {}) },
         },
-        // Ensure new Subjects structure exists
         subjects: {
             ...emptyTemplate.subjects,
             ...(project.subjects || {}),
-            designers: project.subjects?.designers || [], // Ensure array
-            dlOffice: project.subjects?.dlOffice || [], // Ensure array
-            // Ensure nested objects exist
+            designers: project.subjects?.designers || [], 
+            dlOffice: project.subjects?.dlOffice || [],
             rup: { ...emptyTemplate.subjects.rup, ...(project.subjects?.rup || {}) },
             dl: { ...emptyTemplate.subjects.dl, ...(project.subjects?.dl || {}) },
             tester: { ...emptyTemplate.subjects.tester, ...(project.subjects?.tester || {}) },
         },
-        // Ensure Execution Phase exists
         executionPhase: {
             ...emptyTemplate.executionPhase,
             ...(project.executionPhase || {}),
@@ -82,7 +117,6 @@ const App: React.FC = () => {
                 ...(project.executionPhase?.handoverDocs || {})
             }
         },
-        // Ensure Contractor structure exists
         contractor: {
             ...emptyTemplate.contractor,
             ...(project.contractor || {}),
@@ -120,6 +154,11 @@ const App: React.FC = () => {
       }
   };
 
+  const handleShareClick = (projectId: string) => {
+      setProjectToShare(projectId);
+      setShowShareModal(true);
+  };
+
   const handleBackToDashboard = () => {
     setView('dashboard');
     setCurrentProject(null);
@@ -128,21 +167,22 @@ const App: React.FC = () => {
   };
 
   const handleProjectUpdate = async (newData: ProjectConstants) => {
+    if (userRole === 'viewer') return;
     const updated = { ...newData, lastModified: Date.now() };
     setCurrentProject(updated);
     await db.saveProject(updated);
   };
 
   const handleDocumentUpdate = async (updatedDoc: DocumentVariables) => {
+    if (userRole === 'viewer') return;
     const newDocs = documents.map(doc => doc.id === updatedDoc.id ? updatedDoc : doc);
     setDocuments(newDocs);
     await db.saveDocument(updatedDoc);
   };
 
   const createNewVerbale = async () => {
-    if (!currentProject) return;
+    if (!currentProject || userRole === 'viewer') return;
     
-    // Find highest visit number safely
     let nextNum = 1;
     let lastPremis = '';
     
@@ -168,6 +208,7 @@ const App: React.FC = () => {
   };
 
   const handleDeleteDocument = async (id: string) => {
+    if (userRole === 'viewer') return;
     if (documents.length <= 1) {
       alert("Impossibile eliminare l'unico documento.");
       return;
@@ -180,20 +221,48 @@ const App: React.FC = () => {
     }
   };
 
+  // --- RENDER ---
+
+  if (!currentUser) {
+      return <AuthScreen onLogin={handleLogin} />;
+  }
+
   if (view === 'dashboard') {
     return (
       <div className="bg-slate-50 min-h-screen">
+        <div className="absolute top-4 right-4 flex items-center gap-4">
+             {/* User info now in sidebar or separate component, but Dashboard has own layout */}
+             <div className="flex items-center gap-2">
+                 <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                    {currentUser.name.charAt(0)}
+                 </div>
+                 <div className="text-right hidden sm:block">
+                     <p className="text-sm font-bold text-slate-800">{currentUser.name}</p>
+                     <button onClick={handleLogout} className="text-xs text-red-500 hover:underline">Esci</button>
+                 </div>
+             </div>
+        </div>
         <Dashboard 
           projects={projectList} 
           onSelectProject={handleSelectProject}
           onNewProject={handleNewProject}
           onDeleteProject={handleDeleteProject}
+          onShareProject={handleShareClick}
+          currentUser={currentUser}
         />
+        {showShareModal && projectToShare && (
+            <ProjectSharing 
+                projectId={projectToShare} 
+                onClose={() => { setShowShareModal(false); setProjectToShare(null); }} 
+            />
+        )}
       </div>
     );
   }
 
   if (!currentProject) return null;
+
+  const isReadOnly = userRole === 'viewer';
 
   return (
     <div className="flex bg-slate-100 min-h-screen">
@@ -202,6 +271,8 @@ const App: React.FC = () => {
         setActiveTab={setActiveTab} 
         onBackToDashboard={handleBackToDashboard}
         projectName={currentProject.projectName}
+        user={currentUser}
+        onLogout={handleLogout}
       />
       
       <main className="ml-64 flex-1 p-8 h-screen overflow-y-auto print:ml-0 print:p-0">
@@ -209,10 +280,11 @@ const App: React.FC = () => {
           
           {['general', 'design', 'subjects', 'tender', 'contractor'].includes(activeTab) && (
             <ProjectForm 
-                key={activeTab} // Forces re-render when tab changes to prevent stale state
+                key={activeTab} 
                 data={currentProject} 
                 onChange={handleProjectUpdate} 
                 section={activeTab as any} 
+                readOnly={isReadOnly}
             />
           )}
 
@@ -226,6 +298,7 @@ const App: React.FC = () => {
               onUpdateDocument={handleDocumentUpdate}
               onNewDocument={createNewVerbale}
               onDeleteDocument={handleDeleteDocument}
+              readOnly={isReadOnly}
             />
           )}
 
@@ -237,6 +310,7 @@ const App: React.FC = () => {
               onUpdateDocument={handleDocumentUpdate}
               onNewDocument={createNewVerbale}
               onDeleteDocument={handleDeleteDocument}
+              readOnly={isReadOnly}
             />
           )}
 

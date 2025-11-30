@@ -17,8 +17,9 @@ const createEmptyDesignPhase = (): DesignPhaseData => ({
     approvalDate: ''
 });
 
-export const createEmptyProject = (): ProjectConstants => ({
+export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
   id: crypto.randomUUID(),
+  ownerId: ownerId, // NEW
   lastModified: Date.now(),
   entity: 'PROVINCIA DI TARANTO', 
   projectName: '',

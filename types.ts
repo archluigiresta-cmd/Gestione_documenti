@@ -42,8 +42,27 @@ export interface DesignPhaseData {
   approvalDate: string;
 }
 
+// --- AUTH & PERMISSIONS ---
+export type PermissionRole = 'viewer' | 'editor' | 'admin';
+
+export interface User {
+  id: string;
+  email: string;
+  password: string; // In real app, this should be hashed. Using plain for demo/local.
+  name: string;
+}
+
+export interface ProjectPermission {
+  id: string; // unique key
+  projectId: string;
+  userEmail: string; // using email to link even if user doesn't exist yet
+  role: PermissionRole;
+}
+// --------------------------
+
 export interface ProjectConstants {
   id: string; 
+  ownerId: string; // ID dell'utente proprietario
   lastModified: number; 
   entity: string; // Ente Appaltante
   projectName: string;
@@ -172,6 +191,7 @@ export interface DocumentVariables {
 }
 
 export interface AppState {
+  user: User | null; // NEW
   project: ProjectConstants;
   documents: DocumentVariables[];
   currentDocumentId: string | null;

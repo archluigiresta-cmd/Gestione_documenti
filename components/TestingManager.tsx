@@ -10,6 +10,7 @@ interface TestingManagerProps {
   onUpdateDocument: (d: DocumentVariables) => void;
   onNewDocument: () => void;
   onDeleteDocument: (id: string) => void;
+  readOnly?: boolean; // NEW
 }
 
 export const TestingManager: React.FC<TestingManagerProps> = ({
@@ -18,12 +19,17 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   onSelectDocument,
   onUpdateDocument,
   onNewDocument,
-  onDeleteDocument
+  onDeleteDocument,
+  readOnly = false
 }) => {
   const currentDoc = documents.find(d => d.id === currentDocId) || documents[0];
   const [step, setStep] = useState<'info' | 'convocation' | 'eval'>('info');
 
   if (!currentDoc) return <div className="p-8 text-center">Nessun verbale attivo. Crea un nuovo verbale dalla dashboard.</div>;
+
+  const handleUpdate = (updatedDoc: DocumentVariables) => {
+      if (!readOnly) onUpdateDocument(updatedDoc);
+  };
 
   return (
     <div className="max-w-5xl mx-auto pb-20 animate-in fade-in">
@@ -46,9 +52,11 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                    </option>
                  ))}
               </select>
-              <button onClick={onNewDocument} className="bg-slate-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-black transition-colors shadow-lg shadow-slate-900/20">
-                  + Nuovo
-              </button>
+              {!readOnly && (
+                <button onClick={onNewDocument} className="bg-slate-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-black transition-colors shadow-lg shadow-slate-900/20">
+                    + Nuovo
+                </button>
+              )}
           </div>
        </div>
 
@@ -86,18 +94,18 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div>
                           <label className="block text-sm font-bold text-slate-700 mb-2">Data Visita</label>
-                          <input type="date" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
-                             value={currentDoc.date} onChange={e => onUpdateDocument({...currentDoc, date: e.target.value})} />
+                          <input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
+                             value={currentDoc.date} onChange={e => handleUpdate({...currentDoc, date: e.target.value})} />
                       </div>
                       <div>
                           <label className="block text-sm font-bold text-slate-700 mb-2">Ora Inizio</label>
-                          <input type="time" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
-                             value={currentDoc.time} onChange={e => onUpdateDocument({...currentDoc, time: e.target.value})} />
+                          <input disabled={readOnly} type="time" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
+                             value={currentDoc.time} onChange={e => handleUpdate({...currentDoc, time: e.target.value})} />
                       </div>
                       <div className="md:col-span-2">
                           <label className="block text-sm font-bold text-slate-700 mb-2">Numero Progressivo Verbale</label>
-                          <input type="number" className="w-32 p-3 border border-slate-300 rounded-lg bg-slate-50 font-mono text-center text-lg"
-                             value={currentDoc.visitNumber} onChange={e => onUpdateDocument({...currentDoc, visitNumber: parseInt(e.target.value)})} />
+                          <input disabled={readOnly} type="number" className="w-32 p-3 border border-slate-300 rounded-lg bg-slate-50 font-mono text-center text-lg disabled:text-slate-400"
+                             value={currentDoc.visitNumber} onChange={e => handleUpdate({...currentDoc, visitNumber: parseInt(e.target.value)})} />
                           <p className="text-xs text-slate-500 mt-2">Modificare solo se necessario riordinare la sequenza.</p>
                       </div>
                   </div>
@@ -110,14 +118,14 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                   <div className="space-y-6">
                       <div>
                           <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2"><Mail className="w-4 h-4"/> Dettagli Convocazione</label>
-                          <textarea className="w-full p-4 border border-slate-300 rounded-xl h-24 text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none resize-none"
-                             value={currentDoc.convocationDetails} onChange={e => onUpdateDocument({...currentDoc, convocationDetails: e.target.value})} 
+                          <textarea disabled={readOnly} className="w-full p-4 border border-slate-300 rounded-xl h-24 text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none resize-none disabled:bg-slate-100"
+                             value={currentDoc.convocationDetails} onChange={e => handleUpdate({...currentDoc, convocationDetails: e.target.value})} 
                              placeholder="Es. La visita è stata convocata mediante PEC del... oppure per le vie brevi..."/>
                       </div>
                       <div>
                           <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2"><Users className="w-4 h-4"/> Soggetti Presenti</label>
-                          <textarea className="w-full p-4 border border-slate-300 rounded-xl h-40 text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none resize-none"
-                             value={currentDoc.attendees} onChange={e => onUpdateDocument({...currentDoc, attendees: e.target.value})} 
+                          <textarea disabled={readOnly} className="w-full p-4 border border-slate-300 rounded-xl h-40 text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none resize-none disabled:bg-slate-100"
+                             value={currentDoc.attendees} onChange={e => handleUpdate({...currentDoc, attendees: e.target.value})} 
                              placeholder="Elenco nominativo dei presenti..."/>
                       </div>
                   </div>
@@ -130,8 +138,8 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                   <p className="text-sm text-slate-500 mb-4 bg-blue-50 p-4 rounded-lg border border-blue-100 text-blue-800">
                       <strong>Nota:</strong> I lavori eseguiti specifici di questo sopralluogo vengono importati automaticamente dalla sezione "Esecuzione > Giornale Lavori". Qui inserisci solo le considerazioni del collaudatore.
                   </p>
-                  <textarea className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed font-serif focus:ring-2 focus:ring-blue-500/20 outline-none"
-                     value={currentDoc.observations} onChange={e => onUpdateDocument({...currentDoc, observations: e.target.value})} 
+                  <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed font-serif focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
+                     value={currentDoc.observations} onChange={e => handleUpdate({...currentDoc, observations: e.target.value})} 
                      placeholder="Si dà atto che... Il collaudatore verifica..."/>
               </div>
           )}

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { DocumentVariables } from '../types';
 import { Calendar, Clock, Plus, Trash2, Wand2, Loader2, Save } from 'lucide-react';
@@ -10,6 +11,7 @@ interface WorksManagerProps {
   onUpdateDocument: (doc: DocumentVariables) => void;
   onNewDocument: () => void;
   onDeleteDocument: (id: string) => void;
+  readOnly?: boolean; // NEW
 }
 
 export const WorksManager: React.FC<WorksManagerProps> = ({ 
@@ -18,7 +20,8 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
   onSelectDocument, 
   onUpdateDocument,
   onNewDocument,
-  onDeleteDocument
+  onDeleteDocument,
+  readOnly = false
 }) => {
   const currentDoc = documents.find(d => d.id === currentDocId) || documents[0];
   const [workInput, setWorkInput] = useState('');
@@ -37,6 +40,7 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
   };
 
   const polishText = async (field: 'premis' | 'observations') => {
+    if (readOnly) return;
     const apiKey = getApiKey();
     if (!apiKey) {
       alert("API Key mancante. Impossibile usare l'IA.");
@@ -58,6 +62,7 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
   };
 
   const addWork = () => {
+    if (readOnly) return;
     if (workInput.trim()) {
       onUpdateDocument({
         ...currentDoc,
@@ -68,6 +73,7 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
   };
 
   const removeWork = (index: number) => {
+    if (readOnly) return;
     const newWorks = [...currentDoc.worksExecuted];
     newWorks.splice(index, 1);
     onUpdateDocument({ ...currentDoc, worksExecuted: newWorks });
@@ -93,10 +99,12 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
                  </option>
                ))}
             </select>
-            <button onClick={onNewDocument} className="text-xs bg-slate-800 text-white px-3 py-1.5 rounded hover:bg-slate-700">
-               + Nuovo
-            </button>
-            {documents.length > 1 && (
+            {!readOnly && (
+                <button onClick={onNewDocument} className="text-xs bg-slate-800 text-white px-3 py-1.5 rounded hover:bg-slate-700">
+                   + Nuovo
+                </button>
+            )}
+            {documents.length > 1 && !readOnly && (
                <button onClick={() => onDeleteDocument(currentDoc.id)} className="text-xs text-red-500 hover:text-red-700 px-3 py-1.5">
                  Elimina
                </button>
@@ -118,9 +126,9 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
                     <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase mb-1">
                        <Calendar className="w-3 h-3" /> Data
                     </label>
-                    <input 
+                    <input disabled={readOnly}
                       type="date" 
-                      className="w-full p-2 border border-slate-300 rounded" 
+                      className="w-full p-2 border border-slate-300 rounded disabled:bg-slate-100" 
                       value={currentDoc.date}
                       onChange={(e) => onUpdateDocument({...currentDoc, date: e.target.value})}
                     />
@@ -129,9 +137,9 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
                     <label className="flex items-center gap-2 text-xs font-bold text-slate-500 uppercase mb-1">
                        <Clock className="w-3 h-3" /> Ora Inizio
                     </label>
-                    <input 
+                    <input disabled={readOnly}
                       type="time" 
-                      className="w-full p-2 border border-slate-300 rounded" 
+                      className="w-full p-2 border border-slate-300 rounded disabled:bg-slate-100" 
                       value={currentDoc.time}
                       onChange={(e) => onUpdateDocument({...currentDoc, time: e.target.value})}
                     />
@@ -144,8 +152,8 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
                <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Dettagli Convocazione</label>
-                    <textarea 
-                      className="w-full p-2 border border-slate-300 rounded text-sm h-20"
+                    <textarea disabled={readOnly}
+                      className="w-full p-2 border border-slate-300 rounded text-sm h-20 disabled:bg-slate-100"
                       placeholder="Es. PEC del..."
                       value={currentDoc.convocationDetails}
                       onChange={(e) => onUpdateDocument({...currentDoc, convocationDetails: e.target.value})}
@@ -153,8 +161,8 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Soggetti Presenti</label>
-                    <textarea 
-                      className="w-full p-2 border border-slate-300 rounded text-sm h-32"
+                    <textarea disabled={readOnly}
+                      className="w-full p-2 border border-slate-300 rounded text-sm h-32 disabled:bg-slate-100"
                       placeholder="Elenco presenti..."
                       value={currentDoc.attendees}
                       onChange={(e) => onUpdateDocument({...currentDoc, attendees: e.target.value})}
@@ -171,23 +179,27 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                <h3 className="text-lg font-bold text-slate-800 mb-2">Lavorazioni Eseguite Oggi</h3>
                <div className="flex gap-2 mb-4">
-                  <input 
+                  <input disabled={readOnly}
                      type="text" 
-                     className="flex-1 p-3 border border-slate-300 rounded-lg"
+                     className="flex-1 p-3 border border-slate-300 rounded-lg disabled:bg-slate-100"
                      placeholder="Descrivi la lavorazione..."
                      value={workInput}
                      onChange={(e) => setWorkInput(e.target.value)}
                      onKeyDown={(e) => e.key === 'Enter' && addWork()}
                   />
-                  <button onClick={addWork} className="bg-blue-600 text-white px-4 rounded-lg hover:bg-blue-700">
-                     <Plus className="w-5 h-5" />
-                  </button>
+                  {!readOnly && (
+                    <button onClick={addWork} className="bg-blue-600 text-white px-4 rounded-lg hover:bg-blue-700">
+                        <Plus className="w-5 h-5" />
+                    </button>
+                  )}
                </div>
                <ul className="space-y-2">
                   {currentDoc.worksExecuted.map((work, idx) => (
                      <li key={idx} className="flex justify-between items-center bg-slate-50 p-3 rounded border border-slate-100">
                         <span className="text-sm text-slate-700"><span className="font-mono text-slate-400 mr-2">{idx+1}.</span> {work}</span>
-                        <button onClick={() => removeWork(idx)} className="text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4"/></button>
+                        {!readOnly && (
+                            <button onClick={() => removeWork(idx)} className="text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4"/></button>
+                        )}
                      </li>
                   ))}
                   {currentDoc.worksExecuted.length === 0 && <p className="text-slate-400 italic text-sm text-center py-4">Nessuna lavorazione inserita.</p>}
@@ -198,12 +210,14 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                <div className="flex justify-between items-center mb-2">
                   <h3 className="font-bold text-slate-800">Premesse</h3>
-                  <button onClick={() => polishText('premis')} className="text-xs text-purple-600 flex items-center gap-1 hover:bg-purple-50 px-2 py-1 rounded">
-                     {isGenerating ? <Loader2 className="w-3 h-3 animate-spin"/> : <Wand2 className="w-3 h-3"/>} IA Assist
-                  </button>
+                  {!readOnly && (
+                    <button onClick={() => polishText('premis')} className="text-xs text-purple-600 flex items-center gap-1 hover:bg-purple-50 px-2 py-1 rounded">
+                        {isGenerating ? <Loader2 className="w-3 h-3 animate-spin"/> : <Wand2 className="w-3 h-3"/>} IA Assist
+                    </button>
+                  )}
                </div>
-               <textarea 
-                  className="w-full p-4 border border-slate-300 rounded-lg text-sm h-32"
+               <textarea disabled={readOnly}
+                  className="w-full p-4 border border-slate-300 rounded-lg text-sm h-32 disabled:bg-slate-100"
                   value={currentDoc.premis}
                   onChange={(e) => onUpdateDocument({...currentDoc, premis: e.target.value})}
                />
@@ -213,12 +227,14 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                <div className="flex justify-between items-center mb-2">
                   <h3 className="font-bold text-slate-800">Osservazioni / Disposizioni</h3>
-                  <button onClick={() => polishText('observations')} className="text-xs text-purple-600 flex items-center gap-1 hover:bg-purple-50 px-2 py-1 rounded">
-                     {isGenerating ? <Loader2 className="w-3 h-3 animate-spin"/> : <Wand2 className="w-3 h-3"/>} IA Assist
-                  </button>
+                  {!readOnly && (
+                    <button onClick={() => polishText('observations')} className="text-xs text-purple-600 flex items-center gap-1 hover:bg-purple-50 px-2 py-1 rounded">
+                        {isGenerating ? <Loader2 className="w-3 h-3 animate-spin"/> : <Wand2 className="w-3 h-3"/>} IA Assist
+                    </button>
+                  )}
                </div>
-               <textarea 
-                  className="w-full p-4 border border-slate-300 rounded-lg text-sm h-32"
+               <textarea disabled={readOnly}
+                  className="w-full p-4 border border-slate-300 rounded-lg text-sm h-32 disabled:bg-slate-100"
                   value={currentDoc.observations}
                   onChange={(e) => onUpdateDocument({...currentDoc, observations: e.target.value})}
                />
