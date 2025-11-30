@@ -7,7 +7,7 @@ interface ProjectFormProps {
   data: ProjectConstants;
   onChange: (data: ProjectConstants) => void;
   section: 'general' | 'design' | 'subjects' | 'tender' | 'contractor';
-  readOnly?: boolean; // NEW
+  readOnly?: boolean; 
 }
 
 export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, section, readOnly = false }) => {
@@ -173,7 +173,6 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
       </div>
 
       {/* Inputs are now protected with disabled={readOnly} ... */}
-      {/* ... keeping the structure same as before but applying disabled prop ... */}
       
       {/* --- SECTION: GENERALI --- */}
       {section === 'general' && (
@@ -188,10 +187,18 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                 <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-right-4 duration-300">
                     <h3 className="text-lg font-bold text-slate-800 mb-6">Inquadramento Opera</h3>
                     <div className="grid grid-cols-1 gap-6">
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">Ente Appaltante</label>
-                            <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg uppercase font-bold text-slate-700 bg-slate-50"
-                                value={data.entity} onChange={(e) => handleChange('entity', e.target.value)} />
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div className="md:col-span-3">
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Ente Appaltante</label>
+                                <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg uppercase font-bold text-slate-700 bg-slate-50"
+                                    value={data.entity} onChange={(e) => handleChange('entity', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Provincia</label>
+                                <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg uppercase font-bold text-slate-700 bg-slate-50"
+                                    placeholder="Es. TA"
+                                    value={data.entityProvince || ''} onChange={(e) => handleChange('entityProvince', e.target.value)} />
+                            </div>
                         </div>
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">Oggetto Lavori</label>

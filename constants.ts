@@ -19,9 +19,10 @@ const createEmptyDesignPhase = (): DesignPhaseData => ({
 
 export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
   id: crypto.randomUUID(),
-  ownerId: ownerId, // NEW
+  ownerId: ownerId, 
   lastModified: Date.now(),
   entity: 'PROVINCIA DI TARANTO', 
+  entityProvince: '', // NEW: Init province
   projectName: '',
   location: '',
   cup: '',

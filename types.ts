@@ -77,6 +77,7 @@ export interface ProjectConstants {
   ownerId: string; // ID dell'utente proprietario
   lastModified: number; 
   entity: string; // Ente Appaltante
+  entityProvince?: string; // Provincia dell'Ente (NEW)
   projectName: string;
   location: string;
   cup: string; 

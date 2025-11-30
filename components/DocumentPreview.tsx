@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
 
@@ -48,7 +49,10 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
         <div>
             {/* Header */}
             <div className="text-center mb-12">
-                <h1 className="uppercase font-bold text-base tracking-widest mb-10">{project.entity}</h1>
+                <h1 className="uppercase font-bold text-base tracking-widest mb-10">
+                    {project.entity}
+                    {project.entityProvince && <span className="block text-sm mt-1 normal-case tracking-normal">(Provincia di {project.entityProvince})</span>}
+                </h1>
                 <div className="mb-10 px-4">
                     <p className="text-sm font-bold text-center uppercase leading-relaxed text-black">lavori di "{project.projectName}"</p>
                     <p className="text-sm font-bold text-center uppercase mt-2 text-black">CUP {project.cup}</p>
