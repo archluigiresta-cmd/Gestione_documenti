@@ -1,6 +1,7 @@
+
 import React, { useState, useRef } from 'react';
 import { DocumentVariables, PhotoAttachment } from '../types';
-import { Plus, Trash2, Wand2, Loader2, Calendar, Clock, Hash, ImagePlus, X, Mail } from 'lucide-react';
+import { Plus, Trash2, Wand2, Loader2, Calendar, Clock, Hash, ImagePlus, X, Mail, UserCheck } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 
 interface DocumentEditorProps {
@@ -333,6 +334,3 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ data, onChange }
     </div>
   );
 };
-
-// Import missing icon that was causing errors in previous versions
-import { UserCheck } from 'lucide-react';

@@ -136,7 +136,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
               <div className="animate-in fade-in slide-in-from-right-4">
                   <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4">Valutazioni Tecnico-Amministrative</h3>
                   <p className="text-sm text-slate-500 mb-4 bg-blue-50 p-4 rounded-lg border border-blue-100 text-blue-800">
-                      <strong>Nota:</strong> I lavori eseguiti specifici di questo sopralluogo vengono importati automaticamente dalla sezione "Esecuzione > Giornale Lavori". Qui inserisci solo le considerazioni del collaudatore.
+                      <strong>Nota:</strong> I lavori eseguiti specifici di questo sopralluogo vengono importati automaticamente dalla sezione "Esecuzione &gt; Giornale Lavori". Qui inserisci solo le considerazioni del collaudatore.
                   </p>
                   <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed font-serif focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
                      value={currentDoc.observations} onChange={e => handleUpdate({...currentDoc, observations: e.target.value})} 
