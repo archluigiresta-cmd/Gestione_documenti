@@ -1,7 +1,21 @@
 
-import { ProjectConstants, DocumentVariables } from './types';
+import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData } from './types';
 
 const emptyContact = { name: '', title: '', email: '', pec: '', phone: '' };
+const emptyAppointment = { type: 'Determina', number: '', date: '' };
+
+const createEmptySubject = (): SubjectProfile => ({
+    contact: { ...emptyContact },
+    appointment: { ...emptyAppointment }
+});
+
+const createEmptyDesignPhase = (): DesignPhaseData => ({
+    deliveryDate: '',
+    economicFramework: '',
+    approvalType: 'Delibera/Determina',
+    approvalNumber: '',
+    approvalDate: ''
+});
 
 export const createEmptyProject = (): ProjectConstants => ({
   id: crypto.randomUUID(),
@@ -24,16 +38,26 @@ export const createEmptyProject = (): ProjectConstants => ({
     deadline: ''
   },
 
+  designPhase: {
+      docfap: createEmptyDesignPhase(),
+      dip: createEmptyDesignPhase(),
+      pfte: createEmptyDesignPhase(),
+      executive: createEmptyDesignPhase()
+  },
+
   subjects: {
-    rup: { ...emptyContact },
+    rup: createEmptySubject(),
     designers: [],
-    csp: { ...emptyContact },
-    verifier: { ...emptyContact },
-    dl: { ...emptyContact },
+    csp: createEmptySubject(),
+    verifier: createEmptySubject(),
+    dl: createEmptySubject(),
     dlOffice: [],
-    cse: { ...emptyContact },
-    tester: { ...emptyContact, title: 'Arch.' },
-    testerAppointment: {
+    cse: createEmptySubject(),
+    tester: { 
+        contact: { ...emptyContact, title: 'Arch.' },
+        appointment: { ...emptyAppointment }
+    },
+    testerAppointment: { // Keeping for legacy/flags
         nominationType: 'Determina Dirigenziale',
         nominationNumber: '',
         nominationDate: '',

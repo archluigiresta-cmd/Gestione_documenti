@@ -1,12 +1,11 @@
-
 import React, { useState, useEffect } from 'react';
-import { ProjectConstants, ContactInfo } from '../types';
-import { Save, User, Mail, ShieldCheck, Phone, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building } from 'lucide-react';
+import { ProjectConstants, ContactInfo, SubjectProfile, AppointmentData } from '../types';
+import { Save, User, Users, Mail, ShieldCheck, Phone, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature } from 'lucide-react';
 
 interface ProjectFormProps {
   data: ProjectConstants;
   onChange: (data: ProjectConstants) => void;
-  section: 'general' | 'subjects' | 'tender' | 'contractor';
+  section: 'general' | 'design' | 'subjects' | 'tender' | 'contractor';
 }
 
 export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, section }) => {
@@ -16,7 +15,8 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
   // Reset subtab when main section changes
   useEffect(() => {
     if (section === 'general') setSubTab('info');
-    else if (section === 'subjects') setSubTab('managers');
+    else if (section === 'design') setSubTab('docfap');
+    else if (section === 'subjects') setSubTab('rup');
     else if (section === 'contractor') setSubTab('registry');
     else setSubTab('default');
   }, [section]);
@@ -35,15 +35,15 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
   };
 
   const SubNav = ({ items }: { items: { id: string, label: string, icon?: any }[] }) => (
-    <div className="flex border-b border-slate-200 mb-6 gap-6 overflow-x-auto">
+    <div className="flex border-b border-slate-200 mb-6 gap-2 overflow-x-auto pb-2">
       {items.map(item => (
         <button
           key={item.id}
           onClick={() => setSubTab(item.id)}
-          className={`flex items-center gap-2 pb-3 px-1 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
             subTab === item.id 
-              ? 'border-blue-600 text-blue-600' 
-              : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+              ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm' 
+              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
           }`}
         >
           {item.icon && <item.icon className="w-4 h-4" />}
@@ -53,7 +53,32 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
     </div>
   );
 
-  const ContactCard = ({ label, path, contact }: { label: string, path: string, contact: ContactInfo }) => (
+  const AppointmentFields = ({ appointment, path }: { appointment: AppointmentData, path: string }) => (
+    <div className="mt-6 bg-slate-50 p-4 rounded-lg border border-slate-200">
+        <h5 className="font-bold text-slate-700 mb-3 text-xs uppercase tracking-wide flex items-center gap-2">
+            <FileSignature className="w-4 h-4" /> Estremi Atto di Nomina
+        </h5>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label className="text-xs font-semibold text-slate-500 mb-1 block">Tipo Atto</label>
+                <input type="text" placeholder="Es. Determina Dirigenziale" className="w-full p-2 border border-slate-300 rounded text-sm" 
+                       value={appointment.type} onChange={e => handleChange(`${path}.type`, e.target.value)} />
+            </div>
+            <div>
+                <label className="text-xs font-semibold text-slate-500 mb-1 block">Numero</label>
+                <input type="text" className="w-full p-2 border border-slate-300 rounded text-sm" 
+                       value={appointment.number} onChange={e => handleChange(`${path}.number`, e.target.value)} />
+            </div>
+            <div>
+                <label className="text-xs font-semibold text-slate-500 mb-1 block">Data</label>
+                <input type="date" className="w-full p-2 border border-slate-300 rounded text-sm" 
+                       value={appointment.date} onChange={e => handleChange(`${path}.date`, e.target.value)} />
+            </div>
+        </div>
+    </div>
+  );
+
+  const ContactCard = ({ label, path, profile, showAppointment = true }: { label: string, path: string, profile: SubjectProfile, showAppointment?: boolean }) => (
     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-4 animate-in fade-in">
       <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-3">
          <User className="w-5 h-5 text-blue-500 bg-blue-50 p-1 rounded-full"/> {label}
@@ -62,21 +87,19 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
          <div className="md:col-span-2">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Nome / Ragione Sociale</label>
             <input type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all" 
-                   value={contact.name} onChange={e => handleChange(`${path}.name`, e.target.value)} />
+                   value={profile.contact.name} onChange={e => handleChange(`${path}.contact.name`, e.target.value)} />
          </div>
-         {contact.title !== undefined && (
-             <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Titolo</label>
-                <input type="text" placeholder="Arch. / Ing." className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" 
-                       value={contact.title} onChange={e => handleChange(`${path}.title`, e.target.value)} />
-             </div>
-         )}
+         <div>
+             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Titolo</label>
+             <input type="text" placeholder="Arch. / Ing." className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" 
+                    value={profile.contact.title} onChange={e => handleChange(`${path}.contact.title`, e.target.value)} />
+         </div>
          <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Email</label>
             <div className="relative">
               <Mail className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
               <input type="email" className="w-full p-2.5 pl-9 border border-slate-300 rounded-lg mt-1" 
-                     value={contact.email || ''} onChange={e => handleChange(`${path}.email`, e.target.value)} />
+                     value={profile.contact.email || ''} onChange={e => handleChange(`${path}.contact.email`, e.target.value)} />
             </div>
          </div>
          <div>
@@ -84,7 +107,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
             <div className="relative">
               <ShieldCheck className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
               <input type="email" className="w-full p-2.5 pl-9 border border-slate-300 rounded-lg mt-1" 
-                     value={contact.pec || ''} onChange={e => handleChange(`${path}.pec`, e.target.value)} />
+                     value={profile.contact.pec || ''} onChange={e => handleChange(`${path}.contact.pec`, e.target.value)} />
             </div>
          </div>
          <div>
@@ -92,7 +115,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
             <div className="relative">
               <Phone className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
               <input type="tel" className="w-full p-2.5 pl-9 border border-slate-300 rounded-lg mt-1" 
-                     value={contact.phone || ''} onChange={e => handleChange(`${path}.phone`, e.target.value)} />
+                     value={profile.contact.phone || ''} onChange={e => handleChange(`${path}.contact.phone`, e.target.value)} />
             </div>
          </div>
          <div>
@@ -100,10 +123,12 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
             <div className="relative">
               <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
               <input type="text" className="w-full p-2.5 pl-9 border border-slate-300 rounded-lg mt-1" 
-                     value={contact.address || ''} onChange={e => handleChange(`${path}.address`, e.target.value)} />
+                     value={profile.contact.address || ''} onChange={e => handleChange(`${path}.contact.address`, e.target.value)} />
             </div>
          </div>
       </div>
+      
+      {showAppointment && <AppointmentFields appointment={profile.appointment} path={`${path}.appointment`} />}
     </div>
   );
 
@@ -114,13 +139,15 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
           <div>
             <h2 className="text-2xl font-bold text-slate-800">
                 {section === 'general' && 'Dati Generali Appalto'}
+                {section === 'design' && 'Fase Progettuale'}
                 {section === 'subjects' && 'Soggetti Responsabili'}
                 {section === 'tender' && 'Fase di Gara'}
                 {section === 'contractor' && 'Dati Impresa'}
             </h2>
             <p className="text-slate-500 text-sm mt-1">
                {section === 'general' && 'Gestisci inquadramento, contratto e registrazione.'}
-               {section === 'subjects' && 'Nomine, responsabili e figure tecniche.'}
+               {section === 'design' && 'Documenti preliminari, definitivi ed esecutivi.'}
+               {section === 'subjects' && 'Anagrafica e nomine di tutte le figure tecniche.'}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -173,75 +200,124 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                     </div>
                 </div>
             )}
-
-            {subTab === 'contract' && (
-                <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-right-4 duration-300">
-                    <h3 className="text-lg font-bold text-slate-800 mb-6">Dati Contratto Principale</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">Data Stipula</label>
-                            <input type="date" className="w-full p-3 border border-slate-300 rounded-lg"
-                                value={data.contract.date} onChange={(e) => handleChange('contract.date', e.target.value)} />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">Repertorio N.</label>
-                            <input type="text" className="w-full p-3 border border-slate-300 rounded-lg"
-                                value={data.contract.repNumber} onChange={(e) => handleChange('contract.repNumber', e.target.value)} />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">Importo Totale (€)</label>
-                            <input type="text" className="w-full p-3 border border-slate-300 rounded-lg"
-                                value={data.contract.totalAmount} onChange={(e) => handleChange('contract.totalAmount', e.target.value)} />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">Oneri Sicurezza (€)</label>
-                            <input type="text" className="w-full p-3 border border-slate-300 rounded-lg"
-                                value={data.contract.securityCosts} onChange={(e) => handleChange('contract.securityCosts', e.target.value)} />
-                        </div>
-                        <div className="md:col-span-2">
-                             <div className="p-4 bg-blue-50 rounded-lg border border-blue-100 flex items-center gap-4">
-                                <div className="flex-1">
-                                    <label className="block text-sm font-bold text-blue-900 mb-1">Durata Lavori (giorni)</label>
-                                    <input type="number" className="w-full p-2 border border-blue-200 rounded text-blue-900 font-bold"
-                                        value={data.contract.durationDays} onChange={(e) => handleChange('contract.durationDays', e.target.value)} />
-                                </div>
-                                <div className="flex-1 opacity-60">
-                                    <label className="block text-xs font-semibold text-blue-800 uppercase mb-1">Scadenza Stimata</label>
-                                    <div className="text-sm font-mono">{data.contract.deadline || 'Inserisci consegna lavori'}</div>
-                                </div>
-                             </div>
-                        </div>
-                    </div>
-                </div>
+            
+            {(subTab === 'contract' || subTab === 'registration') && (
+                 <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-right-4 duration-300">
+                    {subTab === 'contract' ? (
+                       <>
+                         <h3 className="text-lg font-bold text-slate-800 mb-6">Dati Contratto Principale</h3>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Data Stipula</label>
+                                <input type="date" className="w-full p-3 border border-slate-300 rounded-lg"
+                                    value={data.contract.date} onChange={(e) => handleChange('contract.date', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Repertorio N.</label>
+                                <input type="text" className="w-full p-3 border border-slate-300 rounded-lg"
+                                    value={data.contract.repNumber} onChange={(e) => handleChange('contract.repNumber', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Importo Totale (€)</label>
+                                <input type="text" className="w-full p-3 border border-slate-300 rounded-lg"
+                                    value={data.contract.totalAmount} onChange={(e) => handleChange('contract.totalAmount', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Oneri Sicurezza (€)</label>
+                                <input type="text" className="w-full p-3 border border-slate-300 rounded-lg"
+                                    value={data.contract.securityCosts} onChange={(e) => handleChange('contract.securityCosts', e.target.value)} />
+                            </div>
+                         </div>
+                       </>
+                    ) : (
+                       <>
+                         <h3 className="text-lg font-bold text-slate-800 mb-6">Estremi di Registrazione</h3>
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Luogo Registrazione</label>
+                                <input type="text" className="w-full p-3 border border-slate-300 rounded-lg"
+                                    value={data.contract.regPlace} onChange={(e) => handleChange('contract.regPlace', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Data Registrazione</label>
+                                <input type="date" className="w-full p-3 border border-slate-300 rounded-lg"
+                                    value={data.contract.regDate} onChange={(e) => handleChange('contract.regDate', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Numero</label>
+                                <input type="text" className="w-full p-3 border border-slate-300 rounded-lg"
+                                    value={data.contract.regNumber} onChange={(e) => handleChange('contract.regNumber', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-slate-700 mb-2">Serie</label>
+                                <input type="text" className="w-full p-3 border border-slate-300 rounded-lg"
+                                    value={data.contract.regSeries} onChange={(e) => handleChange('contract.regSeries', e.target.value)} />
+                            </div>
+                         </div>
+                       </>
+                    )}
+                 </div>
             )}
+        </>
+      )}
 
-            {subTab === 'registration' && (
-                <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-right-4 duration-300">
-                    <h3 className="text-lg font-bold text-slate-800 mb-6">Estremi di Registrazione</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* --- SECTION: PROGETTO (DESIGN) --- */}
+      {section === 'design' && (
+        <>
+            <SubNav items={[
+                { id: 'docfap', label: 'DocFAP', icon: FileText },
+                { id: 'dip', label: 'DIP', icon: FileText },
+                { id: 'pfte', label: 'PFTE', icon: PencilRuler },
+                { id: 'executive', label: 'Esecutivo', icon: Stamp },
+            ]} />
+            
+            <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-right-4 duration-300">
+               <h3 className="text-lg font-bold text-slate-800 mb-6">
+                  {subTab === 'docfap' && 'Documento di Fattibilità delle Alternative Progettuali'}
+                  {subTab === 'dip' && 'Documento di Indirizzo alla Progettazione'}
+                  {subTab === 'pfte' && 'Progetto di Fattibilità Tecnico Economica'}
+                  {subTab === 'executive' && 'Progetto Esecutivo'}
+               </h3>
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <div>
+                       <label className="block text-sm font-semibold text-slate-700 mb-2">Data Consegna Elaborati</label>
+                       <input type="date" className="w-full p-3 border border-slate-300 rounded-lg"
+                           value={data.designPhase[subTab as keyof typeof data.designPhase].deliveryDate} 
+                           onChange={(e) => handleChange(`designPhase.${subTab}.deliveryDate`, e.target.value)} />
+                   </div>
+                   <div>
+                       <label className="block text-sm font-semibold text-slate-700 mb-2">Importo Quadro Economico (€)</label>
+                       <input type="text" className="w-full p-3 border border-slate-300 rounded-lg"
+                           value={data.designPhase[subTab as keyof typeof data.designPhase].economicFramework} 
+                           onChange={(e) => handleChange(`designPhase.${subTab}.economicFramework`, e.target.value)} />
+                   </div>
+               </div>
+
+               <div className="mt-6 border-t border-slate-100 pt-6">
+                   <h4 className="font-bold text-slate-600 mb-4 text-sm uppercase tracking-wide">Provvedimento di Approvazione</h4>
+                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">Luogo Registrazione</label>
-                            <input type="text" className="w-full p-3 border border-slate-300 rounded-lg"
-                                value={data.contract.regPlace} onChange={(e) => handleChange('contract.regPlace', e.target.value)} />
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">Tipo Provvedimento</label>
+                            <input type="text" placeholder="Es. Determina/Delibera" className="w-full p-3 border border-slate-300 rounded-lg"
+                                value={data.designPhase[subTab as keyof typeof data.designPhase].approvalType} 
+                                onChange={(e) => handleChange(`designPhase.${subTab}.approvalType`, e.target.value)} />
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">Data Registrazione</label>
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">Numero</label>
+                            <input type="text" className="w-full p-3 border border-slate-300 rounded-lg"
+                                value={data.designPhase[subTab as keyof typeof data.designPhase].approvalNumber} 
+                                onChange={(e) => handleChange(`designPhase.${subTab}.approvalNumber`, e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">Data</label>
                             <input type="date" className="w-full p-3 border border-slate-300 rounded-lg"
-                                value={data.contract.regDate} onChange={(e) => handleChange('contract.regDate', e.target.value)} />
+                                value={data.designPhase[subTab as keyof typeof data.designPhase].approvalDate} 
+                                onChange={(e) => handleChange(`designPhase.${subTab}.approvalDate`, e.target.value)} />
                         </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">Numero</label>
-                            <input type="text" className="w-full p-3 border border-slate-300 rounded-lg"
-                                value={data.contract.regNumber} onChange={(e) => handleChange('contract.regNumber', e.target.value)} />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-slate-700 mb-2">Serie</label>
-                            <input type="text" className="w-full p-3 border border-slate-300 rounded-lg"
-                                value={data.contract.regSeries} onChange={(e) => handleChange('contract.regSeries', e.target.value)} />
-                        </div>
-                    </div>
-                </div>
-            )}
+                   </div>
+               </div>
+            </div>
         </>
       )}
 
@@ -249,77 +325,119 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
       {section === 'subjects' && (
         <>
             <SubNav items={[
-                { id: 'managers', label: 'Responsabili' },
-                { id: 'safety', label: 'Sicurezza' },
-                { id: 'testing', label: 'Collaudo' },
-                { id: 'technical', label: 'Tecnici' },
+                { id: 'rup', label: 'RUP', icon: User },
+                { id: 'designers', label: 'Progettisti', icon: PencilRuler },
+                { id: 'csp', label: 'CSP', icon: ShieldCheck },
+                { id: 'verifier', label: 'Verificatore', icon: FileSignature },
+                { id: 'dl', label: 'D.L.', icon: HardHat },
+                { id: 'dloffice', label: 'Uff. DL', icon: Users },
+                { id: 'cse', label: 'CSE', icon: ShieldCheck },
+                { id: 'tester', label: 'Collaudatore', icon: Stamp },
             ]} />
 
-            {subTab === 'managers' && (
-                <div className="animate-in slide-in-from-right-4 duration-300">
-                    <ContactCard label="Responsabile Unico di Progetto (RUP)" path="subjects.rup" contact={data.subjects.rup} />
-                    <ContactCard label="Direttore dei Lavori (DL)" path="subjects.dl" contact={data.subjects.dl} />
+            {subTab === 'rup' && <ContactCard label="Responsabile Unico di Progetto" path="subjects.rup" profile={data.subjects.rup} />}
+            {subTab === 'csp' && <ContactCard label="Coord. Sicurezza Progettazione" path="subjects.csp" profile={data.subjects.csp} />}
+            {subTab === 'cse' && <ContactCard label="Coord. Sicurezza Esecuzione" path="subjects.cse" profile={data.subjects.cse} />}
+            {subTab === 'verifier' && <ContactCard label="Verificatore Progetto" path="subjects.verifier" profile={data.subjects.verifier} />}
+            {subTab === 'dl' && <ContactCard label="Direttore dei Lavori" path="subjects.dl" profile={data.subjects.dl} />}
+            
+            {subTab === 'tester' && (
+                <div className="space-y-6">
+                    <ContactCard label="Collaudatore" path="subjects.tester" profile={data.subjects.tester} />
+                    <div className="bg-white p-6 rounded-xl border border-blue-100 shadow-sm">
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block">Tipo Incarico (Opzioni)</label>
+                        <div className="flex gap-6">
+                            <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded">
+                                <input type="checkbox" className="w-4 h-4 text-blue-600" checked={data.subjects.testerAppointment.isStatic} onChange={e => handleChange('subjects.testerAppointment.isStatic', e.target.checked)}/> 
+                                <span className="text-sm font-medium">Statico</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded">
+                                <input type="checkbox" className="w-4 h-4 text-blue-600" checked={data.subjects.testerAppointment.isAdmin} onChange={e => handleChange('subjects.testerAppointment.isAdmin', e.target.checked)}/> 
+                                <span className="text-sm font-medium">Tecnico-Amministrativo</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded">
+                                <input type="checkbox" className="w-4 h-4 text-blue-600" checked={data.subjects.testerAppointment.isFunctional} onChange={e => handleChange('subjects.testerAppointment.isFunctional', e.target.checked)}/> 
+                                <span className="text-sm font-medium">Funzionale</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {subTab === 'designers' && (
+                <div className="space-y-6">
+                    {data.subjects.designers.map((designer, idx) => (
+                        <div key={idx} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative">
+                             <button onClick={() => {
+                                 const newDesigners = [...data.subjects.designers];
+                                 newDesigners.splice(idx, 1);
+                                 handleChange('subjects.designers', newDesigners);
+                             }} className="absolute top-4 right-4 text-slate-400 hover:text-red-500"><Trash2 className="w-5 h-5"/></button>
+                             
+                             <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                                <PencilRuler className="w-4 h-4 text-blue-500"/> Progettista {idx + 1}
+                             </h4>
+                             
+                             <div className="mb-4">
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Incarico Specifico</label>
+                                <select className="w-full p-2 border border-slate-300 rounded mt-1 text-sm bg-white"
+                                        value={designer.specificRole} 
+                                        onChange={(e) => {
+                                            const newD = [...data.subjects.designers];
+                                            newD[idx].specificRole = e.target.value;
+                                            handleChange('subjects.designers', newD);
+                                        }}>
+                                    <option value="">Seleziona...</option>
+                                    <option value="Architettonico">Architettonico</option>
+                                    <option value="Strutturale">Strutturale</option>
+                                    <option value="Impianti">Impianti</option>
+                                    <option value="Geologico">Geologico</option>
+                                    <option value="Ambientale">Ambientale</option>
+                                    <option value="Altro">Altro</option>
+                                </select>
+                             </div>
+                             
+                             <ContactCard label="Dati Progettista" path={`subjects.designers.${idx}`} profile={designer} showAppointment={true} />
+                        </div>
+                    ))}
+                    
+                    <button onClick={() => {
+                        const emptyDesigner = { 
+                            specificRole: 'Architettonico', 
+                            contact: { name: '', title: 'Arch.', email: '', pec: '', phone: '', address: '' },
+                            appointment: { type: 'Disciplinare', number: '', date: '' }
+                        };
+                        handleChange('subjects.designers', [...data.subjects.designers, emptyDesigner]);
+                    }} className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2 font-medium">
+                        <Plus className="w-5 h-5"/> Aggiungi Progettista
+                    </button>
                 </div>
             )}
             
-            {subTab === 'safety' && (
-                <div className="animate-in slide-in-from-right-4 duration-300">
-                    <ContactCard label="Coord. Sicurezza Esecuzione (CSE)" path="subjects.cse" contact={data.subjects.cse} />
-                    <ContactCard label="Coord. Sicurezza Progettazione (CSP)" path="subjects.csp" contact={data.subjects.csp} />
-                </div>
-            )}
-
-            {subTab === 'testing' && (
-                <div className="animate-in slide-in-from-right-4 duration-300">
-                     <div className="bg-white p-6 rounded-xl border border-blue-200 shadow-sm mb-6 border-l-4 border-l-blue-600">
-                        <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                            <Stamp className="w-5 h-5 text-blue-600"/> Nomina Collaudatore
-                        </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Tipo Atto</label>
-                                <input type="text" placeholder="Es. Determina Dirigenziale" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" 
-                                    value={data.subjects.testerAppointment.nominationType} onChange={e => handleChange('subjects.testerAppointment.nominationType', e.target.value)} />
-                            </div>
-                            <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Numero Atto</label>
-                                <input type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" 
-                                    value={data.subjects.testerAppointment.nominationNumber} onChange={e => handleChange('subjects.testerAppointment.nominationNumber', e.target.value)} />
-                            </div>
-                            <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Data Atto</label>
-                                <input type="date" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" 
-                                    value={data.subjects.testerAppointment.nominationDate} onChange={e => handleChange('subjects.testerAppointment.nominationDate', e.target.value)} />
-                            </div>
-                            <div className="md:col-span-3 pt-4 border-t border-slate-100">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block">Tipo Incarico</label>
-                                <div className="flex gap-6">
-                                    <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded">
-                                        <input type="checkbox" className="w-4 h-4 text-blue-600" checked={data.subjects.testerAppointment.isStatic} onChange={e => handleChange('subjects.testerAppointment.isStatic', e.target.checked)}/> 
-                                        <span className="text-sm font-medium">Statico</span>
-                                    </label>
-                                    <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded">
-                                        <input type="checkbox" className="w-4 h-4 text-blue-600" checked={data.subjects.testerAppointment.isAdmin} onChange={e => handleChange('subjects.testerAppointment.isAdmin', e.target.checked)}/> 
-                                        <span className="text-sm font-medium">Tecnico-Amministrativo</span>
-                                    </label>
-                                    <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded">
-                                        <input type="checkbox" className="w-4 h-4 text-blue-600" checked={data.subjects.testerAppointment.isFunctional} onChange={e => handleChange('subjects.testerAppointment.isFunctional', e.target.checked)}/> 
-                                        <span className="text-sm font-medium">Funzionale</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
+            {subTab === 'dloffice' && (
+                <div className="space-y-6">
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 text-blue-800 text-sm">
+                        Qui puoi inserire gli assistenti, i direttori operativi e gli ispettori di cantiere che compongono l'Ufficio DL.
                     </div>
-                    <ContactCard label="Collaudatore" path="subjects.tester" contact={data.subjects.tester} />
-                </div>
-            )}
-
-            {subTab === 'technical' && (
-                <div className="animate-in slide-in-from-right-4 duration-300">
-                    <ContactCard label="Verificatore" path="subjects.verifier" contact={data.subjects.verifier} />
-                    <div className="p-4 bg-slate-50 rounded-lg border border-dashed border-slate-300 text-center text-slate-500">
-                        Sezione Ufficio DL e Progettisti multipli in arrivo...
-                    </div>
+                    {data.subjects.dlOffice.map((member, idx) => (
+                         <div key={idx} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative">
+                             <button onClick={() => {
+                                 const newOffice = [...data.subjects.dlOffice];
+                                 newOffice.splice(idx, 1);
+                                 handleChange('subjects.dlOffice', newOffice);
+                             }} className="absolute top-4 right-4 text-slate-400 hover:text-red-500"><Trash2 className="w-5 h-5"/></button>
+                             <ContactCard label={`Componente Ufficio DL #${idx + 1}`} path={`subjects.dlOffice.${idx}`} profile={member} showAppointment={true} />
+                         </div>
+                    ))}
+                    <button onClick={() => {
+                        const emptyMember = { 
+                            contact: { name: '', title: 'Geom.', role: 'Ispettore di Cantiere', email: '', pec: '', phone: '', address: '' },
+                            appointment: { type: 'Ordine di Servizio', number: '', date: '' }
+                        };
+                        handleChange('subjects.dlOffice', [...data.subjects.dlOffice, emptyMember]);
+                    }} className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2 font-medium">
+                        <Plus className="w-5 h-5"/> Aggiungi Componente Ufficio DL
+                    </button>
                 </div>
             )}
         </>
@@ -328,7 +446,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
       {/* --- SECTION: GARA --- */}
       {section === 'tender' && (
         <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
-            <h3 className="text-lg font-bold text-slate-800 mb-6">Verbali Fase di Gara e Progettazione</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-6">Verbali Fase di Gara</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Data Verbale Verifica Progetto</label>
@@ -354,7 +472,38 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
             
             {subTab === 'registry' && (
                 <div className="animate-in slide-in-from-right-4 duration-300">
-                    <ContactCard label="Impresa Appaltatrice (o Mandataria)" path="contractor" contact={data.contractor} />
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-4">
+                        <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-3">
+                            <HardHat className="w-5 h-5 text-blue-500 bg-blue-50 p-1 rounded-full"/> Dati Impresa
+                        </h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="md:col-span-2">
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Ragione Sociale</label>
+                                <input type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" 
+                                    value={data.contractor.name} onChange={e => handleChange('contractor.name', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">P.IVA / C.F.</label>
+                                <input type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" 
+                                    value={data.contractor.vat} onChange={e => handleChange('contractor.vat', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Indirizzo Sede Legale</label>
+                                <input type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" 
+                                    value={data.contractor.address} onChange={e => handleChange('contractor.address', e.target.value)} />
+                            </div>
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Rappresentante Legale (Nome)</label>
+                                <input type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" 
+                                    value={data.contractor.repName} onChange={e => handleChange('contractor.repName', e.target.value)} />
+                            </div>
+                             <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Ruolo / Titolo</label>
+                                <input type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" placeholder="Es. Amministratore Unico"
+                                    value={data.contractor.role} onChange={e => handleChange('contractor.role', e.target.value)} />
+                            </div>
+                        </div>
+                    </div>
                 </div>
             )}
 

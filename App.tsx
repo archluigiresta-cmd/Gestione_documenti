@@ -11,7 +11,7 @@ import { createEmptyProject, createInitialDocument } from './constants';
 import { db } from './db';
 
 type ViewType = 'dashboard' | 'workspace';
-type TabType = 'general' | 'subjects' | 'tender' | 'contractor' | 'execution' | 'testing' | 'export';
+type TabType = 'general' | 'design' | 'subjects' | 'tender' | 'contractor' | 'execution' | 'testing' | 'export';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewType>('dashboard');
@@ -151,7 +151,7 @@ const App: React.FC = () => {
       <main className="ml-64 flex-1 p-8 h-screen overflow-y-auto print:ml-0 print:p-0">
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
           
-          {['general', 'subjects', 'tender', 'contractor'].includes(activeTab) && (
+          {['general', 'design', 'subjects', 'tender', 'contractor'].includes(activeTab) && (
             <ProjectForm 
                 data={currentProject} 
                 onChange={handleProjectUpdate} 

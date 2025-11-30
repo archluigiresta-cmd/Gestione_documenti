@@ -12,11 +12,34 @@ export interface ContactInfo {
   repRole?: string; // Rappresentante Legale Role
 }
 
+export interface AppointmentData {
+  type: string; // Es. Determina, Delibera, Lettera incarico
+  number: string;
+  date: string;
+}
+
+export interface SubjectProfile {
+  contact: ContactInfo;
+  appointment: AppointmentData;
+}
+
+export interface DesignerProfile extends SubjectProfile {
+  specificRole: string; // Es. Strutturale, Architettonico
+}
+
 // Struttura per ATI / Imprese
 export interface ContractorStructure extends ContactInfo {
   isATI: boolean;
   mandants: ContactInfo[]; // Imprese mandanti in caso di ATI
   subcontractors: { name: string; activity: string }[];
+}
+
+export interface DesignPhaseData {
+  deliveryDate: string;
+  economicFramework: string; // Quadro Economico
+  approvalType: string; // Tipo atto approvazione
+  approvalNumber: string;
+  approvalDate: string;
 }
 
 export interface ProjectConstants {
@@ -42,17 +65,25 @@ export interface ProjectConstants {
     deadline: string; // Scadenza calcolata
   };
 
+  // 1-BIS. Fase Progettuale (NEW)
+  designPhase: {
+    docfap: DesignPhaseData; // Documento fattibilità alternative
+    dip: DesignPhaseData;    // Documento indirizzo progettazione
+    pfte: DesignPhaseData;   // Progetto fattibilità tecnico economica
+    executive: DesignPhaseData; // Progetto Esecutivo
+  };
+
   // 2. Soggetti Responsabili
   subjects: {
-    rup: ContactInfo; // Resp. Unico Progetto
-    designers: ContactInfo[]; // Progettisti
-    csp: ContactInfo; // Coord. Sicurezza Progettazione
-    verifier: ContactInfo; // Verificatore
-    dl: ContactInfo; // Direttore Lavori
-    dlOffice: ContactInfo[]; // Ufficio Direzione Lavori (Assistenti, Operativi)
-    cse: ContactInfo; // Coord. Sicurezza Esecuzione
-    tester: ContactInfo; // Collaudatore
-    testerAppointment: { // Dati specifici nomina collaudatore
+    rup: SubjectProfile; // Resp. Unico Progetto
+    designers: DesignerProfile[]; // Progettisti multipli
+    csp: SubjectProfile; // Coord. Sicurezza Progettazione
+    verifier: SubjectProfile; // Verificatore
+    dl: SubjectProfile; // Direttore Lavori
+    dlOffice: SubjectProfile[]; // Ufficio Direzione Lavori
+    cse: SubjectProfile; // Coord. Sicurezza Esecuzione
+    tester: SubjectProfile; // Collaudatore
+    testerAppointment: { // Mantieni per compatibilità o integrare sopra
         nominationType: string;
         nominationNumber: string;
         nominationDate: string;

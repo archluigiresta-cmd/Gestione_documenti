@@ -9,12 +9,13 @@ import {
   ClipboardCheck, 
   FileOutput, 
   ArrowLeft,
-  Settings
+  Settings,
+  PencilRuler
 } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
-  setActiveTab: (tab: 'general' | 'subjects' | 'tender' | 'contractor' | 'execution' | 'testing' | 'export') => void;
+  setActiveTab: (tab: 'general' | 'design' | 'subjects' | 'tender' | 'contractor' | 'execution' | 'testing' | 'export') => void;
   onBackToDashboard: () => void;
   projectName: string;
 }
@@ -69,6 +70,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           Anagrafica
         </div>
         <NavItem id="general" label="Dati Generali" icon={Building2} />
+        <NavItem id="design" label="Fase Progettuale" icon={PencilRuler} />
         <NavItem id="subjects" label="Soggetti Responsabili" icon={Users} />
         <NavItem id="tender" label="Fase di Gara" icon={Gavel} />
         <NavItem id="contractor" label="Impresa" icon={HardHat} />
@@ -87,7 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Footer */}
       <div className="p-4 border-t border-blue-900 bg-blue-950 text-center">
-        <p className="text-[10px] text-blue-400">v2.0.0 &bull; EdilApp</p>
+        <p className="text-[10px] text-blue-400">v2.1.0 &bull; EdilApp</p>
       </div>
     </div>
   );

@@ -48,8 +48,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
       );
     }
 
-    // Fix: Cast 'this' to any to resolve TypeScript error "Property 'props' does not exist"
-    return (this as any).props.children;
+    return this.props.children;
   }
 }
 

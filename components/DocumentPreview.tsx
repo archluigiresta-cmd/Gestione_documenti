@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
 
@@ -78,11 +77,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                 <div className="mt-4 pt-2 border-t border-slate-200 print:border-black">
                     <div className="grid grid-cols-[250px_1fr]">
                         <span className="font-normal">RUP:</span>
-                        <span className="font-normal">{project.subjects.rup.name}</span>
+                        <span className="font-normal">{project.subjects.rup.contact.name}</span>
                     </div>
                     <div className="grid grid-cols-[250px_1fr]">
                         <span className="font-normal">Direttore Lavori:</span>
-                        <span className="font-normal">{project.subjects.dl.name}</span>
+                        <span className="font-normal">{project.subjects.dl.contact.name}</span>
                     </div>
                 </div>
             </div>
@@ -93,7 +92,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             <div className="text-sm text-justify space-y-4">
                 <p>
                     Il giorno <strong>{verboseDate.day}</strong> del mese di <strong>{verboseDate.month}</strong> {verboseDate.year}, 
-                    alle ore {doc.time}, in {project.location}, il sottoscritto Collaudatore <strong>{project.subjects.tester.name}</strong> 
+                    alle ore {doc.time}, in {project.location}, il sottoscritto Collaudatore <strong>{project.subjects.tester.contact.name}</strong> 
                     ha effettuato la visita convocata {doc.convocationDetails}.
                 </p>
 
@@ -125,18 +124,18 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
         {/* Signatures */}
         <div className="mt-16 grid grid-cols-2 gap-12 text-sm break-inside-avoid">
             <div className="space-y-12">
-                <div><p>Il Direttore dei Lavori:</p><p className="font-bold">{project.subjects.dl.name}</p></div>
+                <div><p>Il Direttore dei Lavori:</p><p className="font-bold">{project.subjects.dl.contact.name}</p></div>
                 <div><p>L'Impresa:</p><p className="font-bold">{project.contractor.repName}</p></div>
             </div>
             <div className="space-y-12 text-right">
-                <div><p>Il Collaudatore:</p><p className="font-bold">{project.subjects.tester.name}</p></div>
+                <div><p>Il Collaudatore:</p><p className="font-bold">{project.subjects.tester.contact.name}</p></div>
             </div>
         </div>
         
         {/* Footer */}
         <div className="mt-8 border-t border-slate-300 pt-4 text-[10px] text-slate-500 text-center uppercase tracking-wider">
-            <p className="font-bold text-black">{project.subjects.tester.name}</p>
-            <p>{project.subjects.tester.email} - {project.subjects.tester.pec}</p>
+            <p className="font-bold text-black">{project.subjects.tester.contact.name}</p>
+            <p>{project.subjects.tester.contact.email} - {project.subjects.tester.contact.pec}</p>
         </div>
 
       </div>

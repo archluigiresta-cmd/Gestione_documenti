@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import { DocumentVariables } from '../types';
 import { Calendar, Clock, Plus, Trash2, Wand2, Loader2, Save } from 'lucide-react';
@@ -26,11 +24,22 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
   const [workInput, setWorkInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // Helper to safely get API Key
+  const getApiKey = () => {
+    try {
+      if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+        return process.env.API_KEY;
+      }
+    } catch (e) {
+      console.warn("Process env not available");
+    }
+    return null;
+  };
+
   const polishText = async (field: 'premis' | 'observations') => {
-    // Guidelines: The API key must be obtained exclusively from the environment variable process.env.API_KEY.
-    const apiKey = process.env.API_KEY;
+    const apiKey = getApiKey();
     if (!apiKey) {
-      alert("API Key mancante.");
+      alert("API Key mancante. Impossibile usare l'IA.");
       return;
     }
     
@@ -42,7 +51,7 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
       if (response.text) onUpdateDocument({ ...currentDoc, [field]: response.text.trim() });
     } catch (error) {
       console.error(error);
-      alert("Errore IA");
+      alert("Errore durante la generazione del testo.");
     } finally {
       setIsGenerating(false);
     }
