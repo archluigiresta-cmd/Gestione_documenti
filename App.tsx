@@ -8,7 +8,7 @@ import { ExportManager } from './components/ExportManager';
 import { Dashboard } from './components/Dashboard';
 import { AuthScreen } from './components/AuthScreen';
 import { ProjectSharing } from './components/ProjectSharing';
-import { AdminPanel } from './components/AdminPanel'; // NEW
+import { AdminPanel } from './components/AdminPanel';
 import { ProjectConstants, DocumentVariables, User, PermissionRole } from './types';
 import { createEmptyProject, createInitialDocument } from './constants';
 import { db } from './db';
@@ -34,7 +34,15 @@ const App: React.FC = () => {
   const [projectToShare, setProjectToShare] = useState<string | null>(null);
 
   useEffect(() => {
-    // Session restore could go here
+    // Initial system setup: Ensure Admin exists
+    const initSystem = async () => {
+        try {
+            await db.ensureAdminExists();
+        } catch (e) {
+            console.error("System init error:", e);
+        }
+    };
+    initSystem();
   }, []);
 
   useEffect(() => {
@@ -224,10 +232,9 @@ const App: React.FC = () => {
       return <AuthScreen onLogin={handleLogin} />;
   }
 
-  // New Admin Panel View
   if (view === 'admin-panel') {
       if (!currentUser.isSystemAdmin) {
-          setView('dashboard'); // Security fallback
+          setView('dashboard');
           return null;
       }
       return <AdminPanel onBack={() => setView('dashboard')} currentUser={currentUser} />;

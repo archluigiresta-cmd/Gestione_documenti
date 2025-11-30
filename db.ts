@@ -58,22 +58,26 @@ export const db = {
           const req = emailIndex.get('arch.luigiresta@gmail.com');
 
           req.onsuccess = () => {
-              if (!req.result) {
-                  // Admin does not exist, create it
-                  const adminUser: User = {
-                      id: crypto.randomUUID(),
-                      name: 'Luigi Resta (Admin)',
-                      email: 'arch.luigiresta@gmail.com',
-                      password: 'admin123',
-                      isSystemAdmin: true,
-                      status: 'active'
-                  };
-                  store.add(adminUser);
-                  console.log("System Admin seeded.");
-              }
+              // Force overwrite/create the admin user to ensure correct state
+              const adminUser: User = {
+                  id: req.result ? req.result.id : crypto.randomUUID(), // Keep existing ID if present
+                  name: 'Luigi Resta (Admin)',
+                  email: 'arch.luigiresta@gmail.com',
+                  password: 'admin123',
+                  isSystemAdmin: true,
+                  status: 'active'
+              };
+              
+              // Use put to update or add
+              store.put(adminUser);
+              console.log("System Admin synced/restored.");
           };
+          
           transaction.oncomplete = () => resolve();
-          transaction.onerror = () => resolve(); // Don't block app if this fails
+          transaction.onerror = () => {
+              console.error("Failed to sync admin user");
+              resolve(); // Resolve anyway to not block app
+          };
       });
   },
 
@@ -101,8 +105,8 @@ export const db = {
   },
 
   loginUser: async (email: string, password: string): Promise<User> => {
-    // Ensure admin seed runs before login attempt
-    await db.ensureAdminExists(); 
+    // We already ensure admin exists on App mount, but good to double check here
+    await db.ensureAdminExists();
 
     const database = await db.open();
     return new Promise((resolve, reject) => {
@@ -178,7 +182,6 @@ export const db = {
               // Helper for promisifying requests
               const getReq = (req: IDBRequest) => new Promise(res => { req.onsuccess = () => res(req.result); });
 
-              // Parallel execution not easy with single transaction in older browsers, but sequential is safe
               pReq.onsuccess = () => { projects = pReq.result; };
               dReq.onsuccess = () => { documents = dReq.result; };
               uReq.onsuccess = () => { users = uReq.result; };
