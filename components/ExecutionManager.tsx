@@ -29,6 +29,7 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
   const [tab, setTab] = useState<'acts' | 'works' | 'photos'>('acts');
   const [actsSubTab, setActsSubTab] = useState<'dates' | 'suspensions' | 'docs'>('dates');
 
+  // Helper to safely update execution phase
   const updateExec = (field: string, value: any) => {
     onUpdateProject({
         ...project,
@@ -37,6 +38,24 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
             [field]: value
         }
     });
+  };
+
+  // Safety check: ensure executionPhase exists before rendering
+  const execPhase = project.executionPhase || {
+      deliveryDate: '',
+      deliveryType: 'ordinary',
+      suspensions: [],
+      resumptions: [],
+      sals: [],
+      variants: [],
+      completionDate: '',
+      handoverDocs: {
+          projectApprovalType: '', projectApprovalNumber: '', projectApprovalDate: '',
+          ainopProtocol: '', ainopDate: '',
+          municipalityProtocol: '', municipalityDate: '',
+          hasWasteNotes: false, hasUpdatedPOS: false, hasUpdatedSchedule: false,
+          hasPreliminaryNotification: false, preliminaryNotifNumber: '', preliminaryNotifDate: ''
+      }
   };
 
   return (
@@ -78,12 +97,12 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">Consegna Lavori (Data)</label>
                             <input type="date" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
-                                value={project.executionPhase.deliveryDate} onChange={(e) => updateExec('deliveryDate', e.target.value)} />
+                                value={execPhase.deliveryDate || ''} onChange={(e) => updateExec('deliveryDate', e.target.value)} />
                         </div>
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">Ultimazione Lavori (Data)</label>
                             <input type="date" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
-                                value={project.executionPhase.completionDate} onChange={(e) => updateExec('completionDate', e.target.value)} />
+                                value={execPhase.completionDate || ''} onChange={(e) => updateExec('completionDate', e.target.value)} />
                         </div>
                     </div>
                 </div>
@@ -107,27 +126,27 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
                         <div>
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Prot. AINOP</label>
                             <input type="text" className="w-full p-3 border border-slate-300 rounded-lg mt-1" 
-                            value={project.executionPhase.handoverDocs.ainopProtocol} 
+                            value={execPhase.handoverDocs?.ainopProtocol || ''} 
                             onChange={e => {
-                                const hd = { ...project.executionPhase.handoverDocs, ainopProtocol: e.target.value };
+                                const hd = { ...execPhase.handoverDocs, ainopProtocol: e.target.value };
                                 updateExec('handoverDocs', hd);
                             }}/>
                         </div>
                         <div>
                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Data AINOP</label>
                             <input type="date" className="w-full p-3 border border-slate-300 rounded-lg mt-1" 
-                            value={project.executionPhase.handoverDocs.ainopDate} 
+                            value={execPhase.handoverDocs?.ainopDate || ''} 
                             onChange={e => {
-                                const hd = { ...project.executionPhase.handoverDocs, ainopDate: e.target.value };
+                                const hd = { ...execPhase.handoverDocs, ainopDate: e.target.value };
                                 updateExec('handoverDocs', hd);
                             }}/>
                         </div>
                         <div className="col-span-2 pt-4 border-t border-slate-100">
                             <label className="flex items-center gap-3 cursor-pointer p-2 hover:bg-slate-50 rounded-lg transition-colors">
                             <input type="checkbox" className="w-5 h-5 text-blue-600 rounded"
-                                checked={project.executionPhase.handoverDocs.hasUpdatedPOS}
+                                checked={execPhase.handoverDocs?.hasUpdatedPOS || false}
                                 onChange={e => {
-                                    const hd = { ...project.executionPhase.handoverDocs, hasUpdatedPOS: e.target.checked };
+                                    const hd = { ...execPhase.handoverDocs, hasUpdatedPOS: e.target.checked };
                                     updateExec('handoverDocs', hd);
                                 }}
                             />

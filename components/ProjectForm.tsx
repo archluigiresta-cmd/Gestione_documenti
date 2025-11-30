@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ProjectConstants, ContactInfo, SubjectProfile, AppointmentData } from '../types';
 import { Save, User, Users, Mail, ShieldCheck, Phone, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature } from 'lucide-react';
@@ -9,16 +10,22 @@ interface ProjectFormProps {
 }
 
 export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, section }) => {
-  // Local state for sub-navigation
-  const [subTab, setSubTab] = useState<string>('default');
+  // Determine initial subtab based on section to avoid race conditions
+  const getInitialSubTab = (sec: string) => {
+    switch(sec) {
+        case 'general': return 'info';
+        case 'design': return 'docfap';
+        case 'subjects': return 'rup';
+        case 'contractor': return 'registry';
+        default: return 'default';
+    }
+  };
 
-  // Reset subtab when main section changes
+  const [subTab, setSubTab] = useState<string>(getInitialSubTab(section));
+
+  // Sync subtab if section prop changes
   useEffect(() => {
-    if (section === 'general') setSubTab('info');
-    else if (section === 'design') setSubTab('docfap');
-    else if (section === 'subjects') setSubTab('rup');
-    else if (section === 'contractor') setSubTab('registry');
-    else setSubTab('default');
+    setSubTab(getInitialSubTab(section));
   }, [section]);
 
   const handleChange = (path: string, value: any) => {
@@ -271,6 +278,8 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                 { id: 'executive', label: 'Esecutivo', icon: Stamp },
             ]} />
             
+            {/* Defensive check: ensure designPhase exists and the specific subtab exists */}
+            {data.designPhase && data.designPhase[subTab as keyof typeof data.designPhase] ? (
             <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-right-4 duration-300">
                <h3 className="text-lg font-bold text-slate-800 mb-6">
                   {subTab === 'docfap' && 'Documento di Fattibilità delle Alternative Progettuali'}
@@ -283,13 +292,13 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                    <div>
                        <label className="block text-sm font-semibold text-slate-700 mb-2">Data Consegna Elaborati</label>
                        <input type="date" className="w-full p-3 border border-slate-300 rounded-lg"
-                           value={data.designPhase[subTab as keyof typeof data.designPhase].deliveryDate} 
+                           value={data.designPhase[subTab as keyof typeof data.designPhase].deliveryDate || ''} 
                            onChange={(e) => handleChange(`designPhase.${subTab}.deliveryDate`, e.target.value)} />
                    </div>
                    <div>
                        <label className="block text-sm font-semibold text-slate-700 mb-2">Importo Quadro Economico (€)</label>
                        <input type="text" className="w-full p-3 border border-slate-300 rounded-lg"
-                           value={data.designPhase[subTab as keyof typeof data.designPhase].economicFramework} 
+                           value={data.designPhase[subTab as keyof typeof data.designPhase].economicFramework || ''} 
                            onChange={(e) => handleChange(`designPhase.${subTab}.economicFramework`, e.target.value)} />
                    </div>
                </div>
@@ -300,24 +309,29 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                         <div>
                             <label className="block text-xs font-semibold text-slate-500 mb-1">Tipo Provvedimento</label>
                             <input type="text" placeholder="Es. Determina/Delibera" className="w-full p-3 border border-slate-300 rounded-lg"
-                                value={data.designPhase[subTab as keyof typeof data.designPhase].approvalType} 
+                                value={data.designPhase[subTab as keyof typeof data.designPhase].approvalType || ''} 
                                 onChange={(e) => handleChange(`designPhase.${subTab}.approvalType`, e.target.value)} />
                         </div>
                         <div>
                             <label className="block text-xs font-semibold text-slate-500 mb-1">Numero</label>
                             <input type="text" className="w-full p-3 border border-slate-300 rounded-lg"
-                                value={data.designPhase[subTab as keyof typeof data.designPhase].approvalNumber} 
+                                value={data.designPhase[subTab as keyof typeof data.designPhase].approvalNumber || ''} 
                                 onChange={(e) => handleChange(`designPhase.${subTab}.approvalNumber`, e.target.value)} />
                         </div>
                         <div>
                             <label className="block text-xs font-semibold text-slate-500 mb-1">Data</label>
                             <input type="date" className="w-full p-3 border border-slate-300 rounded-lg"
-                                value={data.designPhase[subTab as keyof typeof data.designPhase].approvalDate} 
+                                value={data.designPhase[subTab as keyof typeof data.designPhase].approvalDate || ''} 
                                 onChange={(e) => handleChange(`designPhase.${subTab}.approvalDate`, e.target.value)} />
                         </div>
                    </div>
                </div>
             </div>
+            ) : (
+                <div className="p-8 bg-slate-50 text-slate-500 rounded-lg border border-dashed border-slate-300 text-center">
+                    Dati fase non disponibili. Se il progetto è vecchio, prova a ricaricare la pagina o a salvare nuovamente.
+                </div>
+            )}
         </>
       )}
 
@@ -335,28 +349,28 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                 { id: 'tester', label: 'Collaudatore', icon: Stamp },
             ]} />
 
-            {subTab === 'rup' && <ContactCard label="Responsabile Unico di Progetto" path="subjects.rup" profile={data.subjects.rup} />}
-            {subTab === 'csp' && <ContactCard label="Coord. Sicurezza Progettazione" path="subjects.csp" profile={data.subjects.csp} />}
-            {subTab === 'cse' && <ContactCard label="Coord. Sicurezza Esecuzione" path="subjects.cse" profile={data.subjects.cse} />}
-            {subTab === 'verifier' && <ContactCard label="Verificatore Progetto" path="subjects.verifier" profile={data.subjects.verifier} />}
-            {subTab === 'dl' && <ContactCard label="Direttore dei Lavori" path="subjects.dl" profile={data.subjects.dl} />}
+            {subTab === 'rup' && data.subjects.rup && <ContactCard label="Responsabile Unico di Progetto" path="subjects.rup" profile={data.subjects.rup} />}
+            {subTab === 'csp' && data.subjects.csp && <ContactCard label="Coord. Sicurezza Progettazione" path="subjects.csp" profile={data.subjects.csp} />}
+            {subTab === 'cse' && data.subjects.cse && <ContactCard label="Coord. Sicurezza Esecuzione" path="subjects.cse" profile={data.subjects.cse} />}
+            {subTab === 'verifier' && data.subjects.verifier && <ContactCard label="Verificatore Progetto" path="subjects.verifier" profile={data.subjects.verifier} />}
+            {subTab === 'dl' && data.subjects.dl && <ContactCard label="Direttore dei Lavori" path="subjects.dl" profile={data.subjects.dl} />}
             
-            {subTab === 'tester' && (
+            {subTab === 'tester' && data.subjects.tester && (
                 <div className="space-y-6">
                     <ContactCard label="Collaudatore" path="subjects.tester" profile={data.subjects.tester} />
                     <div className="bg-white p-6 rounded-xl border border-blue-100 shadow-sm">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block">Tipo Incarico (Opzioni)</label>
                         <div className="flex gap-6">
                             <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded">
-                                <input type="checkbox" className="w-4 h-4 text-blue-600" checked={data.subjects.testerAppointment.isStatic} onChange={e => handleChange('subjects.testerAppointment.isStatic', e.target.checked)}/> 
+                                <input type="checkbox" className="w-4 h-4 text-blue-600" checked={data.subjects.testerAppointment?.isStatic || false} onChange={e => handleChange('subjects.testerAppointment.isStatic', e.target.checked)}/> 
                                 <span className="text-sm font-medium">Statico</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded">
-                                <input type="checkbox" className="w-4 h-4 text-blue-600" checked={data.subjects.testerAppointment.isAdmin} onChange={e => handleChange('subjects.testerAppointment.isAdmin', e.target.checked)}/> 
+                                <input type="checkbox" className="w-4 h-4 text-blue-600" checked={data.subjects.testerAppointment?.isAdmin || false} onChange={e => handleChange('subjects.testerAppointment.isAdmin', e.target.checked)}/> 
                                 <span className="text-sm font-medium">Tecnico-Amministrativo</span>
                             </label>
                             <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-slate-50 rounded">
-                                <input type="checkbox" className="w-4 h-4 text-blue-600" checked={data.subjects.testerAppointment.isFunctional} onChange={e => handleChange('subjects.testerAppointment.isFunctional', e.target.checked)}/> 
+                                <input type="checkbox" className="w-4 h-4 text-blue-600" checked={data.subjects.testerAppointment?.isFunctional || false} onChange={e => handleChange('subjects.testerAppointment.isFunctional', e.target.checked)}/> 
                                 <span className="text-sm font-medium">Funzionale</span>
                             </label>
                         </div>
@@ -364,7 +378,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                 </div>
             )}
 
-            {subTab === 'designers' && (
+            {subTab === 'designers' && data.subjects.designers && (
                 <div className="space-y-6">
                     {data.subjects.designers.map((designer, idx) => (
                         <div key={idx} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative">
@@ -414,7 +428,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                 </div>
             )}
             
-            {subTab === 'dloffice' && (
+            {subTab === 'dloffice' && data.subjects.dlOffice && (
                 <div className="space-y-6">
                     <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 text-blue-800 text-sm">
                         Qui puoi inserire gli assistenti, i direttori operativi e gli ispettori di cantiere che compongono l'Ufficio DL.
@@ -451,12 +465,12 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                 <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Data Verbale Verifica Progetto</label>
                     <input type="date" className="w-full p-3 border border-slate-300 rounded-lg mt-1"
-                        value={data.tenderPhase.verificationMinutesDate} onChange={(e) => handleChange('tenderPhase.verificationMinutesDate', e.target.value)} />
+                        value={data.tenderPhase?.verificationMinutesDate || ''} onChange={(e) => handleChange('tenderPhase.verificationMinutesDate', e.target.value)} />
                 </div>
                 <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Data Verbale Validazione Progetto</label>
                     <input type="date" className="w-full p-3 border border-slate-300 rounded-lg mt-1"
-                        value={data.tenderPhase.validationMinutesDate} onChange={(e) => handleChange('tenderPhase.validationMinutesDate', e.target.value)} />
+                        value={data.tenderPhase?.validationMinutesDate || ''} onChange={(e) => handleChange('tenderPhase.validationMinutesDate', e.target.value)} />
                 </div>
             </div>
         </div>
@@ -526,7 +540,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
 
                     <div className="space-y-4">
                        <h4 className="font-bold text-slate-800 flex items-center gap-2"><FileText className="w-5 h-5 text-slate-400"/> Subappaltatori</h4>
-                       {data.contractor.subcontractors.map((sub, idx) => (
+                       {data.contractor.subcontractors?.map((sub, idx) => (
                            <div key={idx} className="flex gap-3 mb-2 animate-in fade-in">
                                <input type="text" value={sub.name} readOnly className="flex-1 p-3 border border-slate-200 bg-slate-50 rounded-lg text-slate-700"/>
                                <button onClick={() => {
@@ -539,7 +553,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                        <button onClick={() => {
                            const name = prompt("Nome Subappaltatore:");
                            if(name) {
-                               handleChange('contractor.subcontractors', [...data.contractor.subcontractors, { name, activity: '' }]);
+                               handleChange('contractor.subcontractors', [...(data.contractor.subcontractors || []), { name, activity: '' }]);
                            }
                        }} className="flex items-center gap-2 text-sm font-bold text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg transition-colors border border-dashed border-blue-200 w-full justify-center">
                            <Plus className="w-4 h-4"/> Aggiungi Subappaltatore

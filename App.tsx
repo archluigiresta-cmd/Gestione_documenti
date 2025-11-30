@@ -46,7 +46,53 @@ const App: React.FC = () => {
   };
 
   const handleSelectProject = async (project: ProjectConstants) => {
-    setCurrentProject(project);
+    // CRITICAL FIX: Deep merge to ensure all new fields exist even in old projects
+    const emptyTemplate = createEmptyProject();
+    
+    // safeMerge ensures that if 'project' is missing a new object (like designPhase), 
+    // it takes it from the empty template instead of leaving it undefined.
+    const completeProject: ProjectConstants = {
+        ...emptyTemplate,
+        ...project,
+        contract: { ...emptyTemplate.contract, ...(project.contract || {}) },
+        // Ensure new Design Phase exists
+        designPhase: { 
+            docfap: { ...emptyTemplate.designPhase.docfap, ...(project.designPhase?.docfap || {}) },
+            dip: { ...emptyTemplate.designPhase.dip, ...(project.designPhase?.dip || {}) },
+            pfte: { ...emptyTemplate.designPhase.pfte, ...(project.designPhase?.pfte || {}) },
+            executive: { ...emptyTemplate.designPhase.executive, ...(project.designPhase?.executive || {}) },
+        },
+        // Ensure new Subjects structure exists
+        subjects: {
+            ...emptyTemplate.subjects,
+            ...(project.subjects || {}),
+            designers: project.subjects?.designers || [], // Ensure array
+            dlOffice: project.subjects?.dlOffice || [], // Ensure array
+            // Ensure nested objects exist
+            rup: { ...emptyTemplate.subjects.rup, ...(project.subjects?.rup || {}) },
+            dl: { ...emptyTemplate.subjects.dl, ...(project.subjects?.dl || {}) },
+            tester: { ...emptyTemplate.subjects.tester, ...(project.subjects?.tester || {}) },
+        },
+        // Ensure Execution Phase exists
+        executionPhase: {
+            ...emptyTemplate.executionPhase,
+            ...(project.executionPhase || {}),
+            handoverDocs: {
+                ...emptyTemplate.executionPhase.handoverDocs,
+                ...(project.executionPhase?.handoverDocs || {})
+            }
+        },
+        // Ensure Contractor structure exists
+        contractor: {
+            ...emptyTemplate.contractor,
+            ...(project.contractor || {}),
+            mandants: project.contractor?.mandants || [],
+            subcontractors: project.contractor?.subcontractors || []
+        }
+    };
+
+    setCurrentProject(completeProject);
+
     try {
       const docs = await db.getDocumentsByProject(project.id);
       if (docs.length > 0) {
@@ -95,16 +141,26 @@ const App: React.FC = () => {
 
   const createNewVerbale = async () => {
     if (!currentProject) return;
-    const lastDoc = documents.reduce((prev, current) => (prev.visitNumber > current.visitNumber) ? prev : current);
-    const lastDate = new Date(lastDoc.date).toLocaleDateString('it-IT');
-    let historicalAddition = '';
-    if (lastDoc.worksExecuted.length > 0) {
-      historicalAddition = `\n\n- in data ${lastDate}, con verbale n. ${lastDoc.visitNumber}, si è preso atto delle seguenti lavorazioni: ${lastDoc.worksExecuted.join(', ')};\n`;
+    
+    // Find highest visit number safely
+    let nextNum = 1;
+    let lastPremis = '';
+    
+    if (documents.length > 0) {
+        const lastDoc = documents.reduce((prev, current) => (prev.visitNumber > current.visitNumber) ? prev : current);
+        nextNum = lastDoc.visitNumber + 1;
+        lastPremis = lastDoc.premis;
+        
+        const lastDate = new Date(lastDoc.date).toLocaleDateString('it-IT');
+        if (lastDoc.worksExecuted && lastDoc.worksExecuted.length > 0) {
+          lastPremis += `\n\n- in data ${lastDate}, con verbale n. ${lastDoc.visitNumber}, si è preso atto delle seguenti lavorazioni: ${lastDoc.worksExecuted.join(', ')};\n`;
+        }
     }
+
     const newDoc: DocumentVariables = {
       ...createInitialDocument(currentProject.id),
-      visitNumber: lastDoc.visitNumber + 1,
-      premis: (lastDoc.premis + historicalAddition).trim(),
+      visitNumber: nextNum,
+      premis: lastPremis.trim(),
     };
     setDocuments([...documents, newDoc]);
     setCurrentDocId(newDoc.id);
@@ -153,6 +209,7 @@ const App: React.FC = () => {
           
           {['general', 'design', 'subjects', 'tender', 'contractor'].includes(activeTab) && (
             <ProjectForm 
+                key={activeTab} // Forces re-render when tab changes to prevent stale state
                 data={currentProject} 
                 onChange={handleProjectUpdate} 
                 section={activeTab as any} 
