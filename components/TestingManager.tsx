@@ -1,7 +1,7 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { DocumentVariables } from '../types';
-import { Calendar, Clock, MapPin, Mail, ClipboardCheck, Save } from 'lucide-react';
+import { Calendar, Clock, MapPin, Mail, ClipboardCheck, Save, Users, FileEdit } from 'lucide-react';
 
 interface TestingManagerProps {
   documents: DocumentVariables[];
@@ -21,19 +21,22 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   onDeleteDocument
 }) => {
   const currentDoc = documents.find(d => d.id === currentDocId) || documents[0];
+  const [step, setStep] = useState<'info' | 'convocation' | 'eval'>('info');
 
   if (!currentDoc) return <div className="p-8 text-center">Nessun verbale attivo. Crea un nuovo verbale dalla dashboard.</div>;
 
   return (
     <div className="max-w-5xl mx-auto pb-20 animate-in fade-in">
-       <div className="flex items-center justify-between mb-6">
+       
+       {/* Header */}
+       <div className="flex items-center justify-between mb-8">
           <div>
             <h2 className="text-2xl font-bold text-slate-800">Verbali di Collaudo</h2>
-            <p className="text-slate-500 text-sm">Gestione visite, convocazioni e valutazioni tecnico-amministrative.</p>
+            <p className="text-slate-500 text-sm mt-1">Gestione visite, convocazioni e valutazioni.</p>
           </div>
           <div className="flex items-center gap-3">
               <select 
-                 className="p-2 border border-slate-300 rounded font-semibold text-sm"
+                 className="p-2.5 border border-slate-300 rounded-lg font-semibold text-sm bg-white shadow-sm hover:border-blue-400 focus:ring-2 focus:ring-blue-500/20 outline-none cursor-pointer"
                  value={currentDocId}
                  onChange={(e) => onSelectDocument(e.target.value)}
               >
@@ -43,68 +46,116 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                    </option>
                  ))}
               </select>
-              <button onClick={onNewDocument} className="bg-slate-900 text-white px-3 py-2 rounded text-sm hover:bg-black transition-colors">
-                  + Nuovo Verbale
+              <button onClick={onNewDocument} className="bg-slate-900 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-black transition-colors shadow-lg shadow-slate-900/20">
+                  + Nuovo
               </button>
           </div>
        </div>
 
-       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="md:col-span-1 space-y-6">
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                  <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                      <Calendar className="w-4 h-4"/> Dati Sopralluogo
-                  </h3>
-                  <div className="space-y-4">
+       {/* Step Navigation */}
+       <div className="grid grid-cols-3 gap-4 mb-8">
+          <button 
+             onClick={() => setStep('info')} 
+             className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${step === 'info' ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300'}`}
+          >
+             <Calendar className="w-6 h-6"/>
+             <span className="font-bold text-sm">Dati & Orari</span>
+          </button>
+          <button 
+             onClick={() => setStep('convocation')} 
+             className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${step === 'convocation' ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300'}`}
+          >
+             <Users className="w-6 h-6"/>
+             <span className="font-bold text-sm">Presenti</span>
+          </button>
+          <button 
+             onClick={() => setStep('eval')} 
+             className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${step === 'eval' ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300'}`}
+          >
+             <ClipboardCheck className="w-6 h-6"/>
+             <span className="font-bold text-sm">Valutazioni</span>
+          </button>
+       </div>
+
+       {/* Content Area */}
+       <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 min-h-[400px]">
+          
+          {step === 'info' && (
+              <div className="animate-in fade-in slide-in-from-right-4">
+                  <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4">Dettagli Temporali del Sopralluogo</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div>
-                          <label className="text-xs font-bold text-slate-500 uppercase">Data</label>
-                          <input type="date" className="w-full p-2 border rounded mt-1"
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Data Visita</label>
+                          <input type="date" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
                              value={currentDoc.date} onChange={e => onUpdateDocument({...currentDoc, date: e.target.value})} />
                       </div>
                       <div>
-                          <label className="text-xs font-bold text-slate-500 uppercase">Ora</label>
-                          <input type="time" className="w-full p-2 border rounded mt-1"
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Ora Inizio</label>
+                          <input type="time" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none"
                              value={currentDoc.time} onChange={e => onUpdateDocument({...currentDoc, time: e.target.value})} />
                       </div>
-                      <div>
-                          <label className="text-xs font-bold text-slate-500 uppercase">Numero Verbale</label>
-                          <input type="number" className="w-full p-2 border rounded mt-1"
+                      <div className="md:col-span-2">
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Numero Progressivo Verbale</label>
+                          <input type="number" className="w-32 p-3 border border-slate-300 rounded-lg bg-slate-50 font-mono text-center text-lg"
                              value={currentDoc.visitNumber} onChange={e => onUpdateDocument({...currentDoc, visitNumber: parseInt(e.target.value)})} />
+                          <p className="text-xs text-slate-500 mt-2">Modificare solo se necessario riordinare la sequenza.</p>
                       </div>
                   </div>
               </div>
-          </div>
+          )}
 
-          <div className="md:col-span-2 space-y-6">
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                  <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                      <Mail className="w-4 h-4"/> Convocazione e Presenti
-                  </h3>
-                  <div className="mb-4">
-                      <label className="block text-sm font-medium mb-1">Dettagli Convocazione (PEC/Brevi)</label>
-                      <textarea className="w-full p-3 border rounded h-20 text-sm"
-                         value={currentDoc.convocationDetails} onChange={e => onUpdateDocument({...currentDoc, convocationDetails: e.target.value})} 
-                         placeholder="Es. Convocata via PEC nota prot. n..."/>
-                  </div>
-                  <div>
-                      <label className="block text-sm font-medium mb-1">Soggetti Presenti</label>
-                      <textarea className="w-full p-3 border rounded h-24 text-sm"
-                         value={currentDoc.attendees} onChange={e => onUpdateDocument({...currentDoc, attendees: e.target.value})} 
-                         placeholder="Elenco nominativo dei presenti..."/>
+          {step === 'convocation' && (
+              <div className="animate-in fade-in slide-in-from-right-4">
+                  <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4">Partecipanti e Convocazione</h3>
+                  <div className="space-y-6">
+                      <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2"><Mail className="w-4 h-4"/> Dettagli Convocazione</label>
+                          <textarea className="w-full p-4 border border-slate-300 rounded-xl h-24 text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none resize-none"
+                             value={currentDoc.convocationDetails} onChange={e => onUpdateDocument({...currentDoc, convocationDetails: e.target.value})} 
+                             placeholder="Es. La visita è stata convocata mediante PEC del... oppure per le vie brevi..."/>
+                      </div>
+                      <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2"><Users className="w-4 h-4"/> Soggetti Presenti</label>
+                          <textarea className="w-full p-4 border border-slate-300 rounded-xl h-40 text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none resize-none"
+                             value={currentDoc.attendees} onChange={e => onUpdateDocument({...currentDoc, attendees: e.target.value})} 
+                             placeholder="Elenco nominativo dei presenti..."/>
+                      </div>
                   </div>
               </div>
+          )}
 
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                  <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                      <ClipboardCheck className="w-4 h-4"/> Valutazioni e Osservazioni
-                  </h3>
-                  <p className="text-sm text-slate-500 mb-2">Inserisci qui le valutazioni specifiche del collaudatore. I lavori eseguiti verranno importati automaticamente dalla sezione "Esecuzione".</p>
-                  <textarea className="w-full p-4 border rounded h-40 text-sm leading-relaxed"
+          {step === 'eval' && (
+              <div className="animate-in fade-in slide-in-from-right-4">
+                  <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4">Valutazioni Tecnico-Amministrative</h3>
+                  <p className="text-sm text-slate-500 mb-4 bg-blue-50 p-4 rounded-lg border border-blue-100 text-blue-800">
+                      <strong>Nota:</strong> I lavori eseguiti specifici di questo sopralluogo vengono importati automaticamente dalla sezione "Esecuzione > Giornale Lavori". Qui inserisci solo le considerazioni del collaudatore.
+                  </p>
+                  <textarea className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed font-serif focus:ring-2 focus:ring-blue-500/20 outline-none"
                      value={currentDoc.observations} onChange={e => onUpdateDocument({...currentDoc, observations: e.target.value})} 
-                     placeholder="Si dà atto che..."/>
+                     placeholder="Si dà atto che... Il collaudatore verifica..."/>
               </div>
-          </div>
+          )}
+
        </div>
+
+       {/* Navigation Buttons */}
+       <div className="flex justify-between mt-6">
+           <button 
+             onClick={() => setStep(prev => prev === 'eval' ? 'convocation' : 'info')}
+             disabled={step === 'info'}
+             className="px-6 py-2 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent font-medium"
+           >
+             &larr; Indietro
+           </button>
+           <button 
+             onClick={() => setStep(prev => prev === 'info' ? 'convocation' : 'eval')}
+             disabled={step === 'eval'}
+             className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-30 disabled:bg-slate-300 font-medium shadow-lg disabled:shadow-none"
+           >
+             Avanti &rarr;
+           </button>
+       </div>
+
     </div>
   );
 };
