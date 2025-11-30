@@ -1,14 +1,15 @@
 
 import React from 'react';
 import { ProjectConstants, User } from '../types';
-import { FolderPlus, FileText, MapPin, Calendar, HardHat, Trash2, Building2, Share2, Shield } from 'lucide-react';
+import { FolderPlus, FileText, MapPin, HardHat, Trash2, Building2, Share2, Shield, Settings } from 'lucide-react';
 
 interface DashboardProps {
   projects: ProjectConstants[];
   onSelectProject: (project: ProjectConstants) => void;
   onNewProject: () => void;
   onDeleteProject: (id: string) => void;
-  onShareProject: (id: string) => void; // NEW
+  onShareProject: (id: string) => void; 
+  onOpenAdmin: () => void; // NEW
   currentUser: User | null;
 }
 
@@ -18,6 +19,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onNewProject, 
   onDeleteProject, 
   onShareProject,
+  onOpenAdmin,
   currentUser
 }) => {
   return (
@@ -27,13 +29,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <h1 className="text-3xl font-bold text-slate-900">I Miei Appalti</h1>
           <p className="text-slate-500 mt-2">Gestisci i documenti di collaudo per i tuoi interventi.</p>
         </div>
-        <button
-          onClick={onNewProject}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg shadow-md flex items-center gap-2 font-medium transition-colors"
-        >
-          <FolderPlus className="w-5 h-5" />
-          Nuovo Intervento
-        </button>
+        <div className="flex gap-3">
+             {currentUser?.isSystemAdmin && (
+                 <button 
+                   onClick={onOpenAdmin}
+                   className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-3 rounded-lg shadow-md flex items-center gap-2 font-medium transition-colors"
+                 >
+                    <Shield className="w-5 h-5" />
+                    Pannello Admin
+                 </button>
+             )}
+            <button
+              onClick={onNewProject}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg shadow-md flex items-center gap-2 font-medium transition-colors"
+            >
+              <FolderPlus className="w-5 h-5" />
+              Nuovo Intervento
+            </button>
+        </div>
       </div>
 
       {projects.length === 0 ? (

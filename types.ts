@@ -44,12 +44,15 @@ export interface DesignPhaseData {
 
 // --- AUTH & PERMISSIONS ---
 export type PermissionRole = 'viewer' | 'editor' | 'admin';
+export type UserStatus = 'active' | 'pending' | 'suspended';
 
 export interface User {
   id: string;
   email: string;
-  password: string; // In real app, this should be hashed. Using plain for demo/local.
+  password: string; 
   name: string;
+  isSystemAdmin?: boolean; // Super Admin flag
+  status: UserStatus; // Approval status
 }
 
 export interface ProjectPermission {
@@ -57,6 +60,15 @@ export interface ProjectPermission {
   projectId: string;
   userEmail: string; // using email to link even if user doesn't exist yet
   role: PermissionRole;
+}
+
+export interface BackupData {
+  version: number;
+  timestamp: number;
+  users: User[];
+  projects: ProjectConstants[];
+  documents: DocumentVariables[];
+  permissions: ProjectPermission[];
 }
 // --------------------------
 
@@ -191,7 +203,7 @@ export interface DocumentVariables {
 }
 
 export interface AppState {
-  user: User | null; // NEW
+  user: User | null; 
   project: ProjectConstants;
   documents: DocumentVariables[];
   currentDocumentId: string | null;

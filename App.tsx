@@ -6,17 +6,18 @@ import { ExecutionManager } from './components/ExecutionManager';
 import { TestingManager } from './components/TestingManager';
 import { ExportManager } from './components/ExportManager';
 import { Dashboard } from './components/Dashboard';
-import { AuthScreen } from './components/AuthScreen'; // NEW
-import { ProjectSharing } from './components/ProjectSharing'; // NEW
+import { AuthScreen } from './components/AuthScreen';
+import { ProjectSharing } from './components/ProjectSharing';
+import { AdminPanel } from './components/AdminPanel'; // NEW
 import { ProjectConstants, DocumentVariables, User, PermissionRole } from './types';
 import { createEmptyProject, createInitialDocument } from './constants';
 import { db } from './db';
 
-type ViewType = 'dashboard' | 'workspace';
+type ViewType = 'dashboard' | 'workspace' | 'admin-panel';
 type TabType = 'general' | 'design' | 'subjects' | 'tender' | 'contractor' | 'execution' | 'testing' | 'export';
 
 const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null); // AUTH STATE
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const [view, setView] = useState<ViewType>('dashboard');
   const [activeTab, setActiveTab] = useState<TabType>('general');
@@ -24,7 +25,6 @@ const App: React.FC = () => {
   const [projectList, setProjectList] = useState<ProjectConstants[]>([]);
   const [currentProject, setCurrentProject] = useState<ProjectConstants | null>(null);
   
-  // Permissions for current project
   const [userRole, setUserRole] = useState<PermissionRole>('viewer');
 
   const [documents, setDocuments] = useState<DocumentVariables[]>([]);
@@ -34,8 +34,7 @@ const App: React.FC = () => {
   const [projectToShare, setProjectToShare] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check localStorage for persisted session (optional, for now simple session)
-    // if(localStorage.getItem('user')) ...
+    // Session restore could go here
   }, []);
 
   useEffect(() => {
@@ -76,19 +75,17 @@ const App: React.FC = () => {
   };
 
   const handleSelectProject = async (project: ProjectConstants) => {
-    // 1. Determine Permission Role
     let role: PermissionRole = 'viewer';
     if (currentUser?.id === project.ownerId) {
         role = 'admin';
     } else {
-        // Fetch permission from DB
         const perms = await db.getUserPermissions(currentUser?.email || '');
         const p = perms.find(perm => perm.projectId === project.id);
         if (p) role = p.role;
     }
     setUserRole(role);
 
-    // 2. Deep Merge (Safe Loading)
+    // Deep Merge (Safe Loading)
     const emptyTemplate = createEmptyProject(project.ownerId);
     const completeProject: ProjectConstants = {
         ...emptyTemplate,
@@ -227,17 +224,25 @@ const App: React.FC = () => {
       return <AuthScreen onLogin={handleLogin} />;
   }
 
+  // New Admin Panel View
+  if (view === 'admin-panel') {
+      if (!currentUser.isSystemAdmin) {
+          setView('dashboard'); // Security fallback
+          return null;
+      }
+      return <AdminPanel onBack={() => setView('dashboard')} currentUser={currentUser} />;
+  }
+
   if (view === 'dashboard') {
     return (
       <div className="bg-slate-50 min-h-screen">
         <div className="absolute top-4 right-4 flex items-center gap-4">
-             {/* User info now in sidebar or separate component, but Dashboard has own layout */}
              <div className="flex items-center gap-2">
-                 <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">
+                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${currentUser.isSystemAdmin ? 'bg-purple-600' : 'bg-blue-600'}`}>
                     {currentUser.name.charAt(0)}
                  </div>
                  <div className="text-right hidden sm:block">
-                     <p className="text-sm font-bold text-slate-800">{currentUser.name}</p>
+                     <p className="text-sm font-bold text-slate-800">{currentUser.name} {currentUser.isSystemAdmin && '(Admin)'}</p>
                      <button onClick={handleLogout} className="text-xs text-red-500 hover:underline">Esci</button>
                  </div>
              </div>
@@ -248,6 +253,7 @@ const App: React.FC = () => {
           onNewProject={handleNewProject}
           onDeleteProject={handleDeleteProject}
           onShareProject={handleShareClick}
+          onOpenAdmin={() => setView('admin-panel')}
           currentUser={currentUser}
         />
         {showShareModal && projectToShare && (

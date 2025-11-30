@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { User } from '../types';
 import { db } from '../db';
-import { Building2, KeyRound, Mail, UserPlus, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Building2, KeyRound, Mail, UserPlus, ArrowRight, ShieldCheck, Info } from 'lucide-react';
 
 interface AuthScreenProps {
   onLogin: (user: User) => void;
@@ -14,10 +14,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMsg('');
 
     try {
       if (isRegister) {
@@ -26,10 +28,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
            id: crypto.randomUUID(),
            name,
            email,
-           password // In real app, hash this!
+           password, 
+           status: 'pending' // Default status
         };
         await db.registerUser(newUser);
-        alert("Registrazione completata! Ora puoi accedere.");
+        setSuccessMsg("Registrazione inviata! L'amministratore dovrà approvare l'account prima che tu possa accedere.");
         setIsRegister(false);
       } else {
         const user = await db.loginUser(email, password);
@@ -69,8 +72,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
             </div>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2">
-                 <ShieldCheck className="w-4 h-4"/> {error}
+              <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2 border border-red-100">
+                 <ShieldCheck className="w-4 h-4 min-w-[16px]"/> {error}
+              </div>
+            )}
+
+            {successMsg && (
+              <div className="mb-4 p-3 bg-green-50 text-green-700 text-sm rounded-lg flex items-center gap-2 border border-green-100">
+                 <Info className="w-4 h-4 min-w-[16px]"/> {successMsg}
               </div>
             )}
 
@@ -108,7 +117,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                </div>
 
                <button type="submit" className="w-full bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-black transition-colors flex items-center justify-center gap-2 mt-6 shadow-lg">
-                  {isRegister ? 'Crea Account' : 'Accedi al Portale'}
+                  {isRegister ? 'Invia Richiesta' : 'Accedi al Portale'}
                   <ArrowRight className="w-4 h-4" />
                </button>
             </form>
