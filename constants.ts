@@ -1,7 +1,8 @@
 
 import { ProjectConstants, DocumentVariables } from './types';
 
-// Helper to create empty state with fresh IDs
+const emptyContact = { name: '', title: '', email: '', pec: '', phone: '' };
+
 export const createEmptyProject = (): ProjectConstants => ({
   id: crypto.randomUUID(),
   lastModified: Date.now(),
@@ -9,6 +10,44 @@ export const createEmptyProject = (): ProjectConstants => ({
   projectName: '',
   location: '',
   cup: '',
+  
+  contract: {
+    repNumber: '',
+    date: '',
+    regPlace: '',
+    regDate: '',
+    regNumber: '',
+    regSeries: '',
+    totalAmount: '',
+    securityCosts: '',
+    durationDays: 0,
+    deadline: ''
+  },
+
+  subjects: {
+    rup: { ...emptyContact },
+    designers: [],
+    csp: { ...emptyContact },
+    verifier: { ...emptyContact },
+    dl: { ...emptyContact },
+    dlOffice: [],
+    cse: { ...emptyContact },
+    tester: { ...emptyContact, title: 'Arch.' },
+    testerAppointment: {
+        nominationType: 'Determina Dirigenziale',
+        nominationNumber: '',
+        nominationDate: '',
+        isStatic: true,
+        isAdmin: true,
+        isFunctional: false
+    }
+  },
+
+  tenderPhase: {
+    verificationMinutesDate: '',
+    validationMinutesDate: ''
+  },
+
   contractor: {
     name: '',
     address: '',
@@ -17,70 +56,36 @@ export const createEmptyProject = (): ProjectConstants => ({
     role: 'Legale Rappresentante',
     email: '',
     pec: '',
-    phone: ''
+    phone: '',
+    isATI: false,
+    mandants: [],
+    subcontractors: []
   },
-  contract: {
-    repNumber: '',
-    date: '',
-    
-    regPlace: '',
-    regDate: '',
-    regNumber: '',
-    regSeries: '',
 
-    totalAmount: '',
-    securityCosts: '',
-    
-    handoverDate: '',
-    durationDays: 0,
-    deadline: ''
-  },
-  staff: {
-    rup: { name: '', title: '', email: '', pec: '', phone: '' },
-    direttoreLavori: { name: '', title: '', email: '', pec: '', phone: '' },
-    ispettoreCantiere: { name: '', title: '', email: '', pec: '', phone: '' },
-    cse: { name: '', title: '', email: '', pec: '', phone: '' }
-  },
-  testerAppointment: {
-    contact: { 
-      name: '', 
-      title: 'Arch.', 
-      address: '', 
-      email: '', 
-      pec: '', 
-      phone: '' 
-    },
-    nominationType: 'Determina Dirigenziale',
-    nominationNumber: '',
-    nominationDate: '',
-    contractRep: '',
-    contractDate: '',
-    isStatic: true,
-    isAdmin: true,
-    isFunctional: false
-  },
-  handoverDocs: {
-    projectApprovalType: 'Determina',
-    projectApprovalNumber: '',
-    projectApprovalDate: '',
+  executionPhase: {
     deliveryDate: '',
     deliveryType: 'ordinary',
-    ainopProtocol: '',
-    ainopDate: '',
-    municipalityProtocol: '',
-    municipalityDate: '',
+    suspensions: [],
+    resumptions: [],
+    sals: [],
+    variants: [],
+    completionDate: '',
     
-    // New fields
-    hasWasteNotes: false,
-    hasUpdatedPOS: false,
-    hasUpdatedSchedule: false,
-    
-    hasPreliminaryNotification: false,
-    preliminaryNotifNumber: '',
-    preliminaryNotifDate: '',
-    
-    hasOtherDocs: false,
-    otherDocsDescription: ''
+    handoverDocs: {
+        projectApprovalType: 'Determina',
+        projectApprovalNumber: '',
+        projectApprovalDate: '',
+        ainopProtocol: '',
+        ainopDate: '',
+        municipalityProtocol: '',
+        municipalityDate: '',
+        hasWasteNotes: false,
+        hasUpdatedPOS: false,
+        hasUpdatedSchedule: false,
+        hasPreliminaryNotification: false,
+        preliminaryNotifNumber: '',
+        preliminaryNotifDate: ''
+    }
   }
 });
 

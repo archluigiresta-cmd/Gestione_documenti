@@ -1,18 +1,20 @@
 
 import React from 'react';
 import { 
-  FolderKanban, 
-  Settings, 
-  ArrowLeft, 
+  Building2, 
+  Users, 
+  Gavel, 
   HardHat, 
-  Camera, 
-  FileOutput,
-  Briefcase
+  Activity, 
+  ClipboardCheck, 
+  FileOutput, 
+  ArrowLeft,
+  Settings
 } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
-  setActiveTab: (tab: 'project' | 'works' | 'photos' | 'export') => void;
+  setActiveTab: (tab: 'general' | 'subjects' | 'tender' | 'contractor' | 'execution' | 'testing' | 'export') => void;
   onBackToDashboard: () => void;
   projectName: string;
 }
@@ -64,25 +66,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Navigation */}
       <div className="flex-1 p-4 overflow-y-auto">
         <div className="mb-2 px-4 text-xs font-bold text-blue-300 uppercase tracking-wider opacity-70">
-          Gestione
+          Anagrafica
         </div>
-        <NavItem id="project" label="Dati Appalto" icon={Briefcase} />
+        <NavItem id="general" label="Dati Generali" icon={Building2} />
+        <NavItem id="subjects" label="Soggetti Responsabili" icon={Users} />
+        <NavItem id="tender" label="Fase di Gara" icon={Gavel} />
+        <NavItem id="contractor" label="Impresa" icon={HardHat} />
         
-        <div className="mt-8 mb-2 px-4 text-xs font-bold text-blue-300 uppercase tracking-wider opacity-70">
-          Sopralluoghi
+        <div className="mt-6 mb-2 px-4 text-xs font-bold text-blue-300 uppercase tracking-wider opacity-70">
+          Cantiere
         </div>
-        <NavItem id="works" label="Lavori Eseguiti" icon={HardHat} />
-        <NavItem id="photos" label="Galleria Foto" icon={Camera} />
+        <NavItem id="execution" label="Fase Esecuzione" icon={Activity} />
+        <NavItem id="testing" label="Collaudo" icon={ClipboardCheck} />
         
-        <div className="mt-8 mb-2 px-4 text-xs font-bold text-blue-300 uppercase tracking-wider opacity-70">
-          Output
+        <div className="mt-6 mb-2 px-4 text-xs font-bold text-blue-300 uppercase tracking-wider opacity-70">
+          Stampa
         </div>
-        <NavItem id="export" label="Esporta / Stampa" icon={FileOutput} />
+        <NavItem id="export" label="Esporta" icon={FileOutput} />
       </div>
 
       {/* Footer */}
       <div className="p-4 border-t border-blue-900 bg-blue-950 text-center">
-        <p className="text-[10px] text-blue-400">v1.2.0 &bull; Gestione Lavori Pubblici</p>
+        <p className="text-[10px] text-blue-400">v2.0.0 &bull; EdilApp</p>
       </div>
     </div>
   );

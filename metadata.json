@@ -1,5 +1,5 @@
 {
-  "name": "Gestione Collaudi Pubblici",
+  "name": "Gestione Opere Pubbliche",
   "description": "Application for managing public works documentation, specifically inspection minutes and testing reports, distinguishing between project constants and variable document data.",
   "requestFramePermissions": []
 }
