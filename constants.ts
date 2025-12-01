@@ -27,6 +27,8 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
   projectName: '',
   location: '',
   cup: '',
+  cig: '',
+  generalNotes: '',
   
   contract: {
     repNumber: '',

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ProjectConstants, User } from '../types';
-import { FolderPlus, FileText, MapPin, HardHat, Trash2, Building2, Share2, Shield, Settings } from 'lucide-react';
+import { FolderPlus, FileText, Trash2, Shield, Share2, Building2, HardHat, Calendar } from 'lucide-react';
 
 interface DashboardProps {
   projects: ProjectConstants[];
@@ -9,7 +9,7 @@ interface DashboardProps {
   onNewProject: () => void;
   onDeleteProject: (id: string) => void;
   onShareProject: (id: string) => void; 
-  onOpenAdmin: () => void; // NEW
+  onOpenAdmin: () => void; 
   currentUser: User | null;
 }
 
@@ -22,18 +22,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenAdmin,
   currentUser
 }) => {
+
+  const formatDate = (dateString: string) => {
+      if (!dateString) return '-';
+      try {
+          return new Date(dateString).toLocaleDateString('it-IT');
+      } catch {
+          return dateString;
+      }
+  };
+
   return (
-    <div className="max-w-6xl mx-auto p-8">
+    <div className="max-w-7xl mx-auto p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-slate-900">I Miei Appalti</h1>
-          <p className="text-slate-500 mt-2">Gestisci i documenti di collaudo per i tuoi interventi.</p>
+          <p className="text-slate-500 mt-2">Gestione opere pubbliche: elenco interventi e stato avanzamento.</p>
         </div>
         <div className="flex gap-3">
              {currentUser?.isSystemAdmin && (
                  <button 
                    onClick={onOpenAdmin}
-                   className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-3 rounded-lg shadow-md flex items-center gap-2 font-medium transition-colors"
+                   className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-3 rounded-lg shadow-md flex items-center gap-2 font-medium transition-colors text-sm"
                  >
                     <Shield className="w-5 h-5" />
                     Pannello Admin
@@ -41,7 +51,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
              )}
             <button
               onClick={onNewProject}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg shadow-md flex items-center gap-2 font-medium transition-colors"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg shadow-md flex items-center gap-2 font-medium transition-colors text-sm"
             >
               <FolderPlus className="w-5 h-5" />
               Nuovo Intervento
@@ -62,88 +72,105 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.sort((a,b) => b.lastModified - a.lastModified).map((project) => {
-            const isOwner = project.ownerId === currentUser?.id;
-
-            return (
-            <div 
-              key={project.id} 
-              className="group bg-white rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-blue-300 transition-all cursor-pointer relative overflow-hidden"
-              onClick={() => onSelectProject(project)}
-            >
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="p-2 bg-blue-50 text-blue-600 rounded-lg relative">
-                    <FileText className="w-6 h-6" />
-                    {!isOwner && (
-                        <span className="absolute -top-1 -right-1 bg-amber-500 text-white text-[10px] px-1.5 rounded-full border border-white">
-                            Shared
-                        </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1">
-                      {isOwner && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                onShareProject(project.id);
-                            }}
-                            className="p-2 text-slate-400 hover:text-blue-500 hover:bg-slate-50 rounded-full transition-colors"
-                            title="Condividi"
-                        >
-                            <Share2 className="w-5 h-5" />
-                        </button>
-                      )}
-                      {isOwner && (
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                if(confirm('Sei sicuro di voler eliminare questo appalto e tutti i verbali associati?')) {
-                                    onDeleteProject(project.id);
-                                }
-                            }}
-                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-slate-50 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-                            title="Elimina Appalto"
-                        >
-                            <Trash2 className="w-5 h-5" />
-                        </button>
-                      )}
-                  </div>
-                </div>
-                
-                {/* Entity Badge */}
-                {project.entity && (
-                   <div className="flex items-center gap-1 text-xs text-blue-600 font-bold uppercase tracking-wide mb-2">
-                     <Building2 className="w-3 h-3" />
-                     {project.entity}
-                   </div>
-                )}
-
-                <h3 className="font-bold text-slate-800 mb-2 line-clamp-2 min-h-[3rem]">
-                  {project.projectName || 'Nuovo Progetto Senza Nome'}
-                </h3>
-                
-                <div className="space-y-2 text-sm text-slate-500">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-slate-400" />
-                    <span className="truncate">{project.location || 'Luogo non definito'}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                     <Shield className="w-4 h-4 text-slate-400" />
-                     <span className={isOwner ? 'text-green-600 font-medium' : 'text-amber-600 font-medium'}>
-                         {isOwner ? 'Proprietario' : 'Condiviso con te'}
-                     </span>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-between items-center">
-                 <span className="text-xs font-mono text-slate-500">CUP: {project.cup || '---'}</span>
-                 <span className="text-xs text-blue-600 font-medium group-hover:translate-x-1 transition-transform">Apri &rarr;</span>
-              </div>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                    <thead className="bg-slate-50 border-b border-slate-200">
+                        <tr>
+                            <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider">Ente Appaltante</th>
+                            <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider w-1/3">Intervento</th>
+                            <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider">Consegna</th>
+                            <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider">Ultimazione</th>
+                            <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider w-1/4">Note</th>
+                            <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider text-right">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-sm">
+                        {projects.sort((a,b) => b.lastModified - a.lastModified).map((project) => {
+                            const isOwner = project.ownerId === currentUser?.id;
+                            return (
+                                <tr 
+                                    key={project.id} 
+                                    onClick={() => onSelectProject(project)}
+                                    className="hover:bg-blue-50 cursor-pointer transition-colors group"
+                                >
+                                    <td className="p-4 align-top">
+                                        <div className="flex items-center gap-2">
+                                            <Building2 className="w-4 h-4 text-blue-500 shrink-0"/>
+                                            <span className="font-semibold text-slate-700 line-clamp-2" title={project.entity}>
+                                                {project.entity || 'N/D'}
+                                                {project.entityProvince && <span className="text-slate-400 font-normal ml-1">({project.entityProvince})</span>}
+                                            </span>
+                                        </div>
+                                        <div className="text-xs text-slate-400 mt-1 pl-6">
+                                            CUP: {project.cup || '-'}
+                                        </div>
+                                    </td>
+                                    <td className="p-4 align-top">
+                                        <div className="font-medium text-slate-900 line-clamp-2" title={project.projectName}>
+                                            {project.projectName || 'Nuovo Progetto'}
+                                        </div>
+                                        <div className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                                            <Shield className="w-3 h-3"/>
+                                            {isOwner ? 'Proprietario' : 'Condiviso'}
+                                        </div>
+                                    </td>
+                                    <td className="p-4 align-top whitespace-nowrap">
+                                        <div className="flex items-center gap-2 text-slate-600">
+                                            <Calendar className="w-3 h-3 text-slate-400"/>
+                                            {formatDate(project.executionPhase?.deliveryDate)}
+                                        </div>
+                                    </td>
+                                    <td className="p-4 align-top whitespace-nowrap">
+                                        <div className="flex items-center gap-2 text-slate-600">
+                                            <Calendar className="w-3 h-3 text-slate-400"/>
+                                            {formatDate(project.executionPhase?.completionDate)}
+                                        </div>
+                                    </td>
+                                    <td className="p-4 align-top">
+                                        <div className="text-slate-500 italic line-clamp-2 text-xs" title={project.generalNotes}>
+                                            {project.generalNotes || '-'}
+                                        </div>
+                                    </td>
+                                    <td className="p-4 align-top text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            {isOwner && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onShareProject(project.id);
+                                                    }}
+                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+                                                    title="Condividi"
+                                                >
+                                                    <Share2 className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                            {isOwner && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        if(confirm('Sei sicuro di voler eliminare questo appalto?')) {
+                                                            onDeleteProject(project.id);
+                                                        }
+                                                    }}
+                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                                    title="Elimina"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            )}
+                                            <button className="px-3 py-1 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded hover:bg-slate-50 hover:text-blue-600">
+                                                Apri
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
             </div>
-            );
-          })}
         </div>
       )}
     </div>

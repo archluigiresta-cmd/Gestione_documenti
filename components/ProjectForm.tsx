@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ProjectConstants, ContactInfo, SubjectProfile, AppointmentData } from '../types';
-import { Save, User, Users, Mail, ShieldCheck, Phone, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy } from 'lucide-react';
+import { Save, User, Users, Mail, ShieldCheck, Phone, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote } from 'lucide-react';
 
 interface ProjectFormProps {
   data: ProjectConstants;
@@ -182,6 +182,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                 { id: 'info', label: 'Inquadramento', icon: Building },
                 { id: 'contract', label: 'Dati Contratto', icon: Briefcase },
                 { id: 'registration', label: 'Registrazione', icon: Stamp },
+                { id: 'notes', label: 'Note', icon: StickyNote },
             ]} />
 
             {subTab === 'info' && (
@@ -283,6 +284,22 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                        </>
                     )}
                  </div>
+            )}
+            
+            {subTab === 'notes' && (
+                <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-right-4 duration-300">
+                    <h3 className="text-lg font-bold text-slate-800 mb-6">Note Generali</h3>
+                    <p className="text-sm text-slate-500 mb-4">
+                        Annotazioni interne, promemoria o dettagli aggiuntivi riguardanti l'appalto.
+                    </p>
+                    <textarea 
+                        disabled={readOnly} 
+                        className="w-full p-4 border border-slate-300 rounded-lg h-64 leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none resize-none"
+                        placeholder="Scrivi qui le tue note..."
+                        value={data.generalNotes || ''} 
+                        onChange={(e) => handleChange('generalNotes', e.target.value)} 
+                    />
+                </div>
             )}
         </>
       )}
