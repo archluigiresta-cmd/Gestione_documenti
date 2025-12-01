@@ -1,3 +1,4 @@
+
 import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData } from './types';
 
 const emptyContact = { name: '', title: '', email: '', pec: '', phone: '' };
@@ -13,7 +14,8 @@ const createEmptyDesignPhase = (): DesignPhaseData => ({
     economicFramework: '',
     approvalType: 'Delibera/Determina',
     approvalNumber: '',
-    approvalDate: ''
+    approvalDate: '',
+    localFolderLink: ''
 });
 
 export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
@@ -21,7 +23,7 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
   ownerId: ownerId, 
   lastModified: Date.now(),
   entity: 'PROVINCIA DI TARANTO', 
-  entityProvince: '', // NEW: Init province
+  entityProvince: '', 
   projectName: '',
   location: '',
   cup: '',

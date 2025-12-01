@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ProjectConstants, ContactInfo, SubjectProfile, AppointmentData } from '../types';
-import { Save, User, Users, Mail, ShieldCheck, Phone, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock } from 'lucide-react';
+import { Save, User, Users, Mail, ShieldCheck, Phone, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy } from 'lucide-react';
 
 interface ProjectFormProps {
   data: ProjectConstants;
@@ -319,6 +319,23 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                            value={data.designPhase[subTab as keyof typeof data.designPhase].economicFramework || ''} 
                            onChange={(e) => handleChange(`designPhase.${subTab}.economicFramework`, e.target.value)} />
                    </div>
+               </div>
+               
+               <div className="md:col-span-2 mt-4">
+                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wide block mb-1">Link Cartella Locale Progetto</label>
+                   <div className="flex gap-2">
+                       <div className="relative flex-1">
+                           <FolderOpen className="absolute left-3 top-2.5 w-4 h-4 text-slate-400"/>
+                           <input disabled={readOnly} type="text" className="w-full p-2 pl-9 border border-slate-300 rounded text-sm text-slate-600 font-mono" 
+                               placeholder="C:\Progetti\FaseProgettuale..."
+                               value={data.designPhase[subTab as keyof typeof data.designPhase].localFolderLink || ''} 
+                               onChange={(e) => handleChange(`designPhase.${subTab}.localFolderLink`, e.target.value)} />
+                       </div>
+                       <button onClick={() => {navigator.clipboard.writeText(data.designPhase[subTab as keyof typeof data.designPhase].localFolderLink || ''); alert("Link copiato!");}} className="p-2 border border-slate-300 rounded hover:bg-slate-50" title="Copia percorso">
+                           <Copy className="w-4 h-4 text-slate-500"/>
+                       </button>
+                   </div>
+                   <p className="text-[10px] text-slate-400 mt-1">Incolla qui il percorso della cartella sul tuo PC per riferimento futuro.</p>
                </div>
 
                <div className="mt-6 border-t border-slate-100 pt-6">

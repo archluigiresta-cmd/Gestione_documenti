@@ -40,6 +40,7 @@ export interface DesignPhaseData {
   approvalType: string; // Tipo atto approvazione
   approvalNumber: string;
   approvalDate: string;
+  localFolderLink: string; // Path cartella locale (NEW)
 }
 
 // --- AUTH & PERMISSIONS ---
