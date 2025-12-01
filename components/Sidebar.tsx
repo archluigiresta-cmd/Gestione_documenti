@@ -77,15 +77,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
           Anagrafica
         </div>
         <NavItem id="general" label="Dati Generali" icon={Building2} />
-        <NavItem id="design" label="Fase Progettuale" icon={PencilRuler} />
+        <NavItem id="design" label="Progettazione" icon={PencilRuler} />
         <NavItem id="subjects" label="Soggetti Responsabili" icon={Users} />
-        <NavItem id="tender" label="Fase di Gara" icon={Gavel} />
+        <NavItem id="tender" label="Gara" icon={Gavel} />
         <NavItem id="contractor" label="Impresa" icon={HardHat} />
         
         <div className="mt-6 mb-2 px-4 text-xs font-bold text-blue-300 uppercase tracking-wider opacity-70">
           Cantiere
         </div>
-        <NavItem id="execution" label="Fase Esecuzione" icon={Activity} />
+        <NavItem id="execution" label="Esecuzione" icon={Activity} />
         <NavItem id="testing" label="Collaudo" icon={ClipboardCheck} />
         
         <div className="mt-6 mb-2 px-4 text-xs font-bold text-blue-300 uppercase tracking-wider opacity-70">

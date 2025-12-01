@@ -141,6 +141,9 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
     </div>
   );
 
+  // Safety check for design phase data
+  if (section === 'design' && !data.designPhase) return null;
+
   return (
     <div className="max-w-5xl mx-auto pb-20 animate-in fade-in duration-500">
       
@@ -148,9 +151,9 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
           <div>
             <h2 className="text-2xl font-bold text-slate-800">
                 {section === 'general' && 'Dati Generali Appalto'}
-                {section === 'design' && 'Fase Progettuale'}
+                {section === 'design' && 'Progettazione'}
                 {section === 'subjects' && 'Soggetti Responsabili'}
-                {section === 'tender' && 'Fase di Gara'}
+                {section === 'tender' && 'Gara'}
                 {section === 'contractor' && 'Dati Impresa'}
             </h2>
             <p className="text-slate-500 text-sm mt-1">
@@ -172,8 +175,6 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
           </div>
       </div>
 
-      {/* Inputs are now protected with disabled={readOnly} ... */}
-      
       {/* --- SECTION: GENERALI --- */}
       {section === 'general' && (
         <>
@@ -486,7 +487,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
       {/* --- SECTION: GARA --- */}
       {section === 'tender' && (
         <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
-            <h3 className="text-lg font-bold text-slate-800 mb-6">Verbali Fase di Gara</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-6">Verbali Gara</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                     <label className="block text-sm font-semibold text-slate-700 mb-2">Data Verbale Verifica Progetto</label>

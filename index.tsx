@@ -18,6 +18,8 @@ interface ErrorBoundaryState {
 
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   public state: ErrorBoundaryState = { hasError: false, error: null };
+  // Explicitly declare props to ensure TypeScript recognizes it on the instance
+  readonly props!: Readonly<ErrorBoundaryProps>;
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };

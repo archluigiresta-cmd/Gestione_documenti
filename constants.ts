@@ -1,4 +1,3 @@
-
 import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData } from './types';
 
 const emptyContact = { name: '', title: '', email: '', pec: '', phone: '' };
@@ -110,7 +109,9 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
         hasUpdatedSchedule: false,
         hasPreliminaryNotification: false,
         preliminaryNotifNumber: '',
-        preliminaryNotifDate: ''
+        preliminaryNotifDate: '',
+        hasOtherDocs: false,
+        otherDocsDescription: ''
     }
   }
 });

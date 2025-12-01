@@ -70,6 +70,20 @@ export interface BackupData {
   documents: DocumentVariables[];
   permissions: ProjectPermission[];
 }
+
+export interface SALData {
+    id: string;
+    number: string;
+    date: string;
+    periodFrom: string;
+    periodTo: string;
+    netAmount: string; // Importo Lavori
+    paymentCertificateDate: string;
+    paymentCertificateAmount: string; // Importo Certificato Pagamento
+    localFolderLink: string; // Path cartella locale
+    notes: string;
+}
+
 // --------------------------
 
 export interface ProjectConstants {
@@ -77,7 +91,7 @@ export interface ProjectConstants {
   ownerId: string; // ID dell'utente proprietario
   lastModified: number; 
   entity: string; // Ente Appaltante
-  entityProvince?: string; // Provincia dell'Ente (NEW)
+  entityProvince?: string; // Provincia dell'Ente
   projectName: string;
   location: string;
   cup: string; 
@@ -97,7 +111,7 @@ export interface ProjectConstants {
     deadline: string; // Scadenza calcolata
   };
 
-  // 1-BIS. Fase Progettuale (NEW)
+  // 1-BIS. Progettazione (Ex Fase Progettuale)
   designPhase: {
     docfap: DesignPhaseData; // Documento fattibilità alternative
     dip: DesignPhaseData;    // Documento indirizzo progettazione
@@ -125,7 +139,7 @@ export interface ProjectConstants {
     }
   };
 
-  // 3. Fase Gara
+  // 3. Gara (Ex Fase Gara)
   tenderPhase: {
     verificationMinutesDate: string; // Verbale Verifica Progetto
     validationMinutesDate: string; // Verbale Validazione Progetto
@@ -134,7 +148,7 @@ export interface ProjectConstants {
   // 4. Impresa
   contractor: ContractorStructure;
 
-  // 5. Fase Esecuzione (Atti Amministrativi)
+  // 5. Esecuzione (Ex Fase Esecuzione)
   executionPhase: {
     deliveryDate: string; // Consegna Lavori
     deliveryType: 'ordinary' | 'anticipated';
@@ -142,12 +156,13 @@ export interface ProjectConstants {
     suspensions: { id: string; date: string; reason: string; minutesNumber?: string }[];
     resumptions: { id: string; date: string; minutesNumber?: string }[];
     
-    sals: { id: string; date: string; number: string; amount: string }[]; // Stati Avanzamento
+    sals: SALData[]; // Stati Avanzamento Lavori (UPDATED)
+    
     variants: { id: string; date: string; approvalAct: string }[]; // Varianti
     
     completionDate: string; // Certificato Ultimazione
     
-    // Documenti consegnati (ex handoverDocs)
+    // Documenti consegnati
     handoverDocs: {
         projectApprovalType: string;
         projectApprovalNumber: string;
@@ -162,6 +177,8 @@ export interface ProjectConstants {
         hasPreliminaryNotification: boolean;
         preliminaryNotifNumber: string;
         preliminaryNotifDate: string;
+        hasOtherDocs: boolean;
+        otherDocsDescription: string;
     };
   };
 }
