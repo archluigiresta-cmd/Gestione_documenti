@@ -53,6 +53,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       }
   };
 
+  const isCollaudo = type === 'VERBALE_COLLAUDO';
+
   return (
     <div className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
       
@@ -139,15 +141,30 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
             <hr className="border-t border-black my-6 w-1/3 mx-auto opacity-50" />
 
-            {/* Body Content - Varies by Document Type (Currently optimized for Collaudo) */}
+            {/* Body Content */}
             <div className="text-sm text-justify space-y-4">
-                <p>
-                    Il giorno <strong>{verboseDate.day}</strong> del mese di <strong>{verboseDate.month}</strong> dell'anno <strong>{verboseDate.year}</strong>, 
-                    alle ore <strong>{doc.time}</strong>, presso il luogo dei lavori in <strong>{project.location}</strong>, 
-                    ha avvio la <strong>{doc.visitNumber}ª</strong> visita di collaudo in corso d'opera convocata con nota {doc.convocationDetails || '...'}.
-                </p>
+                {isCollaudo ? (
+                    // Collaudo Intro
+                    <p>
+                        Il giorno <strong>{verboseDate.day}</strong> del mese di <strong>{verboseDate.month}</strong> dell'anno <strong>{verboseDate.year}</strong>, 
+                        alle ore <strong>{doc.time}</strong>, presso il luogo dei lavori in <strong>{project.location}</strong>, 
+                        ha avvio la <strong>{doc.visitNumber}ª</strong> visita di collaudo in corso d'opera convocata con nota {doc.convocationDetails || '...'}.
+                    </p>
+                ) : (
+                    // Generic Intro for other acts
+                    <p>
+                        L'anno <strong>{verboseDate.year}</strong>, il giorno <strong>{verboseDate.day}</strong> del mese di <strong>{verboseDate.month}</strong>, 
+                        presso il luogo dei lavori in <strong>{project.location}</strong>.
+                    </p>
+                )}
 
-                <p>Sono presenti, oltre al sottoscritto Collaudatore {project.subjects.tester.contact.title} {project.subjects.tester.contact.name}:</p>
+                {/* Attendees Logic */}
+                {isCollaudo ? (
+                    <p>Sono presenti, oltre al sottoscritto Collaudatore {project.subjects.tester.contact.title} {project.subjects.tester.contact.name}:</p>
+                ) : (
+                    <p>Sono presenti, oltre al sottoscritto Direttore dei Lavori {project.subjects.dl.contact.title} {project.subjects.dl.contact.name}:</p>
+                )}
+                
                 <div className="whitespace-pre-line pl-4 mb-4 font-normal italic bg-slate-50 p-2 print:bg-transparent print:p-0">
                     {doc.attendees || "Vedi elenco presenze."}
                 </div>
@@ -187,15 +204,19 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                 <div><p>L'Impresa:</p><p className="font-bold mt-8 border-b border-black w-2/3">{project.contractor.repName}</p></div>
             </div>
             <div className="space-y-16 text-right flex flex-col items-end">
-                <div><p>Il Collaudatore:</p><p className="font-bold mt-8 border-b border-black w-48">{project.subjects.tester.contact.name}</p></div>
+                {isCollaudo && (
+                    <div><p>Il Collaudatore:</p><p className="font-bold mt-8 border-b border-black w-48">{project.subjects.tester.contact.name}</p></div>
+                )}
             </div>
         </div>
         
         {/* Footer */}
-        <div className="mt-8 border-t border-slate-300 pt-4 text-[10px] text-slate-500 text-center uppercase tracking-wider">
-            <p className="font-bold text-black">{project.subjects.tester.contact.title} {project.subjects.tester.contact.name}</p>
-            <p>{project.subjects.tester.contact.email} - {project.subjects.tester.contact.pec}</p>
-        </div>
+        {isCollaudo && (
+            <div className="mt-8 border-t border-slate-300 pt-4 text-[10px] text-slate-500 text-center uppercase tracking-wider">
+                <p className="font-bold text-black">{project.subjects.tester.contact.title} {project.subjects.tester.contact.name}</p>
+                <p>{project.subjects.tester.contact.email} - {project.subjects.tester.contact.pec}</p>
+            </div>
+        )}
 
         {/* Photos Page (Appended if photos exist) */}
         {doc.photos && doc.photos.length > 0 && (

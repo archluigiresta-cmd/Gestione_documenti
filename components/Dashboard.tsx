@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ProjectConstants, User } from '../types';
-import { FolderPlus, FileText, Trash2, Shield, Share2, Building2, HardHat, Calendar } from 'lucide-react';
+import { FolderPlus, Trash2, Shield, Share2, Building2, HardHat, Calendar } from 'lucide-react';
 
 interface DashboardProps {
   projects: ProjectConstants[];

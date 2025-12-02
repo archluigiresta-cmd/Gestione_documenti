@@ -97,7 +97,7 @@ export interface ProjectConstants {
   location: string;
   cup: string; 
   cig?: string; 
-  generalNotes: string; // Note generali progetto
+  generalNotes: string; // Note generali progetto (NEW)
   
   // 1. Dati Generali (Contratto)
   contract: {
