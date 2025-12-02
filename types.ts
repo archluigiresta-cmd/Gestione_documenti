@@ -85,6 +85,14 @@ export interface SALData {
     notes: string;
 }
 
+export interface TesterVisitSummary {
+    id: string;
+    startDate: string;
+    endDate: string;
+    works: string[]; // Elenco sintetico lavorazioni
+    notes: string;
+}
+
 // --------------------------
 
 export interface ProjectConstants {
@@ -161,6 +169,8 @@ export interface ProjectConstants {
     sals: SALData[]; // Stati Avanzamento Lavori (UPDATED)
     
     variants: { id: string; date: string; approvalAct: string }[]; // Varianti
+    
+    testerVisitSummaries: TesterVisitSummary[]; // NEW: Riepilogo lavori per visite collaudo
     
     completionDate: string; // Certificato Ultimazione
     

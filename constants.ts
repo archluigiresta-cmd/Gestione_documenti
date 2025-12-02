@@ -98,6 +98,7 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
     resumptions: [],
     sals: [],
     variants: [],
+    testerVisitSummaries: [], // NEW
     completionDate: '',
     
     handoverDocs: {
