@@ -1,19 +1,21 @@
 
 import React, { useState } from 'react';
-import { DocumentVariables } from '../types';
-import { Calendar, Clock, MapPin, Mail, ClipboardCheck, Save, Users, FileEdit } from 'lucide-react';
+import { DocumentVariables, ProjectConstants } from '../types';
+import { Calendar, Clock, MapPin, Mail, ClipboardCheck, Save, Users, FileEdit, CheckSquare } from 'lucide-react';
 
 interface TestingManagerProps {
+  project: ProjectConstants;
   documents: DocumentVariables[];
   currentDocId: string;
   onSelectDocument: (id: string) => void;
   onUpdateDocument: (d: DocumentVariables) => void;
   onNewDocument: () => void;
   onDeleteDocument: (id: string) => void;
-  readOnly?: boolean; // NEW
+  readOnly?: boolean; 
 }
 
 export const TestingManager: React.FC<TestingManagerProps> = ({
+  project,
   documents,
   currentDocId,
   onSelectDocument,
@@ -29,6 +31,30 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
 
   const handleUpdate = (updatedDoc: DocumentVariables) => {
       if (!readOnly) onUpdateDocument(updatedDoc);
+  };
+
+  // Logic for Smart Attendees Selection
+  const potentialAttendees = [
+      { id: 'rup', label: `RUP: ${project.subjects.rup.contact.title} ${project.subjects.rup.contact.name}`, role: 'Responsabile Unico del Progetto' },
+      { id: 'dl', label: `DL: ${project.subjects.dl.contact.title} ${project.subjects.dl.contact.name}`, role: 'Direttore dei Lavori' },
+      { id: 'cse', label: `CSE: ${project.subjects.cse.contact.title} ${project.subjects.cse.contact.name}`, role: 'Coord. Sicurezza Esecuzione' },
+      { id: 'contractor', label: `Impresa: ${project.contractor.repName} (${project.contractor.role})`, role: `per l'Impresa ${project.contractor.name}` },
+  ];
+
+  const toggleAttendee = (label: string, role: string) => {
+      if (readOnly) return;
+      const textToAdd = `${role}: ${label.split(': ')[1]}`;
+      const currentText = currentDoc.attendees || '';
+      
+      if (currentText.includes(textToAdd)) {
+          // Remove
+          const newText = currentText.replace(textToAdd, '').replace('\n', '').trim();
+          handleUpdate({...currentDoc, attendees: newText});
+      } else {
+          // Add
+          const separator = currentText.length > 0 ? '\n' : '';
+          handleUpdate({...currentDoc, attendees: currentText + separator + textToAdd});
+      }
   };
 
   return (
@@ -115,19 +141,68 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
           {step === 'convocation' && (
               <div className="animate-in fade-in slide-in-from-right-4">
                   <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4">Partecipanti e Convocazione</h3>
-                  <div className="space-y-6">
-                      <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2"><Mail className="w-4 h-4"/> Dettagli Convocazione</label>
-                          <textarea disabled={readOnly} className="w-full p-4 border border-slate-300 rounded-xl h-24 text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none resize-none disabled:bg-slate-100"
-                             value={currentDoc.convocationDetails} onChange={e => handleUpdate({...currentDoc, convocationDetails: e.target.value})} 
-                             placeholder="Es: via PEC del 10/10/2025 (inserisci metodo e data)"/>
+                  
+                  <div className="mb-8 bg-blue-50 p-6 rounded-xl border border-blue-100">
+                      <h4 className="font-bold text-blue-900 mb-4 flex items-center gap-2"><Mail className="w-5 h-5"/> Estremi Convocazione</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                           <div>
+                               <label className="block text-xs font-bold text-blue-700 uppercase mb-1">Mezzo di Invio</label>
+                               <select disabled={readOnly} className="w-full p-3 border border-blue-200 rounded-lg bg-white"
+                                  value={currentDoc.convocationMethod || 'PEC'} 
+                                  onChange={e => handleUpdate({...currentDoc, convocationMethod: e.target.value})}
+                               >
+                                   <option value="PEC">PEC</option>
+                                   <option value="email">Email</option>
+                                   <option value="raccomandata a mano">Raccomandata a mano</option>
+                                   <option value="nota protocollata">Nota protocollata</option>
+                                   <option value="comunicazione breve">Comunicazione vie brevi</option>
+                               </select>
+                           </div>
+                           <div>
+                               <label className="block text-xs font-bold text-blue-700 uppercase mb-1">Data Invio</label>
+                               <input disabled={readOnly} type="date" className="w-full p-3 border border-blue-200 rounded-lg bg-white"
+                                  value={currentDoc.convocationDate || ''} 
+                                  onChange={e => handleUpdate({...currentDoc, convocationDate: e.target.value})}
+                               />
+                           </div>
                       </div>
-                      <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2"><Users className="w-4 h-4"/> Soggetti Presenti</label>
-                          <textarea disabled={readOnly} className="w-full p-4 border border-slate-300 rounded-xl h-40 text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none resize-none disabled:bg-slate-100"
+                  </div>
+
+                  <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                         <label className="block text-sm font-bold text-slate-700 flex items-center gap-2"><Users className="w-4 h-4"/> Elenco Soggetti Presenti</label>
+                         <span className="text-xs text-slate-400">Modificabile manualmente</span>
+                      </div>
+                      
+                      {/* Smart Select Area */}
+                      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                          <p className="text-xs font-bold text-slate-500 uppercase mb-2">Aggiungi rapidamente:</p>
+                          <div className="flex flex-wrap gap-2">
+                              {potentialAttendees.map(p => {
+                                  // Check if this person is roughly in the text
+                                  const isSelected = currentDoc.attendees?.includes(p.label.split(': ')[1]);
+                                  return (
+                                    <button 
+                                      key={p.id}
+                                      onClick={() => toggleAttendee(p.label, p.role)}
+                                      disabled={readOnly}
+                                      className={`text-xs px-3 py-1.5 rounded-full border flex items-center gap-1 transition-all ${
+                                          isSelected 
+                                          ? 'bg-blue-600 text-white border-blue-600' 
+                                          : 'bg-white text-slate-600 border-slate-300 hover:border-blue-400'
+                                      }`}
+                                    >
+                                        {isSelected ? <CheckSquare className="w-3 h-3"/> : <span className="w-3 h-3 block border rounded-sm border-slate-300"></span>}
+                                        {p.label}
+                                    </button>
+                                  );
+                              })}
+                          </div>
+                      </div>
+
+                      <textarea disabled={readOnly} className="w-full p-4 border border-slate-300 rounded-xl h-40 text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none resize-none disabled:bg-slate-100"
                              value={currentDoc.attendees} onChange={e => handleUpdate({...currentDoc, attendees: e.target.value})} 
                              placeholder="Elenco nominativo dei presenti..."/>
-                      </div>
                   </div>
               </div>
           )}

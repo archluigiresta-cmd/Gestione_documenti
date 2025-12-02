@@ -150,7 +150,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                     <p>
                         Il giorno <strong>{verboseDate.day}</strong> del mese di <strong>{verboseDate.month}</strong> dell'anno <strong>{verboseDate.year}</strong>, 
                         alle ore <strong>{doc.time}</strong>, presso il luogo dei lavori in <strong>{project.location}</strong>, 
-                        ha avvio la <strong>{doc.visitNumber}ª</strong> visita di collaudo in corso d'opera convocata con nota {doc.convocationDetails || '...'}.
+                        ha avvio la <strong>{doc.visitNumber}ª</strong> visita di collaudo in corso d'opera convocata con nota via <strong>{doc.convocationMethod || '...'}</strong> del <strong>{formatShortDate(doc.convocationDate)}</strong>.
                     </p>
                 ) : (
                     // Generic Intro for other acts

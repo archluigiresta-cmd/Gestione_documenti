@@ -317,6 +317,7 @@ const App: React.FC = () => {
 
           {activeTab === 'testing' && currentDocId && (
             <TestingManager
+              project={currentProject}
               documents={documents}
               currentDocId={currentDocId}
               onSelectDocument={setCurrentDocId}

@@ -213,7 +213,12 @@ export interface DocumentVariables {
   // Dati Sopralluogo (Collaudo)
   date: string;
   time: string;
-  convocationDetails: string; 
+  
+  // Convocation structured data
+  convocationMethod: string; // New: PEC, Email, ecc.
+  convocationDate: string;   // New: Data invio
+  convocationDetails: string; // Legacy/Fallback text
+  
   attendees: string; 
   
   // Contenuto

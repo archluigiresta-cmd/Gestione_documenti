@@ -127,6 +127,8 @@ export const createInitialDocument = (projectId: string): DocumentVariables => (
   visitNumber: 1,
   date: new Date().toISOString().split('T')[0],
   time: '09:00',
+  convocationMethod: 'PEC',
+  convocationDate: '',
   convocationDetails: '',
   attendees: '', 
   premis: '',
