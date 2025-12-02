@@ -49,6 +49,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
           case 'SAL': return `STATO DI AVANZAMENTO LAVORI N. ${doc.visitNumber}`; // Using visitNumber as SAL number roughly
           case 'CERTIFICATO_REGOLARE_ESECUZIONE': return 'CERTIFICATO DI REGOLARE ESECUZIONE';
           case 'RELAZIONE_FINALE': return 'RELAZIONE SUL CONTO FINALE';
+          case 'RELAZIONE_COLLAUDO': return 'RELAZIONE DI COLLAUDO';
+          case 'CERTIFICATO_ULTIMAZIONE': return 'CERTIFICATO DI ULTIMAZIONE LAVORI';
           default: return type.replace(/_/g, ' ');
       }
   };

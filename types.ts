@@ -193,12 +193,14 @@ export interface PhotoAttachment {
 }
 
 export type DocumentType = 
-  | 'VERBALE_COLLAUDO' 
+  | 'VERBALE_COLLAUDO' // Label: Verbale Visita di Collaudo
   | 'VERBALE_CONSEGNA' 
   | 'SOSPENSIONE_LAVORI' 
   | 'RIPRESA_LAVORI' 
   | 'SAL' 
-  | 'RELAZIONE_FINALE'
+  | 'RELAZIONE_FINALE' // Label: Relazione sul Conto Finale
+  | 'RELAZIONE_COLLAUDO' // New
+  | 'CERTIFICATO_ULTIMAZIONE' // New
   | 'CERTIFICATO_REGOLARE_ESECUZIONE';
 
 // Il "Verbale" o "Giornale"

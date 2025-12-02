@@ -54,12 +54,14 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
                   value={docType}
                   onChange={(e) => setDocType(e.target.value as DocumentType)}
                 >
-                  <option value="VERBALE_COLLAUDO">Verbale di Collaudo</option>
+                  <option value="VERBALE_COLLAUDO">Verbale Visita di Collaudo</option>
                   <option value="VERBALE_CONSEGNA">Verbale di Consegna</option>
                   <option value="SOSPENSIONE_LAVORI">Verbale Sospensione</option>
                   <option value="RIPRESA_LAVORI">Verbale Ripresa</option>
                   <option value="SAL">Stato Avanzamento Lavori</option>
-                  <option value="RELAZIONE_FINALE">Relazione Finale</option>
+                  <option value="RELAZIONE_FINALE">Relazione sul Conto Finale</option>
+                  <option value="RELAZIONE_COLLAUDO">Relazione di Collaudo</option>
+                  <option value="CERTIFICATO_ULTIMAZIONE">Certificato Ultimazione Lavori</option>
                   <option value="CERTIFICATO_REGOLARE_ESECUZIONE">Cert. Regolare Esecuzione</option>
                 </select>
              </div>
