@@ -120,7 +120,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                           <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2"><Mail className="w-4 h-4"/> Dettagli Convocazione</label>
                           <textarea disabled={readOnly} className="w-full p-4 border border-slate-300 rounded-xl h-24 text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none resize-none disabled:bg-slate-100"
                              value={currentDoc.convocationDetails} onChange={e => handleUpdate({...currentDoc, convocationDetails: e.target.value})} 
-                             placeholder="Es. La visita è stata convocata mediante PEC del... oppure per le vie brevi..."/>
+                             placeholder="Es: via PEC del 10/10/2025 (inserisci metodo e data)"/>
                       </div>
                       <div>
                           <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2"><Users className="w-4 h-4"/> Soggetti Presenti</label>
