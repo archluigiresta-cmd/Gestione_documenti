@@ -46,19 +46,19 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
           case 'VERBALE_CONSEGNA': return 'VERBALE DI CONSEGNA DEI LAVORI';
           case 'SOSPENSIONE_LAVORI': return 'VERBALE DI SOSPENSIONE LAVORI';
           case 'RIPRESA_LAVORI': return 'VERBALE DI RIPRESA LAVORI';
-          case 'SAL': return `STATO DI AVANZAMENTO LAVORI N. ${doc.visitNumber}`; // Using visitNumber as SAL number roughly
+          case 'SAL': return `STATO DI AVANZAMENTO LAVORI N. ${doc.visitNumber}`;
           case 'CERTIFICATO_REGOLARE_ESECUZIONE': return 'CERTIFICATO DI REGOLARE ESECUZIONE';
           case 'RELAZIONE_FINALE': return 'RELAZIONE SUL CONTO FINALE';
           case 'RELAZIONE_COLLAUDO': return 'RELAZIONE DI COLLAUDO';
           case 'CERTIFICATO_ULTIMAZIONE': return 'CERTIFICATO DI ULTIMAZIONE LAVORI';
-          default: return type.replace(/_/g, ' ');
+          default: return (type as string).replace(/_/g, ' ');
       }
   };
 
-  const isCollaudo = type === 'VERBALE_COLLAUDO';
+  const isCollaudo = type === 'VERBALE_COLLAUDO' || type === 'RELAZIONE_COLLAUDO';
 
   return (
-    <div className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
+    <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
       
       {/* Page 1 */}
       <div className="bg-white shadow-lg p-[2cm] min-h-[29.7cm] print-page mb-8 relative flex flex-col justify-between">
@@ -79,66 +79,67 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                 </h2>
             </div>
 
-            {/* --- DATA BLOCK REQUIRED --- */}
-            <div className="text-sm mb-8 leading-relaxed space-y-3">
-                
-                {/* Impresa */}
-                <div className="grid grid-cols-[220px_1fr] gap-2">
-                    <div className="font-bold">Impresa:</div>
-                    <div>
-                        {project.contractor.name} <br/>
-                        {project.contractor.address} - P.IVA {project.contractor.vat}
-                        {project.contractor.isATI && " (Mandataria ATI)"}
-                    </div>
-                </div>
+            {/* --- DATA BLOCK (Used Table for better Word export) --- */}
+            <table className="w-full text-sm mb-8 leading-relaxed">
+                <tbody>
+                    {/* Impresa */}
+                    <tr>
+                        <td className="w-[220px] font-bold align-top py-1">Impresa:</td>
+                        <td className="align-top py-1">
+                            {project.contractor.name} <br/>
+                            {project.contractor.address} - P.IVA {project.contractor.vat}
+                            {project.contractor.isATI && " (Mandataria ATI)"}
+                        </td>
+                    </tr>
 
-                {/* Contratto */}
-                <div className="grid grid-cols-[220px_1fr] gap-2">
-                    <div className="font-bold">Contratto d'appalto:</div>
-                    <div>
-                        stipulato in data {formatShortDate(project.contract.date)}, giusto Rep. {project.contract.repNumber}
-                        {project.contract.regDate && `, Registrato a ${project.contract.regPlace} il ${formatShortDate(project.contract.regDate)} al n. ${project.contract.regNumber}`}
-                    </div>
-                </div>
+                    {/* Contratto */}
+                    <tr>
+                        <td className="w-[220px] font-bold align-top py-1">Contratto d'appalto:</td>
+                        <td className="align-top py-1">
+                            stipulato in data {formatShortDate(project.contract.date)}, giusto Rep. {project.contract.repNumber}
+                            {project.contract.regDate && `, Registrato a ${project.contract.regPlace} il ${formatShortDate(project.contract.regDate)} al n. ${project.contract.regNumber}`}
+                        </td>
+                    </tr>
 
-                {/* Importo */}
-                <div className="grid grid-cols-[220px_1fr] gap-2">
-                    <div className="font-bold">Importo Contrattuale:</div>
-                    <div>
-                        {formatCurrency(project.contract.totalAmount)}, di cui {formatCurrency(project.contract.securityCosts)} per la prestazione relativa alla sicurezza, oltre IVA.
-                    </div>
-                </div>
+                    {/* Importo */}
+                    <tr>
+                        <td className="w-[220px] font-bold align-top py-1">Importo Contrattuale:</td>
+                        <td className="align-top py-1">
+                            {formatCurrency(project.contract.totalAmount)}, di cui {formatCurrency(project.contract.securityCosts)} per la prestazione relativa alla sicurezza, oltre IVA.
+                        </td>
+                    </tr>
 
-                {/* Scadenza */}
-                <div className="grid grid-cols-[220px_1fr] gap-2">
-                    <div className="font-bold">Scadenza contrattuale lavori:</div>
-                    <div>
-                        giorni {project.contract.durationDays} naturali e consecutivi, per l'esecuzione di tutte le lavorazioni, 
-                        decorrenti dalla data del verbale di consegna dei lavori 
-                        {project.executionPhase.deliveryDate ? ` (${formatShortDate(project.executionPhase.deliveryDate)})` : ''} 
-                        e quindi dal {formatShortDate(project.executionPhase.deliveryDate)} 
-                        per cui l'ultimazione dovrà avvenire entro il {formatShortDate(project.contract.deadline)}.
-                    </div>
-                </div>
+                    {/* Scadenza */}
+                    <tr>
+                        <td className="w-[220px] font-bold align-top py-1">Scadenza contrattuale lavori:</td>
+                        <td className="align-top py-1">
+                            giorni {project.contract.durationDays} naturali e consecutivi, per l'esecuzione di tutte le lavorazioni, 
+                            decorrenti dalla data del verbale di consegna dei lavori 
+                            {project.executionPhase.deliveryDate ? ` (${formatShortDate(project.executionPhase.deliveryDate)})` : ''} 
+                            e quindi dal {formatShortDate(project.executionPhase.deliveryDate)} 
+                            per cui l'ultimazione dovrà avvenire entro il {formatShortDate(project.contract.deadline)}.
+                        </td>
+                    </tr>
 
-                {/* RUP */}
-                <div className="grid grid-cols-[220px_1fr] gap-2">
-                    <div className="font-bold">Responsabile Unico del Procedimento:</div>
-                    <div>{project.subjects.rup.contact.title} {project.subjects.rup.contact.name}</div>
-                </div>
+                    {/* RUP */}
+                    <tr>
+                        <td className="w-[220px] font-bold align-top py-1">Responsabile Unico del Progetto:</td>
+                        <td className="align-top py-1">{project.subjects.rup.contact.title} {project.subjects.rup.contact.name}</td>
+                    </tr>
 
-                {/* DL */}
-                <div className="grid grid-cols-[220px_1fr] gap-2">
-                    <div className="font-bold">Direttore dei Lavori:</div>
-                    <div>{project.subjects.dl.contact.title} {project.subjects.dl.contact.name}</div>
-                </div>
+                    {/* DL */}
+                    <tr>
+                        <td className="w-[220px] font-bold align-top py-1">Direttore dei Lavori:</td>
+                        <td className="align-top py-1">{project.subjects.dl.contact.title} {project.subjects.dl.contact.name}</td>
+                    </tr>
 
-                {/* CSE */}
-                <div className="grid grid-cols-[220px_1fr] gap-2">
-                    <div className="font-bold">CSE:</div>
-                    <div>{project.subjects.cse.contact.title} {project.subjects.cse.contact.name}</div>
-                </div>
-            </div>
+                    {/* CSE */}
+                    <tr>
+                        <td className="w-[220px] font-bold align-top py-1">CSE:</td>
+                        <td className="align-top py-1">{project.subjects.cse.contact.title} {project.subjects.cse.contact.name}</td>
+                    </tr>
+                </tbody>
+            </table>
             {/* --------------------------- */}
 
             <hr className="border-t border-black my-6 w-1/3 mx-auto opacity-50" />
@@ -199,18 +200,32 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             <p className="mt-8">La visita si conclude alle ore {parseInt(doc.time.split(':')[0]) + 1}:00.</p>
         </div>
 
-        {/* Signatures */}
-        <div className="mt-16 grid grid-cols-2 gap-12 text-sm break-inside-avoid">
-            <div className="space-y-16">
-                <div><p>Il Direttore dei Lavori:</p><p className="font-bold mt-8 border-b border-black w-2/3">{project.subjects.dl.contact.name}</p></div>
-                <div><p>L'Impresa:</p><p className="font-bold mt-8 border-b border-black w-2/3">{project.contractor.repName}</p></div>
-            </div>
-            <div className="space-y-16 text-right flex flex-col items-end">
-                {isCollaudo && (
-                    <div><p>Il Collaudatore:</p><p className="font-bold mt-8 border-b border-black w-48">{project.subjects.tester.contact.name}</p></div>
-                )}
-            </div>
-        </div>
+        {/* Signatures using Table for alignment */}
+        <table className="mt-16 w-full text-sm break-inside-avoid">
+            <tbody>
+                <tr>
+                    <td className="w-1/2 align-top pb-16">
+                        <p>Il Direttore dei Lavori:</p>
+                        <p className="font-bold mt-8 border-b border-black w-2/3">{project.subjects.dl.contact.name}</p>
+                    </td>
+                    <td className="w-1/2 align-top pb-16 text-right">
+                         {isCollaudo && (
+                            <div className="flex flex-col items-end">
+                                <p>Il Collaudatore:</p>
+                                <p className="font-bold mt-8 border-b border-black w-48">{project.subjects.tester.contact.name}</p>
+                            </div>
+                         )}
+                    </td>
+                </tr>
+                <tr>
+                    <td className="w-1/2 align-top">
+                        <p>L'Impresa:</p>
+                        <p className="font-bold mt-8 border-b border-black w-2/3">{project.contractor.repName}</p>
+                    </td>
+                    <td className="w-1/2"></td>
+                </tr>
+            </tbody>
+        </table>
         
         {/* Footer */}
         {isCollaudo && (

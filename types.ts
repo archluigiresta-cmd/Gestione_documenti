@@ -99,6 +99,7 @@ export interface ProjectConstants {
   id: string; 
   ownerId: string; // ID dell'utente proprietario
   lastModified: number; 
+  displayOrder: number; // NEW: Custom sort order
   entity: string; // Ente Appaltante
   entityProvince?: string; // Provincia dell'Ente
   projectName: string;

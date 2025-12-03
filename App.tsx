@@ -55,7 +55,9 @@ const App: React.FC = () => {
     if (!currentUser) return;
     try {
       const projects = await db.getProjectsForUser(currentUser.id, currentUser.email);
-      setProjectList(projects);
+      // Sort by displayOrder ascending
+      const sorted = projects.sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+      setProjectList(sorted);
     } catch (error) {
       console.error("Failed to load projects", error);
     }
@@ -73,13 +75,54 @@ const App: React.FC = () => {
 
   const handleNewProject = async () => {
     if (!currentUser) return;
+    
+    // Calculate next order
+    const maxOrder = projectList.reduce((max, p) => Math.max(max, p.displayOrder || 0), 0);
+    
     const newProject = createEmptyProject(currentUser.id);
     newProject.projectName = "Nuovo Intervento";
+    newProject.displayOrder = maxOrder + 1; // Auto-increment
+
     const initialDoc = createInitialDocument(newProject.id);
     await db.saveProject(newProject);
     await db.saveDocument(initialDoc);
-    setProjectList([...projectList, newProject]);
+    
+    await loadProjects(); // Reload to get sorted list
     handleSelectProject(newProject);
+  };
+
+  const handleUpdateProjectOrder = async (id: string, newOrder: number) => {
+     if (!currentUser) return;
+     const project = projectList.find(p => p.id === id);
+     if (project) {
+         const updated = { ...project, displayOrder: newOrder };
+         await db.saveProject(updated);
+         await loadProjects();
+     }
+  };
+
+  const handleMoveProject = async (id: string, direction: 'up' | 'down') => {
+      if (!currentUser) return;
+      const currentIndex = projectList.findIndex(p => p.id === id);
+      if (currentIndex === -1) return;
+
+      const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      
+      if (targetIndex >= 0 && targetIndex < projectList.length) {
+          const currentProject = projectList[currentIndex];
+          const targetProject = projectList[targetIndex];
+
+          // Swap display orders
+          const currentOrder = currentProject.displayOrder ?? 0;
+          const targetOrder = targetProject.displayOrder ?? 0;
+
+          const updatedCurrent = { ...currentProject, displayOrder: targetOrder };
+          const updatedTarget = { ...targetProject, displayOrder: currentOrder };
+
+          await db.saveProject(updatedCurrent);
+          await db.saveProject(updatedTarget);
+          await loadProjects();
+      }
   };
 
   const handleSelectProject = async (project: ProjectConstants) => {
@@ -261,6 +304,8 @@ const App: React.FC = () => {
           onDeleteProject={handleDeleteProject}
           onShareProject={handleShareClick}
           onOpenAdmin={() => setView('admin-panel')}
+          onUpdateOrder={handleUpdateProjectOrder}
+          onMoveProject={handleMoveProject}
           currentUser={currentUser}
         />
         {showShareModal && projectToShare && (

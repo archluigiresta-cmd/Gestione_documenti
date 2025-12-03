@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
 import { DocumentPreview } from './DocumentPreview';
-import { Printer, FileOutput, FileCheck } from 'lucide-react';
+import { Printer, FileOutput, FileCheck, FileDown } from 'lucide-react';
 
 interface ExportManagerProps {
   project: ProjectConstants;
@@ -24,6 +24,63 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
 
   const handlePrint = () => {
     window.print();
+  };
+
+  const handleDownloadWord = () => {
+    const element = document.getElementById('document-preview-container');
+    if (!element) return;
+
+    // Clone and prepare content
+    const content = element.innerHTML;
+    
+    // Create a complete HTML document with Office namespaces and basic styling
+    const htmlDoc = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <meta charset="utf-8">
+        <title>${project.projectName} - ${docType}</title>
+        <style>
+          body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; color: #000; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+          td, th { padding: 4px; vertical-align: top; }
+          h1, h2, h3 { font-family: Arial, sans-serif; font-weight: bold; }
+          .text-center { text-align: center; }
+          .text-right { text-align: right; }
+          .font-bold { font-weight: bold; }
+          .uppercase { text-transform: uppercase; }
+          .underline { text-decoration: underline; }
+          .text-sm { font-size: 10pt; }
+          .text-xs { font-size: 8pt; }
+          .mb-8 { margin-bottom: 24px; }
+          .mb-6 { margin-bottom: 18px; }
+          .mt-8 { margin-top: 24px; }
+          .border-b { border-bottom: 1px solid #000; }
+          .border-t { border-top: 1px solid #000; }
+          .w-full { width: 100%; }
+          img { max-width: 100%; height: auto; }
+        </style>
+      </head>
+      <body>
+        ${content}
+      </body>
+      </html>
+    `;
+
+    // Create blob and download link
+    const blob = new Blob(['\ufeff', htmlDoc], {
+      type: 'application/msword'
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    // Format filename like "Verbale_Collaudo_2025-01-01.doc"
+    const safeDate = new Date().toISOString().split('T')[0];
+    const safeType = docType.toLowerCase().replace(/_/g, '_');
+    link.download = `${safeType}_${safeDate}.doc`;
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -67,19 +124,27 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
              </div>
           </div>
           
-          <button
-             onClick={handlePrint}
-             className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg shadow flex items-center gap-2 font-bold transition-transform hover:scale-105"
-          >
-             <Printer className="w-5 h-5" /> Stampa / PDF
-          </button>
+          <div className="flex gap-2">
+              <button
+                 onClick={handleDownloadWord}
+                 className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg shadow flex items-center gap-2 font-bold transition-transform hover:scale-105"
+              >
+                 <FileDown className="w-5 h-5" /> Scarica Word
+              </button>
+              <button
+                 onClick={handlePrint}
+                 className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-lg shadow flex items-center gap-2 font-bold transition-transform hover:scale-105"
+              >
+                 <Printer className="w-5 h-5" /> Stampa / PDF
+              </button>
+          </div>
         </div>
 
         <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg flex items-start gap-3">
            <FileCheck className="w-5 h-5 text-yellow-600 mt-1" />
            <div className="text-sm text-yellow-800">
-              <strong>Modalità Anteprima:</strong> Questo documento viene generato dinamicamente usando i dati inseriti nelle sezioni "Dati Appalto" e "Lavori". 
-              Per archiviarlo, usa la funzione "Salva come PDF" del browser.
+              <strong>Modalità Anteprima:</strong> Questo documento viene generato dinamicamente. 
+              Usa "Scarica Word" per ottenere un file editabile o "Stampa / PDF" per la versione finale.
            </div>
         </div>
       </div>

@@ -22,6 +22,7 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
   id: crypto.randomUUID(),
   ownerId: ownerId, 
   lastModified: Date.now(),
+  displayOrder: 0, // Initial order, will be overwritten by logic
   entity: 'PROVINCIA DI TARANTO', 
   entityProvince: '', 
   projectName: '',
