@@ -162,6 +162,15 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       }
   };
 
+  const getDefaultAttendees = () => {
+      const lines = [];
+      if (project.subjects.rup.contact.name) lines.push(`Responsabile Unico del Progetto: ${project.subjects.rup.contact.title} ${project.subjects.rup.contact.name}`);
+      if (project.subjects.dl.contact.name) lines.push(`Direttore dei Lavori: ${project.subjects.dl.contact.title} ${project.subjects.dl.contact.name}`);
+      if (project.subjects.cse.contact.name) lines.push(`Coord. Sicurezza Esecuzione: ${project.subjects.cse.contact.title} ${project.subjects.cse.contact.name}`);
+      if (project.contractor.name) lines.push(`per l'Impresa ${project.contractor.name}: ${project.contractor.repName} (${project.contractor.role || 'Legale Rappresentante'})`);
+      return lines.join('\n');
+  };
+
   // --------------------------------------------------------
 
   return (
@@ -273,8 +282,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                     <p>Sono presenti, oltre al sottoscritto Direttore dei Lavori {project.subjects.dl.contact.title} {project.subjects.dl.contact.name}:</p>
                 )}
                 
-                <div className="whitespace-pre-line pl-4 mb-4 font-normal italic bg-slate-50 p-2 print:bg-transparent print:p-0">
-                    {doc.attendees || "Vedi elenco presenze."}
+                <div className="whitespace-pre-line pl-4 mb-4 font-normal italic bg-slate-50 p-2 print:bg-transparent print:p-0 print:font-normal print:italic">
+                    {doc.attendees ? doc.attendees : getDefaultAttendees()}
                 </div>
 
                 <div className="mb-4">

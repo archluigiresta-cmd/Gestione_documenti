@@ -35,25 +35,40 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
 
   // Logic for Smart Attendees Selection
   const potentialAttendees = [
-      { id: 'rup', label: `RUP: ${project.subjects.rup.contact.title} ${project.subjects.rup.contact.name}`, role: 'Responsabile Unico del Progetto' },
-      { id: 'dl', label: `DL: ${project.subjects.dl.contact.title} ${project.subjects.dl.contact.name}`, role: 'Direttore dei Lavori' },
-      { id: 'cse', label: `CSE: ${project.subjects.cse.contact.title} ${project.subjects.cse.contact.name}`, role: 'Coord. Sicurezza Esecuzione' },
-      { id: 'contractor', label: `Impresa: ${project.contractor.repName} (${project.contractor.role})`, role: `per l'Impresa ${project.contractor.name}` },
+      { 
+          id: 'rup', 
+          label: 'RUP', 
+          fullText: `Responsabile Unico del Progetto: ${project.subjects.rup.contact.title} ${project.subjects.rup.contact.name}` 
+      },
+      { 
+          id: 'dl', 
+          label: 'DL', 
+          fullText: `Direttore dei Lavori: ${project.subjects.dl.contact.title} ${project.subjects.dl.contact.name}` 
+      },
+      { 
+          id: 'cse', 
+          label: 'CSE', 
+          fullText: `Coord. Sicurezza Esecuzione: ${project.subjects.cse.contact.title} ${project.subjects.cse.contact.name}` 
+      },
+      { 
+          id: 'contractor', 
+          label: 'Impresa', 
+          fullText: `per l'Impresa ${project.contractor.name}: ${project.contractor.repName} (${project.contractor.role || 'Legale Rappresentante'})` 
+      },
   ];
 
-  const toggleAttendee = (label: string, role: string) => {
+  const toggleAttendee = (fullText: string) => {
       if (readOnly) return;
-      const textToAdd = `${role}: ${label.split(': ')[1]}`;
       const currentText = currentDoc.attendees || '';
       
-      if (currentText.includes(textToAdd)) {
+      if (currentText.includes(fullText)) {
           // Remove
-          const newText = currentText.replace(textToAdd, '').replace('\n', '').trim();
+          const newText = currentText.replace(fullText, '').replace('\n\n', '\n').trim();
           handleUpdate({...currentDoc, attendees: newText});
       } else {
           // Add
           const separator = currentText.length > 0 ? '\n' : '';
-          handleUpdate({...currentDoc, attendees: currentText + separator + textToAdd});
+          handleUpdate({...currentDoc, attendees: currentText + separator + fullText});
       }
   };
 
@@ -171,20 +186,20 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                   <div className="space-y-4">
                       <div className="flex items-center justify-between">
                          <label className="block text-sm font-bold text-slate-700 flex items-center gap-2"><Users className="w-4 h-4"/> Elenco Soggetti Presenti</label>
-                         <span className="text-xs text-slate-400">Modificabile manualmente</span>
+                         <span className="text-xs text-slate-400">Clicca sui tasti per aggiungere/rimuovere i soggetti dai dati di progetto.</span>
                       </div>
                       
                       {/* Smart Select Area */}
                       <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                          <p className="text-xs font-bold text-slate-500 uppercase mb-2">Aggiungi rapidamente:</p>
+                          <p className="text-xs font-bold text-slate-500 uppercase mb-2">Inserimento Rapido:</p>
                           <div className="flex flex-wrap gap-2">
                               {potentialAttendees.map(p => {
-                                  // Check if this person is roughly in the text
-                                  const isSelected = currentDoc.attendees?.includes(p.label.split(': ')[1]);
+                                  // Check using partial match if possible or exact
+                                  const isSelected = currentDoc.attendees?.includes(p.fullText);
                                   return (
                                     <button 
                                       key={p.id}
-                                      onClick={() => toggleAttendee(p.label, p.role)}
+                                      onClick={() => toggleAttendee(p.fullText)}
                                       disabled={readOnly}
                                       className={`text-xs px-3 py-1.5 rounded-full border flex items-center gap-1 transition-all ${
                                           isSelected 
