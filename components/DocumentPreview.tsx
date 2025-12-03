@@ -148,17 +148,17 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   };
 
   // Logic to determine reference date for current visit body
-  const getPreviousVisitDate = () => {
+  const getPreviousVisitDateDescription = () => {
       const prevDocs = getPreviousDocuments();
       if (prevDocs.length > 0) {
           // Last visit date
           const lastDoc = prevDocs[prevDocs.length - 1];
-          return formatShortDate(lastDoc.date);
+          return `il ${formatShortDate(lastDoc.date)}`;
       } else {
           // No previous visit, use Delivery Date
           return project.executionPhase.deliveryDate 
-             ? formatShortDate(project.executionPhase.deliveryDate) 
-             : 'consegna dei lavori';
+             ? `il ${formatShortDate(project.executionPhase.deliveryDate)}`
+             : 'la consegna dei lavori';
       }
   };
 
@@ -307,7 +307,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                     {isCollaudo ? (
                         <div className="mt-6">
                             <p className="text-justify mb-2">
-                                Durante il presente sopralluogo prende atto che, nel periodo intercorrente il {getPreviousVisitDate()} e la data odierna sono state effettuate le seguenti lavorazioni:
+                                Durante il presente sopralluogo prende atto che, nel periodo intercorrente tra {getPreviousVisitDateDescription()} e la data odierna sono state effettuate le seguenti lavorazioni:
                             </p>
                             
                             {doc.worksExecuted.length > 0 ? (

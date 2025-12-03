@@ -1,7 +1,182 @@
 
 import React, { useState, useEffect } from 'react';
 import { ProjectConstants, ContactInfo, SubjectProfile, AppointmentData } from '../types';
-import { Save, User, Users, Mail, ShieldCheck, Phone, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote } from 'lucide-react';
+import { Save, User, Users, Mail, ShieldCheck, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote, ChevronDown } from 'lucide-react';
+
+// --- HELPER COMPONENTS (Moved outside to prevent re-render focus loss) ---
+
+const TITLES = ["Arch.", "Ing.", "Geom.", "Dott.", "Dott. Agr.", "Geol.", "Per. Ind.", "Sig."];
+
+interface SubNavProps {
+    items: { id: string, label: string, icon?: any }[];
+    activeTab: string;
+    onTabChange: (id: string) => void;
+}
+
+const SubNav: React.FC<SubNavProps> = ({ items, activeTab, onTabChange }) => (
+    <div className="flex border-b border-slate-200 mb-6 gap-2 overflow-x-auto pb-2">
+      {items.map(item => (
+        <button
+          key={item.id}
+          onClick={() => onTabChange(item.id)}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+            activeTab === item.id 
+              ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm' 
+              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+          }`}
+        >
+          {item.icon && <item.icon className="w-4 h-4" />}
+          {item.label}
+        </button>
+      ))}
+    </div>
+);
+
+interface AppointmentFieldsProps {
+    appointment: AppointmentData;
+    path: string;
+    readOnly: boolean;
+    onChange: (path: string, value: any) => void;
+}
+
+const AppointmentFields: React.FC<AppointmentFieldsProps> = ({ appointment, path, readOnly, onChange }) => (
+    <div className="mt-6 bg-slate-50 p-4 rounded-lg border border-slate-200">
+        <h5 className="font-bold text-slate-700 mb-3 text-xs uppercase tracking-wide flex items-center gap-2">
+            <FileSignature className="w-4 h-4" /> Estremi Atto di Nomina
+        </h5>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+                <label className="text-xs font-semibold text-slate-500 mb-1 block">Tipo Atto</label>
+                <input disabled={readOnly} type="text" placeholder="Es. Determina Dirigenziale" className="w-full p-2 border border-slate-300 rounded text-sm disabled:bg-slate-100" 
+                       value={appointment.type} onChange={e => onChange(`${path}.type`, e.target.value)} />
+            </div>
+            <div>
+                <label className="text-xs font-semibold text-slate-500 mb-1 block">Numero</label>
+                <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded text-sm disabled:bg-slate-100" 
+                       value={appointment.number} onChange={e => onChange(`${path}.number`, e.target.value)} />
+            </div>
+            <div>
+                <label className="text-xs font-semibold text-slate-500 mb-1 block">Data</label>
+                <input disabled={readOnly} type="date" className="w-full p-2 border border-slate-300 rounded text-sm disabled:bg-slate-100" 
+                       value={appointment.date} onChange={e => onChange(`${path}.date`, e.target.value)} />
+            </div>
+        </div>
+    </div>
+);
+
+interface ContactCardProps {
+    label: string;
+    path: string;
+    profile: SubjectProfile;
+    showAppointment?: boolean;
+    readOnly: boolean;
+    onChange: (path: string, value: any) => void;
+}
+
+const ContactCard: React.FC<ContactCardProps> = ({ label, path, profile, showAppointment = true, readOnly, onChange }) => {
+    // Determine if current title is standard or custom
+    const currentTitle = profile.contact.title || '';
+    const isStandardTitle = TITLES.includes(currentTitle);
+    // If it's empty, we consider it "Standard" (showing "Seleziona...") until user picks Altro or types.
+    // If it has a value but not in list, it's custom.
+    const showCustomInput = !isStandardTitle && currentTitle !== '';
+
+    return (
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-4 animate-in fade-in">
+        <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-3">
+            <User className="w-5 h-5 text-blue-500 bg-blue-50 p-1 rounded-full"/> {label}
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="md:col-span-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Nome / Ragione Sociale</label>
+                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all disabled:bg-slate-100" 
+                    value={profile.contact.name} onChange={e => onChange(`${path}.contact.name`, e.target.value)} />
+            </div>
+            
+            {/* Title Selection Logic */}
+            <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Titolo</label>
+                <div className="flex gap-2 mt-1">
+                    <div className="relative flex-1">
+                        <select 
+                            disabled={readOnly}
+                            className="w-full p-2.5 border border-slate-300 rounded-lg appearance-none bg-white disabled:bg-slate-100"
+                            value={showCustomInput ? 'Altro' : currentTitle}
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                if (val === 'Altro') {
+                                    onChange(`${path}.contact.title`, ''); // Clear to allow typing
+                                } else {
+                                    onChange(`${path}.contact.title`, val);
+                                }
+                            }}
+                        >
+                            <option value="">Seleziona...</option>
+                            {TITLES.map(t => <option key={t} value={t}>{t}</option>)}
+                            <option value="Altro">Altro...</option>
+                        </select>
+                        <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-slate-400 pointer-events-none"/>
+                    </div>
+                    {showCustomInput && (
+                        <input 
+                            disabled={readOnly} 
+                            type="text" 
+                            placeholder="Specifica..." 
+                            className="flex-1 p-2.5 border border-slate-300 rounded-lg disabled:bg-slate-100 animate-in fade-in slide-in-from-left-2" 
+                            value={profile.contact.title} 
+                            onChange={e => onChange(`${path}.contact.title`, e.target.value)} 
+                        />
+                    )}
+                </div>
+            </div>
+
+            <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">P.IVA / C.F.</label>
+                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
+                    value={profile.contact.vat || ''} onChange={e => onChange(`${path}.contact.vat`, e.target.value)} />
+            </div>
+            <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Email</label>
+                <div className="relative">
+                <Mail className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
+                <input disabled={readOnly} type="email" className="w-full p-2.5 pl-9 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
+                        value={profile.contact.email || ''} onChange={e => onChange(`${path}.contact.email`, e.target.value)} />
+                </div>
+            </div>
+            <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">PEC</label>
+                <div className="relative">
+                <ShieldCheck className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
+                <input disabled={readOnly} type="email" className="w-full p-2.5 pl-9 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
+                        value={profile.contact.pec || ''} onChange={e => onChange(`${path}.contact.pec`, e.target.value)} />
+                </div>
+            </div>
+            <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Albo / Ordine</label>
+                <input disabled={readOnly} type="text" placeholder="Es. Ordine Architetti Taranto" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
+                    value={profile.contact.professionalOrder || ''} onChange={e => onChange(`${path}.contact.professionalOrder`, e.target.value)} />
+            </div>
+            <div>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">N. Iscrizione</label>
+                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
+                    value={profile.contact.registrationNumber || ''} onChange={e => onChange(`${path}.contact.registrationNumber`, e.target.value)} />
+            </div>
+            <div className="md:col-span-2">
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Indirizzo</label>
+                <div className="relative">
+                <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
+                <input disabled={readOnly} type="text" className="w-full p-2.5 pl-9 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
+                        value={profile.contact.address || ''} onChange={e => onChange(`${path}.contact.address`, e.target.value)} />
+                </div>
+            </div>
+        </div>
+        
+        {showAppointment && <AppointmentFields appointment={profile.appointment} path={`${path}.appointment`} readOnly={readOnly} onChange={onChange} />}
+        </div>
+    );
+};
+
+// --- MAIN COMPONENT ---
 
 interface ProjectFormProps {
   data: ProjectConstants;
@@ -11,7 +186,7 @@ interface ProjectFormProps {
 }
 
 export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, section, readOnly = false }) => {
-  // Determine initial subtab based on section to avoid race conditions
+  // Determine initial subtab based on section
   const getInitialSubTab = (sec: string) => {
     switch(sec) {
         case 'general': return 'info';
@@ -24,7 +199,6 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
 
   const [subTab, setSubTab] = useState<string>(getInitialSubTab(section));
 
-  // Sync subtab if section prop changes
   useEffect(() => {
     setSubTab(getInitialSubTab(section));
   }, [section]);
@@ -42,111 +216,6 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
     current[keys[keys.length - 1]] = value;
     onChange(newData);
   };
-
-  const SubNav = ({ items }: { items: { id: string, label: string, icon?: any }[] }) => (
-    <div className="flex border-b border-slate-200 mb-6 gap-2 overflow-x-auto pb-2">
-      {items.map(item => (
-        <button
-          key={item.id}
-          onClick={() => setSubTab(item.id)}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-            subTab === item.id 
-              ? 'bg-blue-50 text-blue-700 border border-blue-200 shadow-sm' 
-              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-700'
-          }`}
-        >
-          {item.icon && <item.icon className="w-4 h-4" />}
-          {item.label}
-        </button>
-      ))}
-    </div>
-  );
-
-  const AppointmentFields = ({ appointment, path }: { appointment: AppointmentData, path: string }) => (
-    <div className="mt-6 bg-slate-50 p-4 rounded-lg border border-slate-200">
-        <h5 className="font-bold text-slate-700 mb-3 text-xs uppercase tracking-wide flex items-center gap-2">
-            <FileSignature className="w-4 h-4" /> Estremi Atto di Nomina
-        </h5>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-                <label className="text-xs font-semibold text-slate-500 mb-1 block">Tipo Atto</label>
-                <input disabled={readOnly} type="text" placeholder="Es. Determina Dirigenziale" className="w-full p-2 border border-slate-300 rounded text-sm disabled:bg-slate-100" 
-                       value={appointment.type} onChange={e => handleChange(`${path}.type`, e.target.value)} />
-            </div>
-            <div>
-                <label className="text-xs font-semibold text-slate-500 mb-1 block">Numero</label>
-                <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded text-sm disabled:bg-slate-100" 
-                       value={appointment.number} onChange={e => handleChange(`${path}.number`, e.target.value)} />
-            </div>
-            <div>
-                <label className="text-xs font-semibold text-slate-500 mb-1 block">Data</label>
-                <input disabled={readOnly} type="date" className="w-full p-2 border border-slate-300 rounded text-sm disabled:bg-slate-100" 
-                       value={appointment.date} onChange={e => handleChange(`${path}.date`, e.target.value)} />
-            </div>
-        </div>
-    </div>
-  );
-
-  const ContactCard = ({ label, path, profile, showAppointment = true }: { label: string, path: string, profile: SubjectProfile, showAppointment?: boolean }) => (
-    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-4 animate-in fade-in">
-      <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-3">
-         <User className="w-5 h-5 text-blue-500 bg-blue-50 p-1 rounded-full"/> {label}
-      </h4>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-         <div className="md:col-span-2">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Nome / Ragione Sociale</label>
-            <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all disabled:bg-slate-100" 
-                   value={profile.contact.name} onChange={e => handleChange(`${path}.contact.name`, e.target.value)} />
-         </div>
-         <div>
-             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Titolo</label>
-             <input disabled={readOnly} type="text" placeholder="Arch. / Ing." className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                    value={profile.contact.title} onChange={e => handleChange(`${path}.contact.title`, e.target.value)} />
-         </div>
-         <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">P.IVA / C.F.</label>
-            <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                   value={profile.contact.vat || ''} onChange={e => handleChange(`${path}.contact.vat`, e.target.value)} />
-         </div>
-         <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Email</label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
-              <input disabled={readOnly} type="email" className="w-full p-2.5 pl-9 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                     value={profile.contact.email || ''} onChange={e => handleChange(`${path}.contact.email`, e.target.value)} />
-            </div>
-         </div>
-         <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">PEC</label>
-            <div className="relative">
-              <ShieldCheck className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
-              <input disabled={readOnly} type="email" className="w-full p-2.5 pl-9 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                     value={profile.contact.pec || ''} onChange={e => handleChange(`${path}.contact.pec`, e.target.value)} />
-            </div>
-         </div>
-         <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Albo / Ordine</label>
-            <input disabled={readOnly} type="text" placeholder="Es. Ordine Architetti Taranto" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                   value={profile.contact.professionalOrder || ''} onChange={e => handleChange(`${path}.contact.professionalOrder`, e.target.value)} />
-         </div>
-         <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">N. Iscrizione</label>
-            <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                   value={profile.contact.registrationNumber || ''} onChange={e => handleChange(`${path}.contact.registrationNumber`, e.target.value)} />
-         </div>
-         <div className="md:col-span-2">
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Indirizzo</label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
-              <input disabled={readOnly} type="text" className="w-full p-2.5 pl-9 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                     value={profile.contact.address || ''} onChange={e => handleChange(`${path}.contact.address`, e.target.value)} />
-            </div>
-         </div>
-      </div>
-      
-      {showAppointment && <AppointmentFields appointment={profile.appointment} path={`${path}.appointment`} />}
-    </div>
-  );
 
   // Safety check for design phase data
   if (section === 'design' && !data.designPhase) return null;
@@ -185,7 +254,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
       {/* --- SECTION: GENERALI --- */}
       {section === 'general' && (
         <>
-            <SubNav items={[
+            <SubNav activeTab={subTab} onTabChange={setSubTab} items={[
                 { id: 'info', label: 'Inquadramento', icon: Building },
                 { id: 'contract', label: 'Dati Contratto', icon: Briefcase },
                 { id: 'registration', label: 'Registrazione', icon: Stamp },
@@ -314,7 +383,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
       {/* Design Phase */}
       {section === 'design' && (
         <>
-            <SubNav items={[
+            <SubNav activeTab={subTab} onTabChange={setSubTab} items={[
                 { id: 'docfap', label: 'DocFAP', icon: FileText },
                 { id: 'dip', label: 'DIP', icon: FileText },
                 { id: 'pfte', label: 'PFTE', icon: PencilRuler },
@@ -397,7 +466,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
       {/* Subjects Phase */}
       {section === 'subjects' && (
         <>
-            <SubNav items={[
+            <SubNav activeTab={subTab} onTabChange={setSubTab} items={[
                 { id: 'rup', label: 'RUP', icon: User },
                 { id: 'designers', label: 'Progettisti', icon: PencilRuler },
                 { id: 'csp', label: 'CSP', icon: ShieldCheck },
@@ -408,11 +477,11 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                 { id: 'tester', label: 'Collaudatore', icon: Stamp },
             ]} />
 
-            {subTab === 'rup' && data.subjects.rup && <ContactCard label="Responsabile Unico di Progetto" path="subjects.rup" profile={data.subjects.rup} />}
-            {subTab === 'csp' && data.subjects.csp && <ContactCard label="Coord. Sicurezza Progettazione" path="subjects.csp" profile={data.subjects.csp} />}
-            {subTab === 'cse' && data.subjects.cse && <ContactCard label="Coord. Sicurezza Esecuzione" path="subjects.cse" profile={data.subjects.cse} />}
-            {subTab === 'verifier' && data.subjects.verifier && <ContactCard label="Verificatore Progetto" path="subjects.verifier" profile={data.subjects.verifier} />}
-            {subTab === 'dl' && data.subjects.dl && <ContactCard label="Direttore dei Lavori" path="subjects.dl" profile={data.subjects.dl} />}
+            {subTab === 'rup' && data.subjects.rup && <ContactCard label="Responsabile Unico di Progetto" path="subjects.rup" profile={data.subjects.rup} readOnly={readOnly} onChange={handleChange} />}
+            {subTab === 'csp' && data.subjects.csp && <ContactCard label="Coord. Sicurezza Progettazione" path="subjects.csp" profile={data.subjects.csp} readOnly={readOnly} onChange={handleChange} />}
+            {subTab === 'cse' && data.subjects.cse && <ContactCard label="Coord. Sicurezza Esecuzione" path="subjects.cse" profile={data.subjects.cse} readOnly={readOnly} onChange={handleChange} />}
+            {subTab === 'verifier' && data.subjects.verifier && <ContactCard label="Verificatore Progetto" path="subjects.verifier" profile={data.subjects.verifier} readOnly={readOnly} onChange={handleChange} />}
+            {subTab === 'dl' && data.subjects.dl && <ContactCard label="Direttore dei Lavori" path="subjects.dl" profile={data.subjects.dl} readOnly={readOnly} onChange={handleChange} />}
             
             {subTab === 'tester' && data.subjects.tester && (
                 <div className="space-y-6">
@@ -466,7 +535,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                        </div>
                     </div>
 
-                    <ContactCard label="Anagrafica Collaudatore" path="subjects.tester" profile={data.subjects.tester} showAppointment={false} />
+                    <ContactCard label="Anagrafica Collaudatore" path="subjects.tester" profile={data.subjects.tester} showAppointment={false} readOnly={readOnly} onChange={handleChange} />
                     
                     <div className="bg-white p-6 rounded-xl border border-blue-100 shadow-sm">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block">Tipo Incarico (Opzioni)</label>
@@ -523,7 +592,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                                 </select>
                              </div>
                              
-                             <ContactCard label="Dati Progettista" path={`subjects.designers.${idx}`} profile={designer} showAppointment={true} />
+                             <ContactCard label="Dati Progettista" path={`subjects.designers.${idx}`} profile={designer} showAppointment={true} readOnly={readOnly} onChange={handleChange} />
                         </div>
                     ))}
                     
@@ -556,7 +625,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                                      handleChange('subjects.dlOffice', newOffice);
                                  }} className="absolute top-4 right-4 text-slate-400 hover:text-red-500"><Trash2 className="w-5 h-5"/></button>
                              )}
-                             <ContactCard label={`Componente Ufficio DL #${idx + 1}`} path={`subjects.dlOffice.${idx}`} profile={member} showAppointment={true} />
+                             <ContactCard label={`Componente Ufficio DL #${idx + 1}`} path={`subjects.dlOffice.${idx}`} profile={member} showAppointment={true} readOnly={readOnly} onChange={handleChange} />
                          </div>
                     ))}
                     {!readOnly && (
@@ -597,7 +666,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
       {/* --- SECTION: IMPRESA --- */}
       {section === 'contractor' && (
         <>
-            <SubNav items={[
+            <SubNav activeTab={subTab} onTabChange={setSubTab} items={[
                 { id: 'registry', label: 'Anagrafica' },
                 { id: 'structure', label: 'Struttura (ATI/Sub)' },
             ]} />
