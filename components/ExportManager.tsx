@@ -151,7 +151,7 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
 
       {/* The Printable Document */}
       <div className="print-container flex justify-center">
-         <DocumentPreview project={project} doc={currentDoc} type={docType} />
+         <DocumentPreview project={project} doc={currentDoc} type={docType} allDocuments={documents} />
       </div>
 
     </div>

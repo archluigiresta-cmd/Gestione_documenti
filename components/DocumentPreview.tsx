@@ -6,9 +6,10 @@ interface DocumentPreviewProps {
   project: ProjectConstants;
   doc: DocumentVariables;
   type: DocumentType;
+  allDocuments?: DocumentVariables[]; // Added to access history
 }
 
-export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, type }) => {
+export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, type, allDocuments = [] }) => {
   const formatShortDate = (dateStr: string) => {
     if (!dateStr) return '...';
     try {
@@ -42,10 +43,12 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   const assignmentStringClean = assignmentTypes.length > 1 
     ? assignmentTypes.slice(0, -1).join(", ") + " e " + assignmentTypes.slice(-1) 
     : assignmentString;
+  
+  const assignmentStringTitle = assignmentStringClean ? ` ${assignmentStringClean.toUpperCase()}` : "";
 
   const getDocumentTitle = () => {
       switch(type) {
-          case 'VERBALE_COLLAUDO': return `VERBALE DI VISITA DI COLLAUDO ${assignmentString.toUpperCase()} IN CORSO D'OPERA N. ${doc.visitNumber}`;
+          case 'VERBALE_COLLAUDO': return `VERBALE DI VISITA DI COLLAUDO${assignmentStringTitle} IN CORSO D'OPERA N. ${doc.visitNumber}`;
           case 'VERBALE_CONSEGNA': return 'VERBALE DI CONSEGNA DEI LAVORI';
           case 'SOSPENSIONE_LAVORI': return 'VERBALE DI SOSPENSIONE LAVORI';
           case 'RIPRESA_LAVORI': return 'VERBALE DI RIPRESA LAVORI';
@@ -60,19 +63,17 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
   const isCollaudo = type === 'VERBALE_COLLAUDO' || type === 'RELAZIONE_COLLAUDO';
 
-  // Specific Preamble Generation for Collaudo
-  const generateCollaudoPreamble = () => {
+  // --- Specific Preamble Generation Logic for Collaudo ---
+
+  // Point 1: Nomination (Always present)
+  const generateCollaudoPreamblePoint1 = () => {
       const t = project.subjects.testerAppointment;
       const tester = project.subjects.tester.contact;
       
-      const parts = [];
-      
-      // Part 1: Nomination
       let text = `- con ${t.nominationType} `;
       if (t.nominationAuthority) text += `del ${t.nominationAuthority} `;
       text += `n. ${t.nominationNumber || '...'} del ${formatShortDate(t.nominationDate)}`;
       
-      // Part 2: Contract
       if (t.contractRepNumber) {
           text += ` e successivo contratto/convenzione, rep. n. ${t.contractRepNumber} del ${formatShortDate(t.contractDate)}`;
       }
@@ -80,20 +81,73 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
           text += `, prot. n. ${t.contractProtocol}`;
       }
       
-      // Part 3: Entity
       text += `, il ${project.entity || '...'} ha affidato, ai sensi dell’art. 116 del D. Lgs. 36/2023, `;
-      
-      // Part 4: Tester
       text += `allo scrivente ${tester.title} ${tester.name} (C.F. ${tester.vat || '...'}), `;
       if (tester.professionalOrder && tester.registrationNumber) {
           text += `iscritto all’Albo ${tester.professionalOrder} al n. ${tester.registrationNumber}, `;
       }
-      
-      // Part 5: Assignment
       text += `l’incarico professionale di collaudo ${assignmentStringClean} relativo all’intervento di "${project.projectName}", CUP: ${project.cup}.`;
 
       return text;
   };
+
+  // Helper to get previous documents sorted
+  const getPreviousDocuments = () => {
+      return allDocuments
+          .filter(d => d.visitNumber < doc.visitNumber) // Only previous
+          .sort((a, b) => a.visitNumber - b.visitNumber);
+  };
+
+  // Point 2, 3, etc.: Historical visits
+  const generateHistoricalPoints = () => {
+      const prevDocs = getPreviousDocuments();
+      if (prevDocs.length === 0) return null;
+
+      return prevDocs.map((prevDoc, index) => {
+          const date = formatShortDate(prevDoc.date);
+          const works = prevDoc.worksExecuted.map((w, i) => `${i + 1}. ${w}`).join(';\n');
+          const worksInProgress = prevDoc.worksInProgress ? `Era in corso il ${prevDoc.worksInProgress}.` : '';
+
+          if (prevDoc.visitNumber === 1) {
+              // TEMPLATE FOR VISIT #1 REFERENCE (Activates from 2nd visit onwards)
+              return (
+                  <div key={prevDoc.id} className="mb-4 text-justify">
+                      <p>
+                          - in data {date}, con verbale di visita di collaudo {assignmentStringClean} in corso d’opera n. 1 sottoscritto in pari data, 
+                          lo scrivente Collaudatore, con la scorta del progetto, dei documenti contabili, ha compiuto, insieme ai presenti, 
+                          un esame generale del carteggio relativo al progetto dell’intervento di “{project.projectName}” CUP: {project.cup}, 
+                          ed ha preso atto dell’andamento dei lavori eseguiti dalla consegna a detta data, così come dettagliati dal Direttore dei Lavori e di seguito riportati:
+                      </p>
+                      <div className="pl-8 my-2 font-serif-print italic whitespace-pre-line">
+                          {works}
+                      </div>
+                      <p>{worksInProgress}</p>
+                  </div>
+              );
+          } else {
+              // TEMPLATE FOR VISIT #2+ REFERENCE (Activates from 3rd visit onwards)
+              // Find date of the visit BEFORE prevDoc to determine the interval
+              const visitBeforePrev = allDocuments.find(d => d.visitNumber === prevDoc.visitNumber - 1);
+              const dateBefore = visitBeforePrev ? formatShortDate(visitBeforePrev.date) : '...';
+
+              return (
+                  <div key={prevDoc.id} className="mb-4 text-justify">
+                      <p>
+                          - in data {date}, con verbale di visita di collaudo {assignmentStringClean} in corso d’opera n. {prevDoc.visitNumber} sottoscritto in pari data, 
+                          lo scrivente Collaudatore, ha preso atto dell’andamento dei lavori eseguiti dal {dateBefore} a detta data, 
+                          così come dettagliati dal Direttore dei Lavori e di seguito riportate:
+                      </p>
+                      <div className="pl-8 my-2 font-serif-print italic whitespace-pre-line">
+                          {works}
+                      </div>
+                      <p>{worksInProgress}</p>
+                  </div>
+              );
+          }
+      });
+  };
+
+  // --------------------------------------------------------
 
   return (
     <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
@@ -214,10 +268,19 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                     <p className="font-bold underline mb-2">Premesso che:</p>
                     <div className="whitespace-pre-line pl-2 mb-4">
                          {isCollaudo ? (
-                             // Auto-generated point 1 for Collaudo + user premis
                              <>
-                                <p className="mb-2 text-justify">{generateCollaudoPreamble()}</p>
-                                {doc.premis}
+                                <p className="mb-2 text-justify">{generateCollaudoPreamblePoint1()}</p>
+                                
+                                {/* Automatically generate Points 2, 3, etc. based on history */}
+                                {generateHistoricalPoints()}
+
+                                {/* Manual Premise (if any added by user) */}
+                                {doc.premis && (
+                                    <div className="mt-4 pt-4 border-t border-dotted border-gray-400">
+                                        <p className="italic text-xs text-gray-500 mb-1">[Premesse Manuali Aggiuntive]:</p>
+                                        <p>{doc.premis}</p>
+                                    </div>
+                                )}
                              </>
                          ) : (
                              doc.premis
@@ -230,6 +293,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                         </ol>
                     ) : (
                         <p className="italic pl-4">Nessuna lavorazione specifica registrata in data odierna.</p>
+                    )}
+                    
+                    {/* Display Works In Progress for current doc */}
+                    {doc.worksInProgress && (
+                        <p className="mt-2 text-justify">Era in corso il {doc.worksInProgress}.</p>
                     )}
                 </div>
 

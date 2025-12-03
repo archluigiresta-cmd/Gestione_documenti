@@ -139,6 +139,7 @@ export const createInitialDocument = (projectId: string): DocumentVariables => (
   attendees: '', 
   premis: '',
   worksExecuted: [],
+  worksInProgress: '', // NEW
   observations: '',
   photos: []
 });

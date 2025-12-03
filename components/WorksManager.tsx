@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { DocumentVariables } from '../types';
-import { Calendar, Clock, Plus, Trash2, Wand2, Loader2, Save } from 'lucide-react';
+import { Calendar, Clock, Plus, Trash2, Wand2, Loader2, Save, Activity } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 
 interface WorksManagerProps {
@@ -177,7 +177,8 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
             
             {/* Works Executed */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-               <h3 className="text-lg font-bold text-slate-800 mb-2">Lavorazioni Eseguite Oggi</h3>
+               <h3 className="text-lg font-bold text-slate-800 mb-2">Lavorazioni Eseguite</h3>
+               <p className="text-sm text-slate-500 mb-4">Elenca le lavorazioni trovate al momento della visita (usato per il verbale successivo).</p>
                <div className="flex gap-2 mb-4">
                   <input disabled={readOnly}
                      type="text" 
@@ -204,18 +205,36 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
                   ))}
                   {currentDoc.worksExecuted.length === 0 && <p className="text-slate-400 italic text-sm text-center py-4">Nessuna lavorazione inserita.</p>}
                </ul>
+               
+               {/* Works In Progress Input */}
+               <div className="mt-6 pt-4 border-t border-slate-100">
+                   <h4 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                       <Activity className="w-4 h-4 text-amber-500" />
+                       Lavorazioni in Corso
+                   </h4>
+                   <textarea disabled={readOnly}
+                      className="w-full p-3 border border-slate-300 rounded-lg text-sm h-20 disabled:bg-slate-100"
+                      placeholder="Descrivi cosa era in corso al momento della visita (es. montaggio ponteggi...)"
+                      value={currentDoc.worksInProgress || ''}
+                      onChange={(e) => onUpdateDocument({...currentDoc, worksInProgress: e.target.value})}
+                   />
+               </div>
             </div>
 
             {/* Premis */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                <div className="flex justify-between items-center mb-2">
-                  <h3 className="font-bold text-slate-800">Premesse</h3>
+                  <h3 className="font-bold text-slate-800">Premesse Manuali (Opzionale)</h3>
                   {!readOnly && (
                     <button onClick={() => polishText('premis')} className="text-xs text-purple-600 flex items-center gap-1 hover:bg-purple-50 px-2 py-1 rounded">
                         {isGenerating ? <Loader2 className="w-3 h-3 animate-spin"/> : <Wand2 className="w-3 h-3"/>} IA Assist
                     </button>
                   )}
                </div>
+               <p className="text-xs text-slate-500 mb-3">
+                   Le premesse storiche (riferimenti ai verbali precedenti) vengono generate automaticamente in stampa. 
+                   Usa questo spazio solo per premesse <strong>extra</strong> specifiche di questo verbale.
+               </p>
                <textarea disabled={readOnly}
                   className="w-full p-4 border border-slate-300 rounded-lg text-sm h-32 disabled:bg-slate-100"
                   value={currentDoc.premis}
