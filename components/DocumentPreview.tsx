@@ -220,11 +220,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                     <tr>
                         <td className="w-[220px] font-bold align-top py-1">Scadenza contrattuale lavori:</td>
                         <td className="align-top py-1">
-                            giorni {project.contract.durationDays} naturali e consecutivi, per l'esecuzione di tutte le lavorazioni, 
-                            decorrenti dalla data del verbale di consegna dei lavori 
-                            {project.executionPhase.deliveryDate ? ` (${formatShortDate(project.executionPhase.deliveryDate)})` : ''} 
-                            e quindi dal {formatShortDate(project.executionPhase.deliveryDate)} 
-                            per cui l'ultimazione dovrà avvenire entro il {formatShortDate(project.contract.deadline)}.
+                            giorni {project.contract.durationDays || '...'} naturali e consecutivi, per l'esecuzione di tutte le lavorazioni, 
+                            decorrenti dal {formatShortDate(project.executionPhase.deliveryDate)}, 
+                            data del verbale di consegna dei lavori per cui l'ultimazione dovrà avvenire entro il {formatShortDate(project.executionPhase.completionDate)}.
                         </td>
                     </tr>
 

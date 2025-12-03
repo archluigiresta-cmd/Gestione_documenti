@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { ProjectConstants, DocumentVariables, SALData, TesterVisitSummary } from '../types';
 import { WorksManager } from './WorksManager';
 import { PhotoManager } from './PhotoManager';
-import { FileText, HardHat, Camera, Calendar, FileClock, FolderOpen, Euro, Plus, Trash2, Copy, CalendarRange, ListPlus, Import, ArrowDownToLine } from 'lucide-react';
+import { FileText, HardHat, Camera, Calendar, FileClock, FolderOpen, Euro, Plus, Trash2, Copy, CalendarRange, ListPlus, Import, ArrowDownToLine, Hourglass } from 'lucide-react';
 
 interface ExecutionManagerProps {
   project: ProjectConstants;
@@ -47,6 +47,48 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
             [field]: value
         }
     });
+  };
+
+  // Helper to calculate completion date
+  const calculateCompletionDate = (deliveryDate: string, days: number): string => {
+      if (!deliveryDate || !days || days <= 0) return '';
+      const date = new Date(deliveryDate);
+      date.setDate(date.getDate() + days);
+      return date.toISOString().split('T')[0];
+  };
+
+  const handleDeliveryDateChange = (date: string) => {
+      if (readOnly) return;
+      const duration = project.contract.durationDays || 0;
+      const newCompletion = calculateCompletionDate(date, duration);
+      
+      onUpdateProject({
+          ...project,
+          executionPhase: {
+              ...project.executionPhase,
+              deliveryDate: date,
+              completionDate: newCompletion || project.executionPhase.completionDate // Overwrite only if calc succeeds
+          }
+      });
+  };
+
+  const handleDurationChange = (daysStr: string) => {
+      if (readOnly) return;
+      const days = parseInt(daysStr) || 0;
+      const delivery = project.executionPhase.deliveryDate;
+      const newCompletion = calculateCompletionDate(delivery, days);
+
+      onUpdateProject({
+          ...project,
+          contract: {
+              ...project.contract,
+              durationDays: days
+          },
+          executionPhase: {
+              ...project.executionPhase,
+              completionDate: newCompletion || project.executionPhase.completionDate
+          }
+      });
   };
 
   // Safety check: ensure executionPhase exists before rendering
@@ -212,16 +254,28 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
             {actsSubTab === 'dates' && (
                 <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-right-4">
                     <h3 className="font-bold text-slate-800 mb-6">Atti Fondamentali</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">Consegna Lavori (Data)</label>
                             <input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
-                                value={execPhase.deliveryDate || ''} onChange={(e) => updateExec('deliveryDate', e.target.value)} />
+                                value={execPhase.deliveryDate || ''} onChange={(e) => handleDeliveryDateChange(e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
+                                <Hourglass className="w-4 h-4"/> Durata (Giorni)
+                            </label>
+                            <input disabled={readOnly} type="number" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
+                                placeholder="Es. 180"
+                                value={project.contract.durationDays || ''} onChange={(e) => handleDurationChange(e.target.value)} />
                         </div>
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">Ultimazione Lavori (Data)</label>
-                            <input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
-                                value={execPhase.completionDate || ''} onChange={(e) => updateExec('completionDate', e.target.value)} />
+                            <input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100 bg-slate-50"
+                                value={execPhase.completionDate || ''} 
+                                onChange={(e) => updateExec('completionDate', e.target.value)} 
+                                title="Calcolata automaticamente, ma modificabile manualmente"
+                            />
+                            <p className="text-[10px] text-slate-400 mt-1">Calcolata autom. (Consegna + Durata) o manuale.</p>
                         </div>
                     </div>
                 </div>
