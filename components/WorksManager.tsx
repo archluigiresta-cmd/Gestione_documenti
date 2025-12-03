@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { DocumentVariables } from '../types';
-import { Calendar, Clock, Plus, Trash2, Wand2, Loader2, Save, Activity } from 'lucide-react';
+import { Calendar, Clock, Plus, Trash2, Wand2, Loader2, Save, Activity, CalendarCheck } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
 
 interface WorksManagerProps {
@@ -178,7 +178,7 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
             {/* Works Executed */}
             <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
                <h3 className="text-lg font-bold text-slate-800 mb-2">Lavorazioni Eseguite</h3>
-               <p className="text-sm text-slate-500 mb-4">Elenca le lavorazioni trovate al momento della visita (usato per il verbale successivo).</p>
+               <p className="text-sm text-slate-500 mb-4">Elenca le lavorazioni terminate o rilevate in questo periodo (usato per la cronistoria).</p>
                <div className="flex gap-2 mb-4">
                   <input disabled={readOnly}
                      type="text" 
@@ -206,18 +206,32 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
                   {currentDoc.worksExecuted.length === 0 && <p className="text-slate-400 italic text-sm text-center py-4">Nessuna lavorazione inserita.</p>}
                </ul>
                
-               {/* Works In Progress Input */}
-               <div className="mt-6 pt-4 border-t border-slate-100">
-                   <h4 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                       <Activity className="w-4 h-4 text-amber-500" />
-                       Lavorazioni in Corso
-                   </h4>
-                   <textarea disabled={readOnly}
-                      className="w-full p-3 border border-slate-300 rounded-lg text-sm h-20 disabled:bg-slate-100"
-                      placeholder="Descrivi cosa era in corso al momento della visita (es. montaggio ponteggi...)"
-                      value={currentDoc.worksInProgress || ''}
-                      onChange={(e) => onUpdateDocument({...currentDoc, worksInProgress: e.target.value})}
-                   />
+               {/* Works In Progress & Upcoming */}
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                    <div className="pt-4 border-t border-slate-100">
+                        <h4 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                            <Activity className="w-4 h-4 text-amber-500" />
+                            Lavorazioni in Corso
+                        </h4>
+                        <textarea disabled={readOnly}
+                            className="w-full p-3 border border-slate-300 rounded-lg text-sm h-32 disabled:bg-slate-100"
+                            placeholder="Descrivi cosa è in corso (verrà formattato come elenco)..."
+                            value={currentDoc.worksInProgress || ''}
+                            onChange={(e) => onUpdateDocument({...currentDoc, worksInProgress: e.target.value})}
+                        />
+                    </div>
+                    <div className="pt-4 border-t border-slate-100">
+                        <h4 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                            <CalendarCheck className="w-4 h-4 text-green-500" />
+                            Prossime Attività
+                        </h4>
+                        <textarea disabled={readOnly}
+                            className="w-full p-3 border border-slate-300 rounded-lg text-sm h-32 disabled:bg-slate-100"
+                            placeholder="Descrivi le attività previste (verrà formattato come elenco)..."
+                            value={currentDoc.upcomingWorks || ''}
+                            onChange={(e) => onUpdateDocument({...currentDoc, upcomingWorks: e.target.value})}
+                        />
+                    </div>
                </div>
             </div>
 

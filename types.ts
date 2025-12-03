@@ -241,7 +241,8 @@ export interface DocumentVariables {
   // Contenuto
   premis: string; // Premesse
   worksExecuted: string[]; // Lavori (Giornale Lavori)
-  worksInProgress: string; // NEW: Lavorazioni in corso al momento della visita
+  worksInProgress: string; // Lavorazioni in corso al momento della visita
+  upcomingWorks: string; // NEW: Prossime attività previste
   observations: string; // Valutazioni collaudatore
   
   photos: PhotoAttachment[];

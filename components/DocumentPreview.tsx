@@ -121,7 +121,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                       <div className="pl-8 my-2 font-serif-print italic whitespace-pre-line">
                           {works}
                       </div>
-                      <p>{worksInProgress}</p>
+                      <p className="pl-8">{worksInProgress}</p>
                   </div>
               );
           } else {
@@ -140,11 +140,26 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                       <div className="pl-8 my-2 font-serif-print italic whitespace-pre-line">
                           {works}
                       </div>
-                      <p>{worksInProgress}</p>
+                      <p className="pl-8">{worksInProgress}</p>
                   </div>
               );
           }
       });
+  };
+
+  // Logic to determine reference date for current visit body
+  const getPreviousVisitDate = () => {
+      const prevDocs = getPreviousDocuments();
+      if (prevDocs.length > 0) {
+          // Last visit date
+          const lastDoc = prevDocs[prevDocs.length - 1];
+          return formatShortDate(lastDoc.date);
+      } else {
+          // No previous visit, use Delivery Date
+          return project.executionPhase.deliveryDate 
+             ? formatShortDate(project.executionPhase.deliveryDate) 
+             : 'consegna dei lavori';
+      }
   };
 
   // --------------------------------------------------------
@@ -269,9 +284,10 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                     <div className="whitespace-pre-line pl-2 mb-4">
                          {isCollaudo ? (
                              <>
+                                {/* Point 1: Appointment (Always present) */}
                                 <p className="mb-2 text-justify">{generateCollaudoPreamblePoint1()}</p>
                                 
-                                {/* Automatically generate Points 2, 3, etc. based on history */}
+                                {/* Points 2, 3...: History based on previous docs */}
                                 {generateHistoricalPoints()}
 
                                 {/* Manual Premise (if any added by user) */}
@@ -286,18 +302,56 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                              doc.premis
                          )}
                     </div>
-                     <p className="font-bold underline mb-2">Si dà atto che:</p>
-                    {doc.worksExecuted.length > 0 ? (
-                        <ol className="list-decimal pl-8 space-y-1">
-                            {doc.worksExecuted.map((work, idx) => <li key={idx}>{work};</li>)}
-                        </ol>
-                    ) : (
-                        <p className="italic pl-4">Nessuna lavorazione specifica registrata in data odierna.</p>
-                    )}
                     
-                    {/* Display Works In Progress for current doc */}
-                    {doc.worksInProgress && (
-                        <p className="mt-2 text-justify">Era in corso il {doc.worksInProgress}.</p>
+                    {/* --- BODY SECTION (Replaces "Si dà atto che" for Collaudo) --- */}
+                    {isCollaudo ? (
+                        <div className="mt-6">
+                            <p className="text-justify mb-2">
+                                Durante il presente sopralluogo prende atto che, nel periodo intercorrente il {getPreviousVisitDate()} e la data odierna sono state effettuate le seguenti lavorazioni:
+                            </p>
+                            
+                            {doc.worksExecuted.length > 0 ? (
+                                <ol className="list-decimal pl-8 space-y-1 mb-4">
+                                    {doc.worksExecuted.map((work, idx) => <li key={idx}>{work};</li>)}
+                                </ol>
+                            ) : (
+                                <p className="italic pl-8 mb-4">Nessuna lavorazione terminata in questo periodo.</p>
+                            )}
+
+                            <p className="mb-2">Al momento, sono in corso di esecuzione le opere relative a:</p>
+                            {doc.worksInProgress ? (
+                                <ul className="list-disc pl-8 space-y-1 mb-4">
+                                    {doc.worksInProgress.split('\n').filter(l => l.trim()).map((line, i) => (
+                                        <li key={i}>{line}</li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="italic pl-8 mb-4">Nessuna lavorazione in corso.</p>
+                            )}
+
+                            <p className="mb-2">Prossime attività previste:</p>
+                            {doc.upcomingWorks ? (
+                                <ul className="list-disc pl-8 space-y-1 mb-4">
+                                    {doc.upcomingWorks.split('\n').filter(l => l.trim()).map((line, i) => (
+                                        <li key={i}>{line}</li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="italic pl-8 mb-4">Nessuna attività specifica pianificata.</p>
+                            )}
+                        </div>
+                    ) : (
+                        // Generic Body for other docs
+                        <>
+                             <p className="font-bold underline mb-2">Si dà atto che:</p>
+                             {doc.worksExecuted.length > 0 ? (
+                                <ol className="list-decimal pl-8 space-y-1">
+                                    {doc.worksExecuted.map((work, idx) => <li key={idx}>{work};</li>)}
+                                </ol>
+                            ) : (
+                                <p className="italic pl-4">Nessuna lavorazione specifica registrata.</p>
+                            )}
+                        </>
                     )}
                 </div>
 

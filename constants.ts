@@ -68,9 +68,9 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
         nominationAuthority: '', // NEW
         nominationNumber: '',
         nominationDate: '',
-        contractRepNumber: '', // NEW
+        contractRepNumber: '', // NEW: Rep. Convenzione
         contractDate: '', // NEW
-        contractProtocol: '', // NEW
+        contractProtocol: '', // NEW: Prot. n.
         isStatic: true,
         isAdmin: true,
         isFunctional: false
@@ -139,7 +139,8 @@ export const createInitialDocument = (projectId: string): DocumentVariables => (
   attendees: '', 
   premis: '',
   worksExecuted: [],
-  worksInProgress: '', // NEW
+  worksInProgress: '', 
+  upcomingWorks: '', // NEW
   observations: '',
   photos: []
 });
