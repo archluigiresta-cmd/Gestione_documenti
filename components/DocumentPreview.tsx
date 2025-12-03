@@ -39,6 +39,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   if (project.subjects.testerAppointment.isAdmin) assignmentTypes.push("tecnico-amministrativo");
   if (project.subjects.testerAppointment.isFunctional) assignmentTypes.push("funzionale degli impianti");
   const assignmentString = assignmentTypes.join(", ");
+  const assignmentStringClean = assignmentTypes.length > 1 
+    ? assignmentTypes.slice(0, -1).join(", ") + " e " + assignmentTypes.slice(-1) 
+    : assignmentString;
 
   const getDocumentTitle = () => {
       switch(type) {
@@ -56,6 +59,41 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   };
 
   const isCollaudo = type === 'VERBALE_COLLAUDO' || type === 'RELAZIONE_COLLAUDO';
+
+  // Specific Preamble Generation for Collaudo
+  const generateCollaudoPreamble = () => {
+      const t = project.subjects.testerAppointment;
+      const tester = project.subjects.tester.contact;
+      
+      const parts = [];
+      
+      // Part 1: Nomination
+      let text = `- con ${t.nominationType} `;
+      if (t.nominationAuthority) text += `del ${t.nominationAuthority} `;
+      text += `n. ${t.nominationNumber || '...'} del ${formatShortDate(t.nominationDate)}`;
+      
+      // Part 2: Contract
+      if (t.contractRepNumber) {
+          text += ` e successivo contratto/convenzione, rep. n. ${t.contractRepNumber} del ${formatShortDate(t.contractDate)}`;
+      }
+      if (t.contractProtocol) {
+          text += `, prot. n. ${t.contractProtocol}`;
+      }
+      
+      // Part 3: Entity
+      text += `, il ${project.entity || '...'} ha affidato, ai sensi dell’art. 116 del D. Lgs. 36/2023, `;
+      
+      // Part 4: Tester
+      text += `allo scrivente ${tester.title} ${tester.name} (C.F. ${tester.vat || '...'}), `;
+      if (tester.professionalOrder && tester.registrationNumber) {
+          text += `iscritto all’Albo ${tester.professionalOrder} al n. ${tester.registrationNumber}, `;
+      }
+      
+      // Part 5: Assignment
+      text += `l’incarico professionale di collaudo ${assignmentStringClean} relativo all’intervento di "${project.projectName}", CUP: ${project.cup}.`;
+
+      return text;
+  };
 
   return (
     <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
@@ -175,7 +213,15 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                 <div className="mb-4">
                     <p className="font-bold underline mb-2">Premesso che:</p>
                     <div className="whitespace-pre-line pl-2 mb-4">
-                         {doc.premis}
+                         {isCollaudo ? (
+                             // Auto-generated point 1 for Collaudo + user premis
+                             <>
+                                <p className="mb-2 text-justify">{generateCollaudoPreamble()}</p>
+                                {doc.premis}
+                             </>
+                         ) : (
+                             doc.premis
+                         )}
                     </div>
                      <p className="font-bold underline mb-2">Si dà atto che:</p>
                     {doc.worksExecuted.length > 0 ? (
@@ -232,6 +278,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             <div className="mt-8 border-t border-slate-300 pt-4 text-[10px] text-slate-500 text-center uppercase tracking-wider">
                 <p className="font-bold text-black">{project.subjects.tester.contact.title} {project.subjects.tester.contact.name}</p>
                 <p>{project.subjects.tester.contact.email} - {project.subjects.tester.contact.pec}</p>
+                {project.subjects.tester.contact.professionalOrder && (
+                    <p>Iscritto all'Albo {project.subjects.tester.contact.professionalOrder} n. {project.subjects.tester.contact.registrationNumber}</p>
+                )}
             </div>
         )}
 

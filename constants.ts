@@ -1,7 +1,7 @@
 
 import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData } from './types';
 
-const emptyContact = { name: '', title: '', email: '', pec: '', phone: '' };
+const emptyContact = { name: '', title: '', email: '', pec: '', phone: '', professionalOrder: '', registrationNumber: '' };
 const emptyAppointment = { type: 'Determina', number: '', date: '' };
 
 const createEmptySubject = (): SubjectProfile => ({
@@ -63,10 +63,14 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
         contact: { ...emptyContact, title: 'Arch.' },
         appointment: { ...emptyAppointment }
     },
-    testerAppointment: { // Keeping for legacy/flags
+    testerAppointment: { 
         nominationType: 'Determina Dirigenziale',
+        nominationAuthority: '', // NEW
         nominationNumber: '',
         nominationDate: '',
+        contractRepNumber: '', // NEW
+        contractDate: '', // NEW
+        contractProtocol: '', // NEW
         isStatic: true,
         isAdmin: true,
         isFunctional: false

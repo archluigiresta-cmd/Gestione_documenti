@@ -104,6 +104,11 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                     value={profile.contact.title} onChange={e => handleChange(`${path}.contact.title`, e.target.value)} />
          </div>
          <div>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">P.IVA / C.F.</label>
+            <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
+                   value={profile.contact.vat || ''} onChange={e => handleChange(`${path}.contact.vat`, e.target.value)} />
+         </div>
+         <div>
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Email</label>
             <div className="relative">
               <Mail className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
@@ -120,14 +125,16 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
             </div>
          </div>
          <div>
-            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Telefono</label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
-              <input disabled={readOnly} type="tel" className="w-full p-2.5 pl-9 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                     value={profile.contact.phone || ''} onChange={e => handleChange(`${path}.contact.phone`, e.target.value)} />
-            </div>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Albo / Ordine</label>
+            <input disabled={readOnly} type="text" placeholder="Es. Ordine Architetti Taranto" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
+                   value={profile.contact.professionalOrder || ''} onChange={e => handleChange(`${path}.contact.professionalOrder`, e.target.value)} />
          </div>
          <div>
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">N. Iscrizione</label>
+            <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
+                   value={profile.contact.registrationNumber || ''} onChange={e => handleChange(`${path}.contact.registrationNumber`, e.target.value)} />
+         </div>
+         <div className="md:col-span-2">
             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Indirizzo</label>
             <div className="relative">
               <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
@@ -402,7 +409,6 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
             ]} />
 
             {subTab === 'rup' && data.subjects.rup && <ContactCard label="Responsabile Unico di Progetto" path="subjects.rup" profile={data.subjects.rup} />}
-            {/* ... other subjects ... same pattern ... */}
             {subTab === 'csp' && data.subjects.csp && <ContactCard label="Coord. Sicurezza Progettazione" path="subjects.csp" profile={data.subjects.csp} />}
             {subTab === 'cse' && data.subjects.cse && <ContactCard label="Coord. Sicurezza Esecuzione" path="subjects.cse" profile={data.subjects.cse} />}
             {subTab === 'verifier' && data.subjects.verifier && <ContactCard label="Verificatore Progetto" path="subjects.verifier" profile={data.subjects.verifier} />}
@@ -410,7 +416,58 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
             
             {subTab === 'tester' && data.subjects.tester && (
                 <div className="space-y-6">
-                    <ContactCard label="Collaudatore" path="subjects.tester" profile={data.subjects.tester} />
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-4 animate-in fade-in">
+                       <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-3">
+                          <Stamp className="w-5 h-5 text-blue-500 bg-blue-50 p-1 rounded-full"/> Atto di Nomina e Contratto
+                       </h4>
+                       
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                           <div className="md:col-span-2">
+                               <label className="text-xs font-semibold text-slate-500 mb-1 block">Tipo Atto di Nomina</label>
+                               <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded text-sm disabled:bg-slate-100" 
+                                      value={data.subjects.testerAppointment.nominationType} onChange={e => handleChange('subjects.testerAppointment.nominationType', e.target.value)} />
+                           </div>
+                           <div className="md:col-span-2">
+                               <label className="text-xs font-semibold text-slate-500 mb-1 block">Autorità Emittente (es. Dirigente di...)</label>
+                               <input disabled={readOnly} type="text" placeholder="Es. Dirigente del Settore Tecnico" className="w-full p-2 border border-slate-300 rounded text-sm disabled:bg-slate-100" 
+                                      value={data.subjects.testerAppointment.nominationAuthority || ''} onChange={e => handleChange('subjects.testerAppointment.nominationAuthority', e.target.value)} />
+                           </div>
+                           <div>
+                               <label className="text-xs font-semibold text-slate-500 mb-1 block">Numero Atto</label>
+                               <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded text-sm disabled:bg-slate-100" 
+                                      value={data.subjects.testerAppointment.nominationNumber} onChange={e => handleChange('subjects.testerAppointment.nominationNumber', e.target.value)} />
+                           </div>
+                           <div>
+                               <label className="text-xs font-semibold text-slate-500 mb-1 block">Data Atto</label>
+                               <input disabled={readOnly} type="date" className="w-full p-2 border border-slate-300 rounded text-sm disabled:bg-slate-100" 
+                                      value={data.subjects.testerAppointment.nominationDate} onChange={e => handleChange('subjects.testerAppointment.nominationDate', e.target.value)} />
+                           </div>
+                       </div>
+                       
+                       <div className="border-t border-slate-100 pt-4 mt-4">
+                           <h5 className="font-bold text-xs text-slate-500 uppercase mb-3">Convenzione / Contratto Specifico</h5>
+                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                               <div>
+                                   <label className="text-xs font-semibold text-slate-500 mb-1 block">Repertorio N.</label>
+                                   <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded text-sm disabled:bg-slate-100" 
+                                          value={data.subjects.testerAppointment.contractRepNumber || ''} onChange={e => handleChange('subjects.testerAppointment.contractRepNumber', e.target.value)} />
+                               </div>
+                               <div>
+                                   <label className="text-xs font-semibold text-slate-500 mb-1 block">Data</label>
+                                   <input disabled={readOnly} type="date" className="w-full p-2 border border-slate-300 rounded text-sm disabled:bg-slate-100" 
+                                          value={data.subjects.testerAppointment.contractDate || ''} onChange={e => handleChange('subjects.testerAppointment.contractDate', e.target.value)} />
+                               </div>
+                               <div>
+                                   <label className="text-xs font-semibold text-slate-500 mb-1 block">Protocollo N.</label>
+                                   <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded text-sm disabled:bg-slate-100" 
+                                          value={data.subjects.testerAppointment.contractProtocol || ''} onChange={e => handleChange('subjects.testerAppointment.contractProtocol', e.target.value)} />
+                               </div>
+                           </div>
+                       </div>
+                    </div>
+
+                    <ContactCard label="Anagrafica Collaudatore" path="subjects.tester" profile={data.subjects.tester} showAppointment={false} />
+                    
                     <div className="bg-white p-6 rounded-xl border border-blue-100 shadow-sm">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2 block">Tipo Incarico (Opzioni)</label>
                         <div className="flex gap-6">
@@ -474,7 +531,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                         <button onClick={() => {
                             const emptyDesigner = { 
                                 specificRole: 'Architettonico', 
-                                contact: { name: '', title: 'Arch.', email: '', pec: '', phone: '', address: '' },
+                                contact: { name: '', title: 'Arch.', email: '', pec: '', phone: '', address: '', professionalOrder: '', registrationNumber: '' },
                                 appointment: { type: 'Disciplinare', number: '', date: '' }
                             };
                             handleChange('subjects.designers', [...data.subjects.designers, emptyDesigner]);
@@ -505,7 +562,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                     {!readOnly && (
                         <button onClick={() => {
                             const emptyMember = { 
-                                contact: { name: '', title: 'Geom.', role: 'Ispettore di Cantiere', email: '', pec: '', phone: '', address: '' },
+                                contact: { name: '', title: 'Geom.', role: 'Ispettore di Cantiere', email: '', pec: '', phone: '', address: '', professionalOrder: '', registrationNumber: '' },
                                 appointment: { type: 'Ordine di Servizio', number: '', date: '' }
                             };
                             handleChange('subjects.dlOffice', [...data.subjects.dlOffice, emptyMember]);

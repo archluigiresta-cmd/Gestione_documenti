@@ -10,6 +10,8 @@ export interface ContactInfo {
   vat?: string; // P.IVA / C.F.
   repName?: string; // Rappresentante Legale Name
   repRole?: string; // Rappresentante Legale Role
+  professionalOrder?: string; // NEW: Albo/Ordine di appartenenza
+  registrationNumber?: string; // NEW: Numero iscrizione
 }
 
 export interface AppointmentData {
@@ -140,10 +142,14 @@ export interface ProjectConstants {
     dlOffice: SubjectProfile[]; // Ufficio Direzione Lavori
     cse: SubjectProfile; // Coord. Sicurezza Esecuzione
     tester: SubjectProfile; // Collaudatore
-    testerAppointment: { // Mantieni per compatibilità o integrare sopra
+    testerAppointment: { 
         nominationType: string;
+        nominationAuthority: string; // NEW: Es. "Dirigente del Settore Tecnico"
         nominationNumber: string;
         nominationDate: string;
+        contractRepNumber: string; // NEW: Rep. Convenzione
+        contractDate: string; // NEW
+        contractProtocol: string; // NEW: Prot. n.
         isStatic: boolean;
         isAdmin: boolean;
         isFunctional: boolean;
