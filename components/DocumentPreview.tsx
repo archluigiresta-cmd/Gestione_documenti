@@ -183,10 +183,10 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
   const getDefaultAttendees = () => {
       const lines = [];
-      if (project.subjects.rup.contact.name) lines.push(`Responsabile Unico del Progetto: ${project.subjects.rup.contact.title} ${project.subjects.rup.contact.name}`);
-      if (project.subjects.dl.contact.name) lines.push(`Direttore dei Lavori: ${project.subjects.dl.contact.title} ${project.subjects.dl.contact.name}`);
-      if (project.subjects.cse.contact.name) lines.push(`Coord. Sicurezza Esecuzione: ${project.subjects.cse.contact.title} ${project.subjects.cse.contact.name}`);
-      if (project.contractor.name) lines.push(`per l'Impresa ${project.contractor.name}: ${project.contractor.repName} (${project.contractor.role || 'Legale Rappresentante'})`);
+      if (project.subjects.rup.contact.name) lines.push(`Responsabile Unico del Progetto: ${project.subjects.rup.contact.title || ''} ${project.subjects.rup.contact.name}`);
+      if (project.subjects.dl.contact.name) lines.push(`Direttore dei Lavori: ${project.subjects.dl.contact.title || ''} ${project.subjects.dl.contact.name}`);
+      if (project.subjects.cse.contact.name) lines.push(`Coord. Sicurezza Esecuzione: ${project.subjects.cse.contact.title || ''} ${project.subjects.cse.contact.name}`);
+      if (project.contractor.name) lines.push(`per l'Impresa ${project.contractor.name} (${project.contractor.role || 'Legale Rappresentante'}): ${project.contractor.repName}`);
       return lines.join('\n');
   };
   

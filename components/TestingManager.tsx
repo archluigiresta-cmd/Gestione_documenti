@@ -73,26 +73,28 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   };
 
   // --- Logic for Smart Attendees Selection ---
+  // Updated format to include Title + Name specifically as requested
   const potentialAttendees = [
       { 
           id: 'rup', 
           label: 'RUP', 
-          fullText: `Responsabile Unico del Progetto: ${project.subjects.rup.contact.title} ${project.subjects.rup.contact.name}` 
+          fullText: `Responsabile Unico del Progetto: ${project.subjects.rup.contact.title || ''} ${project.subjects.rup.contact.name}`.trim()
       },
       { 
           id: 'dl', 
           label: 'DL', 
-          fullText: `Direttore dei Lavori: ${project.subjects.dl.contact.title} ${project.subjects.dl.contact.name}` 
+          fullText: `Direttore dei Lavori: ${project.subjects.dl.contact.title || ''} ${project.subjects.dl.contact.name}`.trim()
       },
       { 
           id: 'cse', 
           label: 'CSE', 
-          fullText: `Coord. Sicurezza Esecuzione: ${project.subjects.cse.contact.title} ${project.subjects.cse.contact.name}` 
+          fullText: `Coord. Sicurezza Esecuzione: ${project.subjects.cse.contact.title || ''} ${project.subjects.cse.contact.name}`.trim()
       },
       { 
           id: 'contractor', 
           label: 'Impresa', 
-          fullText: `per l'Impresa ${project.contractor.name}: ${project.contractor.repName} (${project.contractor.role || 'Legale Rappresentante'})` 
+          // Format: per l'Impresa X (Ruolo): Sig. Y
+          fullText: `per l'Impresa ${project.contractor.name} (${project.contractor.role || 'Legale Rappresentante'}): ${project.contractor.repName}`
       },
   ];
 
