@@ -30,34 +30,141 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
     const element = document.getElementById('document-preview-container');
     if (!element) return;
 
-    // Clone and prepare content
-    const content = element.innerHTML;
-    
-    // Create a complete HTML document with Office namespaces and basic styling
+    // Clone content to avoid modifying the DOM, although we are just reading innerHTML
+    let content = element.innerHTML;
+
+    // Create a complete HTML document with Office namespaces and robust styling mapping
+    // We map Tailwind classes to standard CSS that Word understands
     const htmlDoc = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head>
         <meta charset="utf-8">
         <title>${project.projectName} - ${docType}</title>
+        <!--[if gte mso 9]>
+        <xml>
+        <w:WordDocument>
+        <w:View>Print</w:View>
+        <w:Zoom>100</w:Zoom>
+        <w:DoNotOptimizeForBrowser/>
+        </w:WordDocument>
+        </xml>
+        <![endif]-->
         <style>
-          body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.5; color: #000; }
-          table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
-          td, th { padding: 4px; vertical-align: top; }
-          h1, h2, h3 { font-family: Arial, sans-serif; font-weight: bold; }
-          .text-center { text-align: center; }
-          .text-right { text-align: right; }
+          /* --- BASE STYLES --- */
+          @page {
+            size: A4;
+            margin: 2.0cm 2.0cm 2.0cm 2.0cm;
+            mso-page-orientation: portrait;
+          }
+          body {
+            font-family: 'Times New Roman', serif;
+            font-size: 12pt;
+            line-height: 1.15;
+            color: #000000;
+            background-color: white;
+          }
+          
+          /* --- RESET UI ELEMENTS --- */
+          /* Hide app-specific UI containers/shadows in Word */
+          .bg-white, .shadow-lg, .min-h-\\[29\\.7cm\\], .print-page { 
+            background: transparent !important;
+            box-shadow: none !important;
+            border: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+          }
+
+          /* --- TYPOGRAPHY MAPPING --- */
+          h1, h2, h3, h4, h5, h6 { 
+            font-family: Arial, sans-serif; 
+            margin-bottom: 12pt; 
+            page-break-after: avoid;
+          }
+          
           .font-bold { font-weight: bold; }
+          .italic { font-style: italic; }
           .uppercase { text-transform: uppercase; }
           .underline { text-decoration: underline; }
-          .text-sm { font-size: 10pt; }
-          .text-xs { font-size: 8pt; }
-          .mb-8 { margin-bottom: 24px; }
-          .mb-6 { margin-bottom: 18px; }
-          .mt-8 { margin-top: 24px; }
+          
+          .text-center { text-align: center; }
+          .text-right { text-align: right; }
+          .text-justify { text-align: justify; }
+          
+          .text-lg { font-size: 14pt; }
+          .text-xl { font-size: 16pt; }
+          .text-sm { font-size: 11pt; }
+          .text-xs { font-size: 10pt; }
+
+          /* --- SPACING & MARGINS (Tailwind Mapping) --- */
+          .mb-8 { margin-bottom: 24pt; }
+          .mb-6 { margin-bottom: 18pt; }
+          .mb-4 { margin-bottom: 12pt; }
+          .mb-2 { margin-bottom: 6pt; }
+          
+          .mt-16 { margin-top: 48pt; }
+          .mt-8 { margin-top: 24pt; }
+          .mt-6 { margin-top: 18pt; }
+          
+          .pl-8 { padding-left: 24pt; }
+          .pl-4 { padding-left: 12pt; }
+          .pl-2 { padding-left: 6pt; }
+
+          /* --- TABLES --- */
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 12pt;
+            border: none;
+          }
+          td, th {
+            vertical-align: top;
+            padding: 4pt 2pt;
+          }
+          
+          /* Specific Column Width for Labels */
+          .w-\\[220px\\] { width: 180px; } 
+
+          /* --- LISTS --- */
+          ul, ol {
+            margin-top: 0;
+            margin-bottom: 12pt;
+            padding-left: 30pt;
+          }
+          li {
+            margin-bottom: 3pt;
+          }
+
+          /* --- BORDERS & LINES --- */
           .border-b { border-bottom: 1px solid #000; }
+          .border-b-2 { border-bottom: 2px solid #000; }
           .border-t { border-top: 1px solid #000; }
-          .w-full { width: 100%; }
-          img { max-width: 100%; height: auto; }
+          .border-black { border-color: #000; }
+
+          /* --- UTILITIES --- */
+          .whitespace-pre-line { white-space: pre-wrap; }
+          
+          /* --- PHOTOS --- */
+          img {
+            max-width: 100%;
+            height: auto;
+          }
+          .grid {
+            /* Fallback for grid in Word: simplified block layout */
+            display: block;
+          }
+          .grid-cols-2 > div {
+            display: inline-block;
+            width: 48%;
+            margin-right: 1%;
+            vertical-align: top;
+            margin-bottom: 12pt;
+          }
+          
+          /* Page Breaks */
+          .break-before-page { page-break-before: always; }
+          .break-inside-avoid { page-break-inside: avoid; }
         </style>
       </head>
       <body>
@@ -73,7 +180,8 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    // Format filename like "Verbale_Collaudo_2025-01-01.doc"
+    
+    // Format filename
     const safeDate = new Date().toISOString().split('T')[0];
     const safeType = docType.toLowerCase().replace(/_/g, '_');
     link.download = `${safeType}_${safeDate}.doc`;
@@ -143,8 +251,7 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
         <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg flex items-start gap-3">
            <FileCheck className="w-5 h-5 text-yellow-600 mt-1" />
            <div className="text-sm text-yellow-800">
-              <strong>Modalità Anteprima:</strong> Questo documento viene generato dinamicamente. 
-              Usa "Scarica Word" per ottenere un file editabile o "Stampa / PDF" per la versione finale.
+              <strong>Info Esportazione:</strong> La funzione "Scarica Word" genera un file ottimizzato per Microsoft Word, convertendo il layout web in formato stampabile. Verifica sempre impaginazione e interruzioni di pagina dopo il download.
            </div>
         </div>
       </div>
