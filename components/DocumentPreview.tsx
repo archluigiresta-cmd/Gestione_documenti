@@ -98,6 +98,21 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
           .sort((a, b) => a.visitNumber - b.visitNumber);
   };
 
+  // Helper to get works for a specific visit number
+  // Priorities: 
+  // 1. "Riepilogo Lavori" (TesterVisitSummary) corresponding to the index (Visit N -> Summary N-1)
+  // 2. The document's internal "worksExecuted" list (fallback)
+  const getWorksForVisit = (visitNum: number, fallbackWorks: string[]) => {
+      const summaries = project.executionPhase.testerVisitSummaries || [];
+      // Assuming sequential 1:1 mapping (Visit 1 -> Summary 0, Visit 2 -> Summary 1)
+      const summary = summaries[visitNum - 1];
+      
+      if (summary && summary.works && summary.works.length > 0) {
+          return summary.works;
+      }
+      return fallbackWorks;
+  };
+
   // Point 2, 3, etc.: Historical visits
   const generateHistoricalPoints = () => {
       const prevDocs = getPreviousDocuments();
@@ -105,7 +120,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
       return prevDocs.map((prevDoc, index) => {
           const date = formatShortDate(prevDoc.date);
-          const works = prevDoc.worksExecuted.map((w, i) => `${i + 1}. ${w}`).join(';\n');
+          
+          // Fetch works from Summary if available, otherwise use doc data
+          const worksList = getWorksForVisit(prevDoc.visitNumber, prevDoc.worksExecuted);
+          const worksText = worksList.map((w, i) => `${i + 1}. ${w}`).join(';\n');
+          
           const worksInProgress = prevDoc.worksInProgress ? `Era in corso il ${prevDoc.worksInProgress}.` : '';
 
           if (prevDoc.visitNumber === 1) {
@@ -119,7 +138,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                           ed ha preso atto dell’andamento dei lavori eseguiti dalla consegna a detta data, così come dettagliati dal Direttore dei Lavori e di seguito riportati:
                       </p>
                       <div className="pl-8 my-2 font-serif-print italic whitespace-pre-line">
-                          {works}
+                          {worksText}
                       </div>
                       <p className="pl-8">{worksInProgress}</p>
                   </div>
@@ -138,7 +157,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                           così come dettagliati dal Direttore dei Lavori e di seguito riportate:
                       </p>
                       <div className="pl-8 my-2 font-serif-print italic whitespace-pre-line">
-                          {works}
+                          {worksText}
                       </div>
                       <p className="pl-8">{worksInProgress}</p>
                   </div>
@@ -170,6 +189,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       if (project.contractor.name) lines.push(`per l'Impresa ${project.contractor.name}: ${project.contractor.repName} (${project.contractor.role || 'Legale Rappresentante'})`);
       return lines.join('\n');
   };
+  
+  // Resolve current works list
+  const currentWorksList = getWorksForVisit(doc.visitNumber, doc.worksExecuted);
 
   // --------------------------------------------------------
 
@@ -317,9 +339,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                                 Durante il presente sopralluogo prende atto che, nel periodo intercorrente tra {getPreviousVisitDateDescription()} e la data odierna sono state effettuate le seguenti lavorazioni:
                             </p>
                             
-                            {doc.worksExecuted.length > 0 ? (
+                            {currentWorksList.length > 0 ? (
                                 <ol className="list-decimal pl-8 space-y-1 mb-4">
-                                    {doc.worksExecuted.map((work, idx) => <li key={idx}>{work};</li>)}
+                                    {currentWorksList.map((work, idx) => <li key={idx}>{work};</li>)}
                                 </ol>
                             ) : (
                                 <p className="italic pl-8 mb-4">Nessuna lavorazione terminata in questo periodo.</p>
