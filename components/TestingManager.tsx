@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { DocumentVariables, ProjectConstants, TesterVisitSummary } from '../types';
-import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext } from 'lucide-react';
 
 interface TestingManagerProps {
   project: ProjectConstants;
@@ -27,10 +27,12 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   readOnly = false
 }) => {
   const currentDoc = documents.find(d => d.id === currentDocId) || documents[0];
-  const [step, setStep] = useState<'info' | 'works' | 'convocation' | 'eval'>('info');
+  const [step, setStep] = useState<'info' | 'convocation' | 'works' | 'eval'>('info');
 
-  // State for Tester Works Summary
+  // State for Inputs
   const [summaryManualInput, setSummaryManualInput] = useState('');
+  const [inProgressInput, setInProgressInput] = useState('');
+  const [upcomingInput, setUpcomingInput] = useState('');
 
   if (!currentDoc) return <div className="p-8 text-center">Nessun verbale attivo. Crea un nuovo verbale dalla dashboard.</div>;
 
@@ -50,7 +52,27 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
     });
   };
 
-  // Logic for Smart Attendees Selection
+  // --- Logic for Lists stored in Document (In Progress & Upcoming) ---
+  
+  const addToListInDoc = (field: 'worksInProgress' | 'upcomingWorks', inputVal: string, setInputVal: (s: string) => void) => {
+      if (readOnly || !inputVal.trim()) return;
+      const currentText = currentDoc[field] || '';
+      // Split by newline, filter empty, add new, join
+      const items = currentText.split('\n').filter(i => i.trim());
+      items.push(inputVal.trim());
+      handleUpdate({ ...currentDoc, [field]: items.join('\n') });
+      setInputVal('');
+  };
+
+  const removeFromListInDoc = (field: 'worksInProgress' | 'upcomingWorks', index: number) => {
+      if (readOnly) return;
+      const currentText = currentDoc[field] || '';
+      const items = currentText.split('\n').filter(i => i.trim());
+      items.splice(index, 1);
+      handleUpdate({ ...currentDoc, [field]: items.join('\n') });
+  };
+
+  // --- Logic for Smart Attendees Selection ---
   const potentialAttendees = [
       { 
           id: 'rup', 
@@ -89,7 +111,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
       }
   };
 
-  // --- Logic for Tester Visit Summaries ---
+  // --- Logic for Tester Visit Summaries (Project Level) ---
   const execPhase = project.executionPhase || {};
   // 1-based Visit Number maps to 0-based index
   const summaryIndex = (currentDoc.visitNumber > 0 ? currentDoc.visitNumber : 1) - 1;
@@ -142,7 +164,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
       alert(`Importate ${worksFound.length} lavorazioni da ${relevantDocs.length} verbali del giornale lavori.`);
   };
 
-  const addManualWork = () => {
+  const addManualWorkSummary = () => {
       if (readOnly || !onUpdateProject || !currentSummary) return;
       if (summaryManualInput.trim()) {
           updateCurrentSummary('works', [...currentSummary.works, summaryManualInput]);
@@ -150,7 +172,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
       }
   };
 
-  const removeWork = (workIndex: number) => {
+  const removeWorkSummary = (workIndex: number) => {
       if (readOnly || !onUpdateProject || !currentSummary) return;
       const newWorks = [...currentSummary.works];
       newWorks.splice(workIndex, 1);
@@ -161,8 +183,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
       if (readOnly || !onUpdateProject) return;
       if (confirm("Attenzione: questo eliminerà il riepilogo lavori associato a questo verbale. Continuare?")) {
           const list = [...(execPhase.testerVisitSummaries || [])];
-          // We set it to undefined or remove it?
-          // Setting to undefined/null keeps the index integrity for other visits
           delete list[summaryIndex]; 
           updateExec('testerVisitSummaries', list);
       }
@@ -210,18 +230,18 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
             <span className="font-bold text-xs md:text-sm">Dati & Orari</span>
           </button>
           <button 
-            onClick={() => setStep('works')} 
-            className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${step === 'works' ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300'}`}
-          >
-            <ListChecks className="w-5 h-5"/>
-            <span className="font-bold text-xs md:text-sm">Riepilogo Lavori</span>
-          </button>
-          <button 
             onClick={() => setStep('convocation')} 
             className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${step === 'convocation' ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300'}`}
           >
             <Users className="w-5 h-5"/>
             <span className="font-bold text-xs md:text-sm">Presenti</span>
+          </button>
+          <button 
+            onClick={() => setStep('works')} 
+            className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${step === 'works' ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300'}`}
+          >
+            <ListChecks className="w-5 h-5"/>
+            <span className="font-bold text-xs md:text-sm">Riepilogo & Lavori</span>
           </button>
           <button 
             onClick={() => setStep('eval')} 
@@ -261,111 +281,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                           </div>
                       </div>
                   </div>
-              </div>
-          )}
-
-          {step === 'works' && (
-              <div className="animate-in fade-in slide-in-from-right-4">
-                  <div className="flex items-center justify-between border-b pb-4 mb-6">
-                      <h3 className="text-lg font-bold text-slate-800">Riepilogo Lavori per Verbale N. {currentDoc.visitNumber}</h3>
-                      {currentSummary && !readOnly && (
-                         <button onClick={deleteCurrentSummary} className="text-slate-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition-colors" title="Elimina Riepilogo">
-                             <Trash2 className="w-4 h-4"/>
-                         </button>
-                      )}
-                  </div>
-                  
-                  {!currentSummary ? (
-                      <div className="text-center py-16 bg-slate-50 rounded-xl border border-dashed border-slate-300">
-                          <div className="bg-white p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4 shadow-sm">
-                             <ListChecks className="w-8 h-8 text-slate-400"/>
-                          </div>
-                          <h4 className="text-slate-700 font-bold mb-2">Nessun riepilogo per questo periodo</h4>
-                          <p className="text-slate-500 text-sm mb-6 max-w-md mx-auto">
-                              È necessario creare un riepilogo delle lavorazioni eseguite nel periodo di riferimento (es. dalla visita precedente a questa) per generare correttamente il verbale.
-                          </p>
-                          {!readOnly && (
-                              <button onClick={initSummaryForCurrentVisit} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-bold shadow-lg transition-transform hover:scale-105 flex items-center gap-2 mx-auto">
-                                  <Plus className="w-5 h-5"/> Inizializza Riepilogo
-                              </button>
-                          )}
-                      </div>
-                  ) : (
-                      <div className="space-y-8">
-                          {/* Date Range Block */}
-                          <div className="bg-blue-50 p-6 rounded-xl border border-blue-100 flex flex-wrap gap-6 items-center">
-                              <div className="flex items-center gap-2 text-blue-800 font-bold text-sm bg-white px-3 py-1.5 rounded border border-blue-200 shadow-sm">
-                                  <CalendarRange className="w-4 h-4"/> Periodo di Riferimento
-                              </div>
-                              <div className="flex items-center gap-2">
-                                  <span className="text-slate-600 font-medium text-sm">Dal:</span>
-                                  <input disabled={readOnly} type="date" className="p-2 border border-slate-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500/20 outline-none" 
-                                      value={currentSummary.startDate} onChange={e => updateCurrentSummary('startDate', e.target.value)} />
-                              </div>
-                              <div className="flex items-center gap-2">
-                                  <span className="text-slate-600 font-medium text-sm">Al:</span>
-                                  <input disabled={readOnly} type="date" className="p-2 border border-slate-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500/20 outline-none" 
-                                      value={currentSummary.endDate} onChange={e => updateCurrentSummary('endDate', e.target.value)} />
-                              </div>
-                              <div className="flex-1 text-right">
-                                  {!readOnly && (
-                                     <button 
-                                        onClick={importWorksFromJournal}
-                                        className="inline-flex items-center gap-2 text-xs bg-white text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-100 font-bold border border-blue-200 shadow-sm transition-colors"
-                                        title="Importa automaticamente dal Giornale Lavori in base alle date selezionate"
-                                     >
-                                         <ArrowDownToLine className="w-4 h-4"/> Importa da Giornale
-                                     </button>
-                                  )}
-                              </div>
-                          </div>
-
-                          {/* Works List */}
-                          <div>
-                               <div className="flex gap-2 mb-4">
-                                   <input disabled={readOnly}
-                                      type="text" 
-                                      className="flex-1 p-3 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-blue-500/20 outline-none"
-                                      placeholder="Aggiungi lavorazione manualmente (es. Completamento massetto...)"
-                                      value={summaryManualInput}
-                                      onChange={(e) => setSummaryManualInput(e.target.value)}
-                                      onKeyDown={(e) => e.key === 'Enter' && addManualWork()}
-                                   />
-                                   {!readOnly && (
-                                       <button onClick={addManualWork} className="bg-slate-800 text-white px-4 rounded-lg hover:bg-black transition-colors flex items-center justify-center">
-                                           <Plus className="w-5 h-5" />
-                                       </button>
-                                   )}
-                               </div>
-                               
-                               <div className="bg-slate-50 rounded-xl border border-slate-200 min-h-[200px] p-4">
-                                   {currentSummary.works.length === 0 ? (
-                                       <div className="h-full flex flex-col items-center justify-center text-slate-400 italic text-sm py-10">
-                                            <ListChecks className="w-8 h-8 mb-2 opacity-20"/>
-                                            <p>Nessuna lavorazione in elenco.</p>
-                                            <p className="text-xs mt-1">Usa l'importazione o aggiungi manualmente.</p>
-                                       </div>
-                                   ) : (
-                                       <ul className="space-y-2">
-                                           {currentSummary.works.map((work, wIdx) => (
-                                               <li key={wIdx} className="bg-white p-3 rounded-lg border border-slate-200 shadow-sm text-sm text-slate-700 flex justify-between items-start group">
-                                                   <div className="flex gap-3">
-                                                       <span className="font-mono text-slate-400 text-xs mt-0.5">{wIdx + 1}.</span>
-                                                       <span>{work}</span>
-                                                   </div>
-                                                   {!readOnly && (
-                                                       <button onClick={() => removeWork(wIdx)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity p-1">
-                                                           <Trash2 className="w-4 h-4"/>
-                                                       </button>
-                                                   )}
-                                               </li>
-                                           ))}
-                                       </ul>
-                                   )}
-                               </div>
-                          </div>
-                      </div>
-                  )}
               </div>
           )}
 
@@ -438,6 +353,155 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
               </div>
           )}
 
+          {step === 'works' && (
+              <div className="animate-in fade-in slide-in-from-right-4 space-y-12">
+                  
+                  {/* --- SECTION 1: RIEPILOGO LAVORI PREGRESSI --- */}
+                  <section>
+                      <div className="flex items-center justify-between border-b pb-2 mb-4">
+                          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                              <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
+                              Riepilogo Lavori Periodo
+                          </h3>
+                          {currentSummary && !readOnly && (
+                             <button onClick={deleteCurrentSummary} className="text-slate-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition-colors" title="Elimina Riepilogo">
+                                 <Trash2 className="w-4 h-4"/>
+                             </button>
+                          )}
+                      </div>
+                      
+                      {!currentSummary ? (
+                          <div className="text-center py-8 bg-blue-50 rounded-xl border border-dashed border-blue-200">
+                              <p className="text-blue-800 font-medium mb-3">Nessun riepilogo per il periodo tra il verbale precedente e questo.</p>
+                              {!readOnly && (
+                                  <button onClick={initSummaryForCurrentVisit} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold shadow-sm transition-transform hover:scale-105 inline-flex items-center gap-2">
+                                      <Plus className="w-4 h-4"/> Inizializza Riepilogo
+                                  </button>
+                              )}
+                          </div>
+                      ) : (
+                          <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
+                              {/* Date Range Block */}
+                              <div className="flex flex-wrap gap-4 items-center mb-6 border-b border-blue-200 pb-4">
+                                  <div className="flex items-center gap-2 text-blue-800 font-bold text-sm bg-white px-3 py-1.5 rounded border border-blue-200">
+                                      <CalendarRange className="w-4 h-4"/> Periodo
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                      <span className="text-slate-600 font-medium text-xs">Dal:</span>
+                                      <input disabled={readOnly} type="date" className="p-1.5 border border-slate-300 rounded bg-white text-xs" 
+                                          value={currentSummary.startDate} onChange={e => updateCurrentSummary('startDate', e.target.value)} />
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                      <span className="text-slate-600 font-medium text-xs">Al:</span>
+                                      <input disabled={readOnly} type="date" className="p-1.5 border border-slate-300 rounded bg-white text-xs" 
+                                          value={currentSummary.endDate} onChange={e => updateCurrentSummary('endDate', e.target.value)} />
+                                  </div>
+                                  <div className="flex-1 text-right">
+                                      {!readOnly && (
+                                         <button 
+                                            onClick={importWorksFromJournal}
+                                            className="inline-flex items-center gap-1 text-xs bg-white text-blue-700 px-3 py-1.5 rounded hover:bg-blue-100 font-medium border border-blue-200"
+                                         >
+                                             <ArrowDownToLine className="w-3 h-3"/> Importa da Giornale
+                                         </button>
+                                      )}
+                                  </div>
+                              </div>
+
+                              {/* Works List */}
+                              <div className="flex gap-2 mb-3">
+                                   <input disabled={readOnly} type="text" 
+                                      className="flex-1 p-2 border border-blue-200 rounded text-sm bg-white" placeholder="Es. Completamento massetto..."
+                                      value={summaryManualInput} onChange={(e) => setSummaryManualInput(e.target.value)}
+                                      onKeyDown={(e) => e.key === 'Enter' && addManualWorkSummary()}
+                                   />
+                                   {!readOnly && <button onClick={addManualWorkSummary} className="bg-blue-600 text-white px-3 rounded hover:bg-blue-700"><Plus className="w-5 h-5" /></button>}
+                               </div>
+                               
+                               <ul className="space-y-1 bg-white p-3 rounded border border-blue-100 min-h-[100px]">
+                                   {currentSummary.works.map((work, wIdx) => (
+                                       <li key={wIdx} className="flex justify-between items-start text-sm p-1.5 hover:bg-slate-50 rounded group">
+                                           <span className="text-slate-700">{wIdx + 1}. {work}</span>
+                                           {!readOnly && <button onClick={() => removeWorkSummary(wIdx)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4"/></button>}
+                                       </li>
+                                   ))}
+                                   {currentSummary.works.length === 0 && <p className="text-slate-400 italic text-xs text-center py-2">Nessuna lavorazione inserita.</p>}
+                               </ul>
+                          </div>
+                      )}
+                  </section>
+
+                  {/* --- SECTION 2: OPERE IN CORSO --- */}
+                  <section>
+                      <div className="flex items-center justify-between border-b pb-2 mb-4">
+                          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                              <span className="bg-amber-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
+                              Opere in Corso di Esecuzione
+                          </h3>
+                      </div>
+                      
+                      <div className="bg-amber-50 p-6 rounded-xl border border-amber-100">
+                          <div className="flex gap-2 mb-3">
+                               <input disabled={readOnly} type="text" 
+                                  className="flex-1 p-2 border border-amber-200 rounded text-sm bg-white" placeholder="Es. Posa pavimentazione..."
+                                  value={inProgressInput} onChange={(e) => setInProgressInput(e.target.value)}
+                                  onKeyDown={(e) => e.key === 'Enter' && addToListInDoc('worksInProgress', inProgressInput, setInProgressInput)}
+                               />
+                               {!readOnly && <button onClick={() => addToListInDoc('worksInProgress', inProgressInput, setInProgressInput)} className="bg-amber-500 text-white px-3 rounded hover:bg-amber-600"><Plus className="w-5 h-5" /></button>}
+                           </div>
+                           
+                           <ul className="space-y-1 bg-white p-3 rounded border border-amber-100 min-h-[100px]">
+                               {(currentDoc.worksInProgress || '').split('\n').filter(i => i.trim()).map((work, idx) => (
+                                   <li key={idx} className="flex justify-between items-start text-sm p-1.5 hover:bg-slate-50 rounded group">
+                                       <div className="flex gap-2">
+                                            <Activity className="w-4 h-4 text-amber-500 mt-0.5 shrink-0"/>
+                                            <span className="text-slate-700">{work}</span>
+                                       </div>
+                                       {!readOnly && <button onClick={() => removeFromListInDoc('worksInProgress', idx)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4"/></button>}
+                                   </li>
+                               ))}
+                               {!(currentDoc.worksInProgress || '').trim() && <p className="text-slate-400 italic text-xs text-center py-2">Nessuna opera in corso.</p>}
+                           </ul>
+                      </div>
+                  </section>
+
+                  {/* --- SECTION 3: PROSSIME ATTIVITA --- */}
+                  <section>
+                      <div className="flex items-center justify-between border-b pb-2 mb-4">
+                          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                              <span className="bg-emerald-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
+                              Prossime Attività Previste
+                          </h3>
+                      </div>
+                      
+                      <div className="bg-emerald-50 p-6 rounded-xl border border-emerald-100">
+                          <div className="flex gap-2 mb-3">
+                               <input disabled={readOnly} type="text" 
+                                  className="flex-1 p-2 border border-emerald-200 rounded text-sm bg-white" placeholder="Es. Montaggio infissi..."
+                                  value={upcomingInput} onChange={(e) => setUpcomingInput(e.target.value)}
+                                  onKeyDown={(e) => e.key === 'Enter' && addToListInDoc('upcomingWorks', upcomingInput, setUpcomingInput)}
+                               />
+                               {!readOnly && <button onClick={() => addToListInDoc('upcomingWorks', upcomingInput, setUpcomingInput)} className="bg-emerald-600 text-white px-3 rounded hover:bg-emerald-700"><Plus className="w-5 h-5" /></button>}
+                           </div>
+                           
+                           <ul className="space-y-1 bg-white p-3 rounded border border-emerald-100 min-h-[100px]">
+                               {(currentDoc.upcomingWorks || '').split('\n').filter(i => i.trim()).map((work, idx) => (
+                                   <li key={idx} className="flex justify-between items-start text-sm p-1.5 hover:bg-slate-50 rounded group">
+                                       <div className="flex gap-2">
+                                            <CalendarIconNext className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0"/>
+                                            <span className="text-slate-700">{work}</span>
+                                       </div>
+                                       {!readOnly && <button onClick={() => removeFromListInDoc('upcomingWorks', idx)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4"/></button>}
+                                   </li>
+                               ))}
+                               {!(currentDoc.upcomingWorks || '').trim() && <p className="text-slate-400 italic text-xs text-center py-2">Nessuna attività pianificata.</p>}
+                           </ul>
+                      </div>
+                  </section>
+
+              </div>
+          )}
+
           {step === 'eval' && (
               <div className="animate-in fade-in slide-in-from-right-4">
                   <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4">Valutazioni Tecnico-Amministrative</h3>
@@ -453,9 +517,9 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
        <div className="flex justify-between mt-6">
            <button 
              onClick={() => {
-                if(step === 'eval') setStep('convocation');
-                else if(step === 'convocation') setStep('works');
-                else if(step === 'works') setStep('info');
+                if(step === 'eval') setStep('works');
+                else if(step === 'works') setStep('convocation');
+                else if(step === 'convocation') setStep('info');
              }}
              disabled={step === 'info'}
              className="px-6 py-2 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent font-medium flex items-center gap-2"
@@ -464,9 +528,9 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
            </button>
            <button 
              onClick={() => {
-                if(step === 'info') setStep('works');
-                else if(step === 'works') setStep('convocation');
-                else if(step === 'convocation') setStep('eval');
+                if(step === 'info') setStep('convocation');
+                else if(step === 'convocation') setStep('works');
+                else if(step === 'works') setStep('eval');
              }}
              disabled={step === 'eval'}
              className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-30 disabled:bg-slate-300 font-medium shadow-lg disabled:shadow-none flex items-center gap-2"

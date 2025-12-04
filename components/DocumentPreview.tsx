@@ -340,15 +340,15 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                             </p>
                             
                             {currentWorksList.length > 0 ? (
-                                <ol className="list-decimal pl-8 space-y-1 mb-4">
+                                <ul className="list-disc pl-8 space-y-1 mb-4">
                                     {currentWorksList.map((work, idx) => <li key={idx}>{work};</li>)}
-                                </ol>
+                                </ul>
                             ) : (
                                 <p className="italic pl-8 mb-4">Nessuna lavorazione terminata in questo periodo.</p>
                             )}
 
                             <p className="mb-2">Al momento, sono in corso di esecuzione le opere relative a:</p>
-                            {doc.worksInProgress ? (
+                            {doc.worksInProgress && doc.worksInProgress.trim().length > 0 ? (
                                 <ul className="list-disc pl-8 space-y-1 mb-4">
                                     {doc.worksInProgress.split('\n').filter(l => l.trim()).map((line, i) => (
                                         <li key={i}>{line}</li>
@@ -359,7 +359,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                             )}
 
                             <p className="mb-2">Prossime attività previste:</p>
-                            {doc.upcomingWorks ? (
+                            {doc.upcomingWorks && doc.upcomingWorks.trim().length > 0 ? (
                                 <ul className="list-disc pl-8 space-y-1 mb-4">
                                     {doc.upcomingWorks.split('\n').filter(l => l.trim()).map((line, i) => (
                                         <li key={i}>{line}</li>
