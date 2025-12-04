@@ -1,9 +1,9 @@
 
 import React, { useState } from 'react';
-import { ProjectConstants, DocumentVariables, SALData, TesterVisitSummary } from '../types';
+import { ProjectConstants, DocumentVariables, SALData } from '../types';
 import { WorksManager } from './WorksManager';
 import { PhotoManager } from './PhotoManager';
-import { FileText, HardHat, Camera, Calendar, FileClock, FolderOpen, Euro, Plus, Trash2, Copy, CalendarRange, ListPlus, Import, ArrowDownToLine, Hourglass } from 'lucide-react';
+import { FileText, HardHat, Camera, Calendar, FileClock, FolderOpen, Euro, Plus, Trash2, Copy, Hourglass } from 'lucide-react';
 
 interface ExecutionManagerProps {
   project: ProjectConstants;
@@ -28,15 +28,9 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
   onDeleteDocument,
   readOnly = false
 }) => {
-  const [tab, setTab] = useState<'acts' | 'works' | 'photos' | 'testerWorks'>('acts');
+  const [tab, setTab] = useState<'acts' | 'works' | 'photos'>('acts');
   const [actsSubTab, setActsSubTab] = useState<'dates' | 'suspensions' | 'docs' | 'sals'>('dates');
   
-  // State for Tester Works Summary
-  const [summaryStartDate, setSummaryStartDate] = useState('');
-  const [summaryEndDate, setSummaryEndDate] = useState('');
-  const [summaryManualInput, setSummaryManualInput] = useState('');
-  const [activeSummaryIndex, setActiveSummaryIndex] = useState<number | null>(null);
-
   // Helper to safely update execution phase
   const updateExec = (field: string, value: any) => {
     if (readOnly) return;
@@ -141,78 +135,6 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
     updateExec('sals', newSALs);
   };
 
-  // --- Logic for Tester Visit Summaries ---
-  
-  const createNewSummary = () => {
-      if (readOnly) return;
-      const newSummary: TesterVisitSummary = {
-          id: crypto.randomUUID(),
-          startDate: '',
-          endDate: '',
-          works: [],
-          notes: ''
-      };
-      updateExec('testerVisitSummaries', [...(execPhase.testerVisitSummaries || []), newSummary]);
-      setActiveSummaryIndex((execPhase.testerVisitSummaries || []).length);
-  };
-
-  const updateSummary = (index: number, field: keyof TesterVisitSummary, value: any) => {
-      if (readOnly) return;
-      const list = [...(execPhase.testerVisitSummaries || [])];
-      list[index] = { ...list[index], [field]: value };
-      updateExec('testerVisitSummaries', list);
-  };
-  
-  const importWorksFromJournal = (index: number) => {
-      if (readOnly) return;
-      const summary = execPhase.testerVisitSummaries?.[index];
-      if (!summary || !summary.startDate || !summary.endDate) {
-          alert("Inserisci prima le date 'Dal' e 'Al'.");
-          return;
-      }
-      
-      const relevantDocs = documents.filter(d => d.date >= summary.startDate && d.date <= summary.endDate);
-      const worksFound = relevantDocs.flatMap(d => d.worksExecuted);
-      
-      // Merge unique
-      const currentWorks = new Set(summary.works);
-      worksFound.forEach(w => currentWorks.add(w));
-      
-      updateSummary(index, 'works', Array.from(currentWorks));
-      alert(`Importate ${worksFound.length} lavorazioni da ${relevantDocs.length} verbali.`);
-  };
-
-  const addManualWorkToSummary = (index: number) => {
-      if (readOnly) return;
-      if (summaryManualInput.trim()) {
-          const summary = execPhase.testerVisitSummaries?.[index];
-          if (summary) {
-              updateSummary(index, 'works', [...summary.works, summaryManualInput]);
-              setSummaryManualInput('');
-          }
-      }
-  };
-
-  const removeWorkFromSummary = (summaryIndex: number, workIndex: number) => {
-      if (readOnly) return;
-      const summary = execPhase.testerVisitSummaries?.[summaryIndex];
-      if (summary) {
-          const newWorks = [...summary.works];
-          newWorks.splice(workIndex, 1);
-          updateSummary(summaryIndex, 'works', newWorks);
-      }
-  };
-
-  const deleteSummary = (index: number) => {
-      if (readOnly) return;
-      if (confirm("Eliminare questo riepilogo?")) {
-          const list = [...(execPhase.testerVisitSummaries || [])];
-          list.splice(index, 1);
-          updateExec('testerVisitSummaries', list);
-          setActiveSummaryIndex(null);
-      }
-  };
-
   return (
     <div className="max-w-6xl mx-auto pb-20 animate-in fade-in duration-500">
        <div className="flex items-center justify-between mb-8">
@@ -223,9 +145,6 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
              </button>
              <button onClick={() => setTab('works')} className={`px-4 py-2 text-sm font-medium rounded transition-all whitespace-nowrap ${tab === 'works' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:bg-slate-50'}`}>
                 <div className="flex items-center gap-2"><HardHat className="w-4 h-4"/> Giornale Lavori</div>
-             </button>
-             <button onClick={() => setTab('testerWorks')} className={`px-4 py-2 text-sm font-medium rounded transition-all whitespace-nowrap ${tab === 'testerWorks' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:bg-slate-50'}`}>
-                <div className="flex items-center gap-2"><CalendarRange className="w-4 h-4"/> Lavori Visita Collaudatore</div>
              </button>
              <button onClick={() => setTab('photos')} className={`px-4 py-2 text-sm font-medium rounded transition-all whitespace-nowrap ${tab === 'photos' ? 'bg-blue-600 text-white shadow' : 'text-slate-600 hover:bg-slate-50'}`}>
                 <div className="flex items-center gap-2"><Camera className="w-4 h-4"/> Foto</div>
@@ -423,109 +342,6 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
          </>
        )}
        
-       {tab === 'testerWorks' && (
-           <div className="animate-in fade-in slide-in-from-right-4">
-               <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 mb-6">
-                   <div className="flex items-center justify-between mb-4">
-                       <div>
-                           <h3 className="text-lg font-bold text-slate-800">Riepilogo Lavori per Visita Collaudo</h3>
-                           <p className="text-slate-500 text-sm">Crea un elenco sintetico delle lavorazioni per un determinato periodo.</p>
-                       </div>
-                       {!readOnly && (
-                           <button onClick={createNewSummary} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium text-sm">
-                               <Plus className="w-4 h-4"/> Nuovo Periodo
-                           </button>
-                       )}
-                   </div>
-                   
-                   {(execPhase.testerVisitSummaries || []).length === 0 && (
-                       <div className="text-center py-10 bg-slate-50 rounded-xl border border-dashed border-slate-300 text-slate-400">
-                           Nessun riepilogo creato. Clicca su "Nuovo Periodo" per iniziare.
-                       </div>
-                   )}
-                   
-                   <div className="space-y-8">
-                       {(execPhase.testerVisitSummaries || []).map((summary, idx) => (
-                           <div key={summary.id} className="border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
-                               <div className="bg-slate-100 p-4 border-b border-slate-200 flex justify-between items-center">
-                                   <div className="flex gap-4 items-center">
-                                       <span className="font-bold text-slate-700 bg-white px-2 py-1 rounded text-sm border shadow-sm">Periodo #{idx + 1}</span>
-                                       <div className="flex items-center gap-2 text-sm">
-                                           <span className="text-slate-500">Dal:</span>
-                                           <input disabled={readOnly} type="date" className="p-1 border border-slate-300 rounded bg-white text-xs" 
-                                               value={summary.startDate} onChange={e => updateSummary(idx, 'startDate', e.target.value)} />
-                                           <span className="text-slate-500">Al:</span>
-                                           <input disabled={readOnly} type="date" className="p-1 border border-slate-300 rounded bg-white text-xs" 
-                                               value={summary.endDate} onChange={e => updateSummary(idx, 'endDate', e.target.value)} />
-                                       </div>
-                                   </div>
-                                   {!readOnly && (
-                                       <div className="flex gap-2">
-                                           <button 
-                                              onClick={() => importWorksFromJournal(idx)}
-                                              className="flex items-center gap-1 text-xs bg-blue-100 text-blue-700 px-3 py-1.5 rounded hover:bg-blue-200 font-medium"
-                                              title="Importa dal Giornale Lavori in base alle date"
-                                           >
-                                               <ArrowDownToLine className="w-3 h-3"/> Importa da Giornale
-                                           </button>
-                                           <button onClick={() => deleteSummary(idx)} className="text-slate-400 hover:text-red-600 p-1.5 rounded hover:bg-red-50">
-                                               <Trash2 className="w-4 h-4"/>
-                                           </button>
-                                       </div>
-                                   )}
-                               </div>
-                               
-                               <div className="p-4 bg-white">
-                                   <div className="flex gap-2 mb-4">
-                                       <input disabled={readOnly}
-                                          type="text" 
-                                          className="flex-1 p-2 border border-slate-300 rounded-lg text-sm"
-                                          placeholder="Aggiungi lavorazione manualmente..."
-                                          value={activeSummaryIndex === idx ? summaryManualInput : ''}
-                                          onChange={(e) => {
-                                              setActiveSummaryIndex(idx);
-                                              setSummaryManualInput(e.target.value);
-                                          }}
-                                          onKeyDown={(e) => {
-                                              if (e.key === 'Enter') {
-                                                  setActiveSummaryIndex(idx);
-                                                  addManualWorkToSummary(idx);
-                                              }
-                                          }}
-                                       />
-                                       {!readOnly && (
-                                           <button onClick={() => { setActiveSummaryIndex(idx); addManualWorkToSummary(idx); }} className="bg-slate-800 text-white px-3 rounded-lg hover:bg-black">
-                                               <Plus className="w-4 h-4" />
-                                           </button>
-                                       )}
-                                   </div>
-                                   
-                                   <div className="space-y-2">
-                                       {summary.works.length === 0 ? (
-                                           <p className="text-slate-400 italic text-sm text-center py-2">Nessuna lavorazione in elenco.</p>
-                                       ) : (
-                                           <ul className="list-disc pl-5 space-y-1">
-                                               {summary.works.map((work, wIdx) => (
-                                                   <li key={wIdx} className="text-sm text-slate-700 pl-1 group flex justify-between">
-                                                       <span>{work}</span>
-                                                       {!readOnly && (
-                                                           <button onClick={() => removeWorkFromSummary(idx, wIdx)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 px-2">
-                                                               <Trash2 className="w-3 h-3"/>
-                                                           </button>
-                                                       )}
-                                                   </li>
-                                               ))}
-                                           </ul>
-                                       )}
-                                   </div>
-                               </div>
-                           </div>
-                       ))}
-                   </div>
-               </div>
-           </div>
-       )}
-
        {tab === 'works' && (
          <WorksManager 
             documents={documents}

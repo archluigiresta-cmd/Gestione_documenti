@@ -370,6 +370,7 @@ const App: React.FC = () => {
               onNewDocument={createNewVerbale}
               onDeleteDocument={handleDeleteDocument}
               readOnly={isReadOnly}
+              onUpdateProject={handleProjectUpdate}
             />
           )}
 
