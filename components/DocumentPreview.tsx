@@ -363,28 +363,34 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                                 <p className="italic pl-8 mb-4">Nessuna attività specifica pianificata.</p>
                             )}
 
-                            {/* --- NEW SECTIONS --- */}
+                            {/* --- NEW SECTIONS: REQUESTS & INVITATIONS --- */}
                             
-                            {doc.testerRequests && (
-                                <>
-                                    <p className="font-bold underline mt-6 mb-2">Il Collaudatore richiede:</p>
-                                    <ul className="list-disc pl-8 space-y-1 mb-4">
-                                        {doc.testerRequests.split('\n').filter(l => l.trim().length > 1).map((line, i) => (
-                                            <li key={i}>{line.replace(/^-\s*/, '')}</li>
-                                        ))}
-                                    </ul>
-                                </>
-                            )}
+                            {(doc.testerRequests || doc.testerInvitations) && (
+                                <div className="mt-8 mb-4">
+                                    <p className="mb-4 font-bold">Dopo aver preso visione di tutte le aree di cantiere il Collaudatore:</p>
 
-                            {doc.testerInvitations && (
-                                <>
-                                    <p className="font-bold underline mt-6 mb-2">Il Collaudatore invita:</p>
-                                    <ul className="list-disc pl-8 space-y-1 mb-4">
-                                        {doc.testerInvitations.split('\n').filter(l => l.trim().length > 1).map((line, i) => (
-                                            <li key={i}>{line.replace(/^-\s*/, '')}</li>
-                                        ))}
-                                    </ul>
-                                </>
+                                    {doc.testerRequests && (
+                                        <>
+                                            <p className="mb-2">- chiede ai presenti, ciascuno nell’ambito della propria competenza e responsabilità:</p>
+                                            <ul className="list-disc pl-8 space-y-1 mb-4">
+                                                {doc.testerRequests.split('\n').filter(l => l.trim().length > 1).map((line, i) => (
+                                                    <li key={i}>{line.replace(/^-\s*/, '')}</li>
+                                                ))}
+                                            </ul>
+                                        </>
+                                    )}
+
+                                    {doc.testerInvitations && (
+                                        <>
+                                            <p className="mb-2">- invita i presenti, ciascuno nell’ambito della propria competenza e responsabilità, a:</p>
+                                            <ul className="list-disc pl-8 space-y-1 mb-4">
+                                                {doc.testerInvitations.split('\n').filter(l => l.trim().length > 1).map((line, i) => (
+                                                    <li key={i}>{line.replace(/^-\s*/, '')}</li>
+                                                ))}
+                                            </ul>
+                                        </>
+                                    )}
+                                </div>
                             )}
 
                             {doc.commonParts && (
@@ -422,38 +428,69 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
         </div>
 
         {/* Signatures */}
-        <table className="mt-16 w-full text-sm break-inside-avoid">
-            <tbody>
-                <tr>
-                    <td className="w-1/2 align-top pb-16">
-                        <p>Il Direttore dei Lavori:</p>
-                        <p className="font-bold mt-8 border-b border-black w-2/3">
-                            {formatNameWithTitle(project.subjects.dl.contact)}
+        {isCollaudo ? (
+            <div className="mt-16 flex flex-col items-end space-y-16 break-inside-avoid">
+                {/* 1. L'Impresa */}
+                <div className="w-1/2 text-center">
+                    <p>L'Impresa:</p>
+                    <p className="font-bold mt-8 border-b border-black">
+                        {project.contractor.repTitle ? `${project.contractor.repTitle} ` : 'Sig. '}
+                        {project.contractor.repName}
+                    </p>
+                </div>
+
+                {/* 2. Il Direttore dei Lavori */}
+                <div className="w-1/2 text-center">
+                    <p>Il Direttore dei Lavori:</p>
+                    <p className="font-bold mt-8 border-b border-black">
+                        {formatNameWithTitle(project.subjects.dl.contact)}
+                    </p>
+                </div>
+
+                {/* 3. Il RUP (Se presente, opzionale, ma tipico nei verbali) */}
+                {project.subjects.rup.contact.name && (
+                    <div className="w-1/2 text-center">
+                        <p>Il Responsabile Unico del Progetto:</p>
+                        <p className="font-bold mt-8 border-b border-black">
+                            {formatNameWithTitle(project.subjects.rup.contact)}
                         </p>
-                    </td>
-                    <td className="w-1/2 align-top pb-16 text-right">
-                         {isCollaudo && (
-                            <div className="flex flex-col items-end">
-                                <p>Il Collaudatore:</p>
-                                <p className="font-bold mt-8 border-b border-black w-48">
-                                    {formatNameWithTitle(project.subjects.tester.contact)}
-                                </p>
-                            </div>
-                         )}
-                    </td>
-                </tr>
-                <tr>
-                    <td className="w-1/2 align-top">
-                        <p>L'Impresa:</p>
-                        <p className="font-bold mt-8 border-b border-black w-2/3">
-                            {project.contractor.repTitle ? `${project.contractor.repTitle} ` : 'Sig. '}
-                            {project.contractor.repName}
-                        </p>
-                    </td>
-                    <td className="w-1/2"></td>
-                </tr>
-            </tbody>
-        </table>
+                    </div>
+                )}
+
+                {/* 4. Il Collaudatore (Last) */}
+                <div className="w-1/2 text-center">
+                    <p>Il Collaudatore:</p>
+                    <p className="font-bold mt-8 border-b border-black">
+                        {formatNameWithTitle(project.subjects.tester.contact)}
+                    </p>
+                </div>
+            </div>
+        ) : (
+            // Standard layout for other documents
+            <table className="mt-16 w-full text-sm break-inside-avoid">
+                <tbody>
+                    <tr>
+                        <td className="w-1/2 align-top pb-16">
+                            <p>Il Direttore dei Lavori:</p>
+                            <p className="font-bold mt-8 border-b border-black w-2/3">
+                                {formatNameWithTitle(project.subjects.dl.contact)}
+                            </p>
+                        </td>
+                        <td className="w-1/2 align-top pb-16 text-right"></td>
+                    </tr>
+                    <tr>
+                        <td className="w-1/2 align-top">
+                            <p>L'Impresa:</p>
+                            <p className="font-bold mt-8 border-b border-black w-2/3">
+                                {project.contractor.repTitle ? `${project.contractor.repTitle} ` : 'Sig. '}
+                                {project.contractor.repName}
+                            </p>
+                        </td>
+                        <td className="w-1/2"></td>
+                    </tr>
+                </tbody>
+            </table>
+        )}
         
         {/* Footer */}
         {isCollaudo && (
