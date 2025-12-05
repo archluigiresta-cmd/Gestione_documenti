@@ -244,6 +244,12 @@ export interface DocumentVariables {
   worksExecuted: string[]; // Lavori (Giornale Lavori)
   worksInProgress: string; // Lavorazioni in corso al momento della visita
   upcomingWorks: string; // NEW: Prossime attività previste
+  
+  // NEW FIELDS FOR COLLAUDO
+  testerRequests: string; // Richieste del Collaudatore
+  testerInvitations: string; // Inviti del Collaudatore
+  commonParts: string; // Parti Comuni (Chiusura)
+
   observations: string; // Valutazioni collaudatore
   
   photos: PhotoAttachment[];

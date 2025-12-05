@@ -362,6 +362,37 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                             ) : (
                                 <p className="italic pl-8 mb-4">Nessuna attività specifica pianificata.</p>
                             )}
+
+                            {/* --- NEW SECTIONS --- */}
+                            
+                            {doc.testerRequests && (
+                                <>
+                                    <p className="font-bold underline mt-6 mb-2">Il Collaudatore richiede:</p>
+                                    <ul className="list-disc pl-8 space-y-1 mb-4">
+                                        {doc.testerRequests.split('\n').filter(l => l.trim().length > 1).map((line, i) => (
+                                            <li key={i}>{line.replace(/^-\s*/, '')}</li>
+                                        ))}
+                                    </ul>
+                                </>
+                            )}
+
+                            {doc.testerInvitations && (
+                                <>
+                                    <p className="font-bold underline mt-6 mb-2">Il Collaudatore invita:</p>
+                                    <ul className="list-disc pl-8 space-y-1 mb-4">
+                                        {doc.testerInvitations.split('\n').filter(l => l.trim().length > 1).map((line, i) => (
+                                            <li key={i}>{line.replace(/^-\s*/, '')}</li>
+                                        ))}
+                                    </ul>
+                                </>
+                            )}
+
+                            {doc.commonParts && (
+                                <div className="mt-6 mb-4 whitespace-pre-line text-justify">
+                                    {doc.commonParts}
+                                </div>
+                            )}
+
                         </div>
                     ) : (
                         <>

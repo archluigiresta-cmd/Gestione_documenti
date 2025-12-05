@@ -141,6 +141,11 @@ export const createInitialDocument = (projectId: string): DocumentVariables => (
   worksExecuted: [],
   worksInProgress: '', 
   upcomingWorks: '', // NEW
+  
+  testerRequests: '', // NEW
+  testerInvitations: '', // NEW
+  commonParts: '', // NEW
+
   observations: '',
   photos: []
 });

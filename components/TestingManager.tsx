@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { DocumentVariables, ProjectConstants, TesterVisitSummary } from '../types';
-import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext, RefreshCw } from 'lucide-react';
+import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext, RefreshCw, MessageSquare, Bell, FileCheck2 } from 'lucide-react';
 
 interface TestingManagerProps {
   project: ProjectConstants;
@@ -15,6 +15,29 @@ interface TestingManagerProps {
   readOnly?: boolean; 
 }
 
+// STANDARD TEXT PRESETS
+const REQUEST_OPTIONS = [
+    "se rispetto al progetto appaltato vi siano previsioni di varianti e, in caso di riscontro positivo, se le stesse siano state gestite formalmente.",
+    "se vi sono ritardi rispetto al cronoprogramma dei lavori e, in caso di riscontro positivo, cosa si stia facendo per allineare le attività al cronoprogramma."
+];
+
+const INVITATION_OPTIONS = [
+    "Ad osservare tutte le disposizioni riportate nel PSC e nel POS quest’ultimo redatto dall’impresa esecutrice delle opere.",
+    "Ad astenersi dal porre in essere qualsivoglia opera di carattere strutturale in mancanza della verifica e del preventivo assenso da parte dello scrivente collaudatore.",
+    "Ad osservare tutte le prescrizioni indicate negli elaborati tecnici esecutivi delle opere in esecuzione e a consultare la D.LL., nonché lo scrivente collaudatore in corso d’opera, nel caso in cui dovessero presentarsi varianti tecniche tali da richiedere i dovuti chiarimenti esecutivi.",
+    "Ad effettuare i dovuti controlli di accettazione in cantiere dei materiali da costruzione quali, a titolo esemplificativo e non esaustivo, i Certificati di tracciabilità dei materiali da costruzione e i certificati dei centri di trasformazione.",
+    "A fornire, appena individuato, le dovute informazioni sull’impianto di betonaggio (distanza dal cantiere, sistema di qualità di gestione dell’impianto, relazione di omogeneità sulla miscela del calcestruzzo che dovrà essere utilizzata).",
+    "A provvedere ad effettuare la prequalifica dell’impianto di betonaggio, secondo il modello fornito dallo scrivente, al fine di attestare la qualità e l'affidabilità dell'impianto stesso.",
+    "Ad attenersi, durante le fasi di getto, scrupolosamente ai prelievi di calcestruzzo secondo le indicazioni contenute al paragrafo 11.2.5.1 del DM 17/01/2018 e al paragrafo C11.2.5.1 della Circolare n° 7 del 21/01/2019.",
+    "Al fine di capire se la qualità del cls fornito in cantiere rispetta le prescrizioni progettuali, sarà necessario effettuare un prelievo extra (costituito da due ulteriori cubetti di cls) rispetto a quelli normati, al fine di far schiacciare gli stessi dopo 10 giorni dal getto e vedere se la percentuale di resistenza raggiunta è in linea con la classe prescritta."
+];
+
+const COMMON_PART_OPTIONS = [
+    "Di quanto ispezionato si è effettuato il rilievo fotografico allegato al presente verbale per farne parte integrante.",
+    "Per le parti non più ispezionabili, di difficile ispezione o non potute controllare, la Direzione dei lavori e l’impresa hanno consegnato la documentazione fotografica in fase di esecuzione ed hanno concordemente assicurato, a seguito di esplicita richiesta del sottoscritto, la perfetta esecuzione secondo le prescrizioni contrattuali e, in particolare l’Impresa, per gli effetti dell’art. 1667 del codice civile, ha dichiarato non esservi difformità o vizi.",
+    "Le parti si aggiornano, per la seconda visita di collaudo, a data da concordarsi, dando atto che sarà preceduta da convocazione da parte dello scrivente Collaudatore."
+];
+
 export const TestingManager: React.FC<TestingManagerProps> = ({
   project,
   documents,
@@ -27,7 +50,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   readOnly = false
 }) => {
   const currentDoc = documents.find(d => d.id === currentDocId) || documents[0];
-  const [step, setStep] = useState<'info' | 'convocation' | 'works' | 'eval'>('info');
+  const [step, setStep] = useState<'info' | 'convocation' | 'works' | 'requests' | 'invitations' | 'common' | 'eval'>('info');
 
   // State for Inputs
   const [summaryManualInput, setSummaryManualInput] = useState('');
@@ -38,6 +61,13 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
 
   const handleUpdate = (updatedDoc: DocumentVariables) => {
       if (!readOnly) onUpdateDocument(updatedDoc);
+  };
+
+  const handlePresetInsert = (field: 'testerRequests' | 'testerInvitations' | 'commonParts', text: string) => {
+      if (readOnly) return;
+      const current = currentDoc[field] || '';
+      const separator = current.trim() ? '\n- ' : '- ';
+      handleUpdate({ ...currentDoc, [field]: current + separator + text });
   };
 
   // Helper to safely update execution phase
@@ -53,7 +83,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   };
 
   // --- Logic for Lists stored in Document (In Progress & Upcoming) ---
-  
   const addToListInDoc = (field: 'worksInProgress' | 'upcomingWorks', inputVal: string, setInputVal: (s: string) => void) => {
       if (readOnly || !inputVal.trim()) return;
       const currentText = currentDoc[field] || '';
@@ -99,7 +128,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
       { 
           id: 'contractor', 
           label: 'Impresa', 
-          // Format: per l'Impresa [Nome] ([Ruolo]): [Titolo] [NomeRep]
           fullText: (() => {
               const c = project.contractor;
               if (!c || !c.name) return '';
@@ -116,11 +144,9 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
       const currentText = currentDoc.attendees || '';
       
       if (currentText.includes(fullText)) {
-          // Remove
           const newText = currentText.replace(fullText, '').replace('\n\n', '\n').trim();
           handleUpdate({...currentDoc, attendees: newText});
       } else {
-          // Add
           const separator = currentText.length > 0 ? '\n' : '';
           handleUpdate({...currentDoc, attendees: currentText + separator + fullText});
       }
@@ -136,7 +162,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
 
   // --- Logic for Tester Visit Summaries (Project Level) ---
   const execPhase = project.executionPhase || {};
-  // 1-based Visit Number maps to 0-based index
   const summaryIndex = (currentDoc.visitNumber > 0 ? currentDoc.visitNumber : 1) - 1;
   const currentSummary = execPhase.testerVisitSummaries?.[summaryIndex];
 
@@ -151,9 +176,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
       };
       
       const newSummaries = [...(execPhase.testerVisitSummaries || [])];
-      // Ensure array is filled up to index
       newSummaries[summaryIndex] = newSummary;
-      
       updateExec('testerVisitSummaries', newSummaries);
   };
 
@@ -170,7 +193,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
           alert("Inserisci prima le date 'Dal' e 'Al' per definire il periodo di ricerca.");
           return;
       }
-      
       const relevantDocs = documents.filter(d => d.date >= currentSummary.startDate && d.date <= currentSummary.endDate);
       const worksFound = relevantDocs.flatMap(d => d.worksExecuted);
       
@@ -178,11 +200,8 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
           alert("Nessuna lavorazione trovata nei verbali/giornale del periodo selezionato.");
           return;
       }
-
-      // Merge unique
       const currentWorks = new Set(currentSummary.works);
       worksFound.forEach(w => currentWorks.add(w));
-      
       updateCurrentSummary('works', Array.from(currentWorks));
       alert(`Importate ${worksFound.length} lavorazioni da ${relevantDocs.length} verbali del giornale lavori.`);
   };
@@ -210,6 +229,17 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
           updateExec('testerVisitSummaries', list);
       }
   };
+
+  // Nav Item Helper
+  const NavButton = ({ id, label, icon: Icon }: any) => (
+      <button 
+        onClick={() => setStep(id)} 
+        className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all min-w-[100px] ${step === id ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300'}`}
+      >
+        <Icon className="w-5 h-5"/>
+        <span className="font-bold text-xs md:text-sm text-center">{label}</span>
+      </button>
+  );
 
   return (
     <div className="max-w-5xl mx-auto pb-20 animate-in fade-in">
@@ -244,35 +274,14 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
        </div>
 
        {/* Step Navigation */}
-       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <button 
-            onClick={() => setStep('info')} 
-            className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${step === 'info' ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300'}`}
-          >
-            <Calendar className="w-5 h-5"/>
-            <span className="font-bold text-xs md:text-sm">Dati & Orari</span>
-          </button>
-          <button 
-            onClick={() => setStep('convocation')} 
-            className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${step === 'convocation' ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300'}`}
-          >
-            <Users className="w-5 h-5"/>
-            <span className="font-bold text-xs md:text-sm">Presenti</span>
-          </button>
-          <button 
-            onClick={() => setStep('works')} 
-            className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${step === 'works' ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300'}`}
-          >
-            <ListChecks className="w-5 h-5"/>
-            <span className="font-bold text-xs md:text-sm">Riepilogo & Lavori</span>
-          </button>
-          <button 
-            onClick={() => setStep('eval')} 
-            className={`p-3 rounded-xl border flex flex-col items-center gap-2 transition-all ${step === 'eval' ? 'bg-blue-50 border-blue-500 text-blue-700 shadow-md' : 'bg-white border-slate-200 text-slate-500 hover:border-blue-300'}`}
-          >
-            <ClipboardCheck className="w-5 h-5"/>
-            <span className="font-bold text-xs md:text-sm">Valutazioni</span>
-          </button>
+       <div className="flex gap-2 overflow-x-auto pb-4 mb-4">
+          <NavButton id="info" label="Dati" icon={Calendar} />
+          <NavButton id="convocation" label="Presenti" icon={Users} />
+          <NavButton id="works" label="Lavori" icon={ListChecks} />
+          <NavButton id="requests" label="Richieste" icon={MessageSquare} />
+          <NavButton id="invitations" label="Inviti" icon={Bell} />
+          <NavButton id="common" label="Parti Comuni" icon={FileCheck2} />
+          <NavButton id="eval" label="Valutazioni" icon={ClipboardCheck} />
        </div>
 
        {/* Content Area */}
@@ -347,12 +356,10 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                         )}
                       </div>
                       
-                      {/* Smart Select Area */}
                       <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                           <p className="text-xs font-bold text-slate-500 uppercase mb-2">Inserimento Rapido:</p>
                           <div className="flex flex-wrap gap-2">
                               {potentialAttendees.map(p => {
-                                  // Check using partial match if possible or exact
                                   const isSelected = (currentDoc.attendees || '').includes(p.fullText);
                                   return (
                                     <button 
@@ -382,8 +389,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
 
           {step === 'works' && (
               <div className="animate-in fade-in slide-in-from-right-4 space-y-12">
-                  
-                  {/* --- SECTION 1: RIEPILOGO LAVORI PREGRESSI --- */}
                   <section>
                       <div className="flex items-center justify-between border-b pb-2 mb-4">
                           <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -408,7 +413,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                           </div>
                       ) : (
                           <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
-                              {/* Date Range Block */}
                               <div className="flex flex-wrap gap-4 items-center mb-6 border-b border-blue-200 pb-4">
                                   <div className="flex items-center gap-2 text-blue-800 font-bold text-sm bg-white px-3 py-1.5 rounded border border-blue-200">
                                       <CalendarRange className="w-4 h-4"/> Periodo
@@ -435,7 +439,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                                   </div>
                               </div>
 
-                              {/* Works List */}
                               <div className="flex gap-2 mb-3">
                                    <input disabled={readOnly} type="text" 
                                       className="flex-1 p-2 border border-blue-200 rounded text-sm bg-white" placeholder="Es. Completamento massetto..."
@@ -458,7 +461,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                       )}
                   </section>
 
-                  {/* --- SECTION 2: OPERE IN CORSO --- */}
                   <section>
                       <div className="flex items-center justify-between border-b pb-2 mb-4">
                           <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -492,7 +494,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                       </div>
                   </section>
 
-                  {/* --- SECTION 3: PROSSIME ATTIVITA --- */}
                   <section>
                       <div className="flex items-center justify-between border-b pb-2 mb-4">
                           <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -525,7 +526,87 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                            </ul>
                       </div>
                   </section>
+              </div>
+          )}
 
+          {step === 'requests' && (
+              <div className="animate-in fade-in slide-in-from-right-4">
+                  <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4 flex items-center gap-2"><MessageSquare className="w-5 h-5"/> Richieste del Collaudatore</h3>
+                  
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                      <p className="text-xs font-bold text-blue-700 uppercase mb-2">Inserimento Rapido Richieste:</p>
+                      <select 
+                        disabled={readOnly}
+                        className="w-full p-2 border border-blue-300 rounded text-sm bg-white"
+                        onChange={(e) => {
+                            if(e.target.value) {
+                                handlePresetInsert('testerRequests', e.target.value);
+                                e.target.value = ''; // Reset select
+                            }
+                        }}
+                      >
+                          <option value="">Seleziona una richiesta standard...</option>
+                          {REQUEST_OPTIONS.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
+                      </select>
+                  </div>
+                  
+                  <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed font-serif focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
+                    value={currentDoc.testerRequests || ''} onChange={e => handleUpdate({...currentDoc, testerRequests: e.target.value})} 
+                    placeholder="Elenco delle richieste specifiche da parte del collaudatore..."/>
+              </div>
+          )}
+
+          {step === 'invitations' && (
+              <div className="animate-in fade-in slide-in-from-right-4">
+                  <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4 flex items-center gap-2"><Bell className="w-5 h-5"/> Inviti del Collaudatore</h3>
+                  
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                      <p className="text-xs font-bold text-amber-700 uppercase mb-2">Inserimento Rapido Inviti:</p>
+                      <select 
+                        disabled={readOnly}
+                        className="w-full p-2 border border-amber-300 rounded text-sm bg-white"
+                        onChange={(e) => {
+                            if(e.target.value) {
+                                handlePresetInsert('testerInvitations', e.target.value);
+                                e.target.value = ''; 
+                            }
+                        }}
+                      >
+                          <option value="">Seleziona un invito standard...</option>
+                          {INVITATION_OPTIONS.map((opt, i) => <option key={i} value={opt}>{opt.substring(0, 100)}...</option>)}
+                      </select>
+                  </div>
+                  
+                  <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed font-serif focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
+                    value={currentDoc.testerInvitations || ''} onChange={e => handleUpdate({...currentDoc, testerInvitations: e.target.value})} 
+                    placeholder="Elenco degli inviti/prescrizioni da parte del collaudatore..."/>
+              </div>
+          )}
+
+          {step === 'common' && (
+              <div className="animate-in fade-in slide-in-from-right-4">
+                  <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4 flex items-center gap-2"><FileCheck2 className="w-5 h-5"/> Parti Comuni & Chiusura</h3>
+                  
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
+                      <p className="text-xs font-bold text-slate-500 uppercase mb-2">Inserimento Rapido Frasi Standard:</p>
+                      <select 
+                        disabled={readOnly}
+                        className="w-full p-2 border border-slate-300 rounded text-sm bg-white"
+                        onChange={(e) => {
+                            if(e.target.value) {
+                                handlePresetInsert('commonParts', e.target.value);
+                                e.target.value = ''; 
+                            }
+                        }}
+                      >
+                          <option value="">Seleziona una frase standard...</option>
+                          {COMMON_PART_OPTIONS.map((opt, i) => <option key={i} value={opt}>{opt.substring(0, 100)}...</option>)}
+                      </select>
+                  </div>
+                  
+                  <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed font-serif focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
+                    value={currentDoc.commonParts || ''} onChange={e => handleUpdate({...currentDoc, commonParts: e.target.value})} 
+                    placeholder="Frasi di rito, chiusura verbale, aggiornamenti..."/>
               </div>
           )}
 
@@ -544,7 +625,10 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
        <div className="flex justify-between mt-6">
            <button 
              onClick={() => {
-                if(step === 'eval') setStep('works');
+                if(step === 'eval') setStep('common');
+                else if(step === 'common') setStep('invitations');
+                else if(step === 'invitations') setStep('requests');
+                else if(step === 'requests') setStep('works');
                 else if(step === 'works') setStep('convocation');
                 else if(step === 'convocation') setStep('info');
              }}
@@ -557,7 +641,10 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
              onClick={() => {
                 if(step === 'info') setStep('convocation');
                 else if(step === 'convocation') setStep('works');
-                else if(step === 'works') setStep('eval');
+                else if(step === 'works') setStep('requests');
+                else if(step === 'requests') setStep('invitations');
+                else if(step === 'invitations') setStep('common');
+                else if(step === 'common') setStep('eval');
              }}
              disabled={step === 'eval'}
              className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-30 disabled:bg-slate-300 font-medium shadow-lg disabled:shadow-none flex items-center gap-2"
