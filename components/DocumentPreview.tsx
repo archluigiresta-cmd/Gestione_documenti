@@ -169,7 +169,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
   // Helper to format name with Title
   const formatNameWithTitle = (contact: { title?: string, name: string }) => {
-      if (!contact.name) return '...';
+      if (!contact || !contact.name) return '...';
       const titlePrefix = contact.title ? `${contact.title} ` : '';
       return `${titlePrefix}${contact.name}`;
   };

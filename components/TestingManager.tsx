@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { DocumentVariables, ProjectConstants, TesterVisitSummary } from '../types';
-import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext } from 'lucide-react';
+import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext, RefreshCw } from 'lucide-react';
 
 interface TestingManagerProps {
   project: ProjectConstants;
@@ -75,7 +75,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   // --- Logic for Smart Attendees Selection ---
   // Helper to format name with optional title safely
   const formatName = (contact: { title?: string, name: string }) => {
-      if (!contact.name) return '';
+      if (!contact || !contact.name) return '';
       const titlePrefix = contact.title ? `${contact.title} ` : '';
       return `${titlePrefix}${contact.name}`;
   };
@@ -102,25 +102,19 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
           // Format: per l'Impresa [Nome] ([Ruolo]): [Titolo] [NomeRep]
           fullText: (() => {
               const c = project.contractor;
-              if (!c.name) return '';
+              if (!c || !c.name) return '';
               const role = c.role || 'Legale Rappresentante';
               const repTitle = c.repTitle ? `${c.repTitle} ` : 'Sig. ';
               const repName = c.repName || '...';
               return `per l'Impresa ${c.name} (${role}): ${repTitle}${repName}`;
           })()
       },
-  ].filter(p => p.fullText !== ''); // Remove empty entries if data is missing
+  ].filter(p => p.fullText !== '');
 
   const toggleAttendee = (fullText: string) => {
       if (readOnly) return;
       const currentText = currentDoc.attendees || '';
       
-      // Normalize spaces for comparison
-      const normalize = (s: string) => s.replace(/\s+/g, ' ').trim();
-      const normFullText = normalize(fullText);
-      const normCurrentText = normalize(currentText);
-
-      // Simple check: if current text *contains* this exact string
       if (currentText.includes(fullText)) {
           // Remove
           const newText = currentText.replace(fullText, '').replace('\n\n', '\n').trim();
@@ -129,6 +123,14 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
           // Add
           const separator = currentText.length > 0 ? '\n' : '';
           handleUpdate({...currentDoc, attendees: currentText + separator + fullText});
+      }
+  };
+
+  const regenerateAttendees = () => {
+      if(readOnly) return;
+      if(confirm("Attenzione: Il testo attuale dei presenti verrà sostituito con i dati aggiornati dall'anagrafica (RUP, DL, CSE, Impresa). Continuare?")) {
+          const lines = potentialAttendees.map(p => p.fullText);
+          handleUpdate({ ...currentDoc, attendees: lines.join('\n') });
       }
   };
 
@@ -338,7 +340,11 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                   <div className="space-y-4">
                       <div className="flex items-center justify-between">
                         <label className="block text-sm font-bold text-slate-700 flex items-center gap-2"><Users className="w-4 h-4"/> Elenco Soggetti Presenti</label>
-                        <span className="text-xs text-slate-400">Clicca sui tasti per aggiungere/rimuovere i soggetti dai dati di progetto.</span>
+                        {!readOnly && (
+                            <button onClick={regenerateAttendees} className="text-xs flex items-center gap-1 bg-slate-100 hover:bg-slate-200 px-3 py-1 rounded text-slate-600 font-bold transition-colors">
+                                <RefreshCw className="w-3 h-3"/> Rigenera da Anagrafica
+                            </button>
+                        )}
                       </div>
                       
                       {/* Smart Select Area */}
