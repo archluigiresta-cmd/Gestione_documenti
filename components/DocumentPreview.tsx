@@ -429,40 +429,48 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
         {/* Signatures */}
         {isCollaudo ? (
-            <div className="mt-16 flex flex-col items-end space-y-16 break-inside-avoid">
-                {/* 1. L'Impresa */}
-                <div className="w-1/2 text-center">
-                    <p>L'Impresa:</p>
-                    <p className="font-bold mt-8 border-b border-black">
-                        {project.contractor.repTitle ? `${project.contractor.repTitle} ` : 'Sig. '}
-                        {project.contractor.repName}
-                    </p>
+            <div className="mt-24 space-y-16 break-inside-avoid text-sm">
+                {/* 1. Il Collaudatore (First) */}
+                <div className="flex items-end justify-between">
+                    <span>Il Collaudatore: {formatNameWithTitle(project.subjects.tester.contact)}</span>
+                    <span className="w-[280px] border-b border-black"></span>
                 </div>
 
-                {/* 2. Il Direttore dei Lavori */}
-                <div className="w-1/2 text-center">
-                    <p>Il Direttore dei Lavori:</p>
-                    <p className="font-bold mt-8 border-b border-black">
-                        {formatNameWithTitle(project.subjects.dl.contact)}
-                    </p>
-                </div>
-
-                {/* 3. Il RUP (Se presente, opzionale, ma tipico nei verbali) */}
+                {/* 2. Il RUP */}
                 {project.subjects.rup.contact.name && (
-                    <div className="w-1/2 text-center">
-                        <p>Il Responsabile Unico del Progetto:</p>
-                        <p className="font-bold mt-8 border-b border-black">
-                            {formatNameWithTitle(project.subjects.rup.contact)}
-                        </p>
+                    <div className="flex items-end justify-between">
+                        <span>Il Responsabile Unico del Procedimento: {formatNameWithTitle(project.subjects.rup.contact)}</span>
+                        <span className="w-[280px] border-b border-black"></span>
                     </div>
                 )}
 
-                {/* 4. Il Collaudatore (Last) */}
-                <div className="w-1/2 text-center">
-                    <p>Il Collaudatore:</p>
-                    <p className="font-bold mt-8 border-b border-black">
-                        {formatNameWithTitle(project.subjects.tester.contact)}
-                    </p>
+                {/* 3. Il DL (e CSE) */}
+                <div className="flex items-end justify-between">
+                    <span>
+                         {project.subjects.dl.contact.name === project.subjects.cse.contact.name
+                            ? "Il Direttore dei Lavori e CSE"
+                            : "Il Direttore dei Lavori"}
+                         : {formatNameWithTitle(project.subjects.dl.contact)}
+                    </span>
+                    <span className="w-[280px] border-b border-black"></span>
+                </div>
+                {project.subjects.dl.contact.name !== project.subjects.cse.contact.name && project.subjects.cse.contact.name && (
+                     <div className="flex items-end justify-between">
+                        <span>Il Coordinatore Sicurezza Esecuzione: {formatNameWithTitle(project.subjects.cse.contact)}</span>
+                        <span className="w-[280px] border-b border-black"></span>
+                    </div>
+                )}
+
+                {/* 4. L'Impresa */}
+                <div>
+                    <p>Il rappresentante legale dell'impresa appaltatrice {project.contractor.name}:</p>
+                    <div className="flex items-end justify-between mt-8">
+                        <span>
+                            {project.contractor.repTitle ? `${project.contractor.repTitle} ` : 'Sig. '}
+                            {project.contractor.repName}
+                        </span>
+                        <span className="w-[280px] border-b border-black"></span>
+                    </div>
                 </div>
             </div>
         ) : (

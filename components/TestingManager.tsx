@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { DocumentVariables, ProjectConstants, TesterVisitSummary } from '../types';
-import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext, RefreshCw, MessageSquare, Bell, FileCheck2 } from 'lucide-react';
+import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext, RefreshCw, MessageSquare, Bell, FileCheck2, X } from 'lucide-react';
 
 interface TestingManagerProps {
   project: ProjectConstants;
@@ -18,7 +18,7 @@ interface TestingManagerProps {
 // STANDARD TEXT PRESETS
 const REQUEST_OPTIONS = [
     "se rispetto al progetto appaltato vi siano previsioni di varianti e, in caso di riscontro positivo, se le stesse siano state gestite formalmente.",
-    "se vi sono ritardi rispetto al cronoprogramma dei lavori e, in caso di riscontro positivo, cosa si stia facendo per allineare le attività al cronoprogramma."
+    "se vi siano ritardi rispetto al cronoprogramma dei lavori e, in caso di riscontro positivo, cosa si stia facendo per allineare le attività al cronoprogramma."
 ];
 
 const INVITATION_OPTIONS = [
@@ -57,6 +57,15 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   const [inProgressInput, setInProgressInput] = useState('');
   const [upcomingInput, setUpcomingInput] = useState('');
 
+  // State for Custom Dropdown Inputs
+  const [activeCustomField, setActiveCustomField] = useState<'testerRequests' | 'testerInvitations' | 'commonParts' | null>(null);
+  const [customText, setCustomText] = useState('');
+  
+  // Refs for selects to reset them
+  const requestsSelectRef = useRef<HTMLSelectElement>(null);
+  const invitationsSelectRef = useRef<HTMLSelectElement>(null);
+  const commonSelectRef = useRef<HTMLSelectElement>(null);
+
   if (!currentDoc) return <div className="p-8 text-center">Nessun verbale attivo. Crea un nuovo verbale dalla dashboard.</div>;
 
   const handleUpdate = (updatedDoc: DocumentVariables) => {
@@ -68,6 +77,28 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
       const current = currentDoc[field] || '';
       const separator = current.trim() ? '\n- ' : '- ';
       handleUpdate({ ...currentDoc, [field]: current + separator + text });
+  };
+
+  const handleCustomConfirm = () => {
+      if (activeCustomField && customText.trim()) {
+          handlePresetInsert(activeCustomField, customText.trim());
+          setCustomText('');
+          setActiveCustomField(null);
+          
+          // Reset Selects
+          if (activeCustomField === 'testerRequests' && requestsSelectRef.current) requestsSelectRef.current.value = "";
+          if (activeCustomField === 'testerInvitations' && invitationsSelectRef.current) invitationsSelectRef.current.value = "";
+          if (activeCustomField === 'commonParts' && commonSelectRef.current) commonSelectRef.current.value = "";
+      }
+  };
+
+  const handleCustomCancel = () => {
+      setCustomText('');
+      setActiveCustomField(null);
+       // Reset Selects
+       if (activeCustomField === 'testerRequests' && requestsSelectRef.current) requestsSelectRef.current.value = "";
+       if (activeCustomField === 'testerInvitations' && invitationsSelectRef.current) invitationsSelectRef.current.value = "";
+       if (activeCustomField === 'commonParts' && commonSelectRef.current) commonSelectRef.current.value = "";
   };
 
   // Helper to safely update execution phase
@@ -536,10 +567,13 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
                       <p className="text-xs font-bold text-blue-700 uppercase mb-2">Inserimento Rapido Richieste:</p>
                       <select 
+                        ref={requestsSelectRef}
                         disabled={readOnly}
                         className="w-full p-2 border border-blue-300 rounded text-sm bg-white"
                         onChange={(e) => {
-                            if(e.target.value) {
+                            if(e.target.value === 'OTHER') {
+                                setActiveCustomField('testerRequests');
+                            } else if(e.target.value) {
                                 handlePresetInsert('testerRequests', e.target.value);
                                 e.target.value = ''; // Reset select
                             }
@@ -547,7 +581,24 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                       >
                           <option value="">Seleziona una richiesta standard...</option>
                           {REQUEST_OPTIONS.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
+                          <option value="OTHER" className="font-bold text-blue-800">Altro...</option>
                       </select>
+
+                      {activeCustomField === 'testerRequests' && (
+                          <div className="mt-3 flex gap-2 animate-in fade-in">
+                              <input 
+                                type="text" 
+                                className="flex-1 p-2 border border-blue-300 rounded text-sm focus:ring-2 focus:ring-blue-500" 
+                                placeholder="Scrivi la richiesta personalizzata..."
+                                value={customText}
+                                onChange={e => setCustomText(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleCustomConfirm()}
+                                autoFocus
+                              />
+                              <button onClick={handleCustomConfirm} className="bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 text-xs font-bold flex items-center gap-1"><Plus className="w-4 h-4"/> Aggiungi</button>
+                              <button onClick={handleCustomCancel} className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded hover:bg-slate-300"><X className="w-4 h-4"/></button>
+                          </div>
+                      )}
                   </div>
                   
                   <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed font-serif focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
@@ -563,10 +614,13 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
                       <p className="text-xs font-bold text-amber-700 uppercase mb-2">Inserimento Rapido Inviti:</p>
                       <select 
+                        ref={invitationsSelectRef}
                         disabled={readOnly}
                         className="w-full p-2 border border-amber-300 rounded text-sm bg-white"
                         onChange={(e) => {
-                            if(e.target.value) {
+                            if(e.target.value === 'OTHER') {
+                                setActiveCustomField('testerInvitations');
+                            } else if(e.target.value) {
                                 handlePresetInsert('testerInvitations', e.target.value);
                                 e.target.value = ''; 
                             }
@@ -574,7 +628,24 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                       >
                           <option value="">Seleziona un invito standard...</option>
                           {INVITATION_OPTIONS.map((opt, i) => <option key={i} value={opt}>{opt.substring(0, 100)}...</option>)}
+                          <option value="OTHER" className="font-bold text-amber-800">Altro...</option>
                       </select>
+
+                      {activeCustomField === 'testerInvitations' && (
+                          <div className="mt-3 flex gap-2 animate-in fade-in">
+                              <input 
+                                type="text" 
+                                className="flex-1 p-2 border border-amber-300 rounded text-sm focus:ring-2 focus:ring-amber-500" 
+                                placeholder="Scrivi l'invito personalizzato..."
+                                value={customText}
+                                onChange={e => setCustomText(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleCustomConfirm()}
+                                autoFocus
+                              />
+                              <button onClick={handleCustomConfirm} className="bg-amber-600 text-white px-3 py-1.5 rounded hover:bg-amber-700 text-xs font-bold flex items-center gap-1"><Plus className="w-4 h-4"/> Aggiungi</button>
+                              <button onClick={handleCustomCancel} className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded hover:bg-slate-300"><X className="w-4 h-4"/></button>
+                          </div>
+                      )}
                   </div>
                   
                   <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed font-serif focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
@@ -590,10 +661,13 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                   <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
                       <p className="text-xs font-bold text-slate-500 uppercase mb-2">Inserimento Rapido Frasi Standard:</p>
                       <select 
+                        ref={commonSelectRef}
                         disabled={readOnly}
                         className="w-full p-2 border border-slate-300 rounded text-sm bg-white"
                         onChange={(e) => {
-                            if(e.target.value) {
+                            if(e.target.value === 'OTHER') {
+                                setActiveCustomField('commonParts');
+                            } else if(e.target.value) {
                                 handlePresetInsert('commonParts', e.target.value);
                                 e.target.value = ''; 
                             }
@@ -601,7 +675,24 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                       >
                           <option value="">Seleziona una frase standard...</option>
                           {COMMON_PART_OPTIONS.map((opt, i) => <option key={i} value={opt}>{opt.substring(0, 100)}...</option>)}
+                          <option value="OTHER" className="font-bold text-slate-800">Altro...</option>
                       </select>
+
+                      {activeCustomField === 'commonParts' && (
+                          <div className="mt-3 flex gap-2 animate-in fade-in">
+                              <input 
+                                type="text" 
+                                className="flex-1 p-2 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-slate-500" 
+                                placeholder="Scrivi la frase personalizzata..."
+                                value={customText}
+                                onChange={e => setCustomText(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && handleCustomConfirm()}
+                                autoFocus
+                              />
+                              <button onClick={handleCustomConfirm} className="bg-slate-800 text-white px-3 py-1.5 rounded hover:bg-slate-900 text-xs font-bold flex items-center gap-1"><Plus className="w-4 h-4"/> Aggiungi</button>
+                              <button onClick={handleCustomCancel} className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded hover:bg-slate-300"><X className="w-4 h-4"/></button>
+                          </div>
+                      )}
                   </div>
                   
                   <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed font-serif focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
