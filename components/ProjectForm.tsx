@@ -698,6 +698,11 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                                 <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" 
                                     value={data.contractor.repName} onChange={e => handleChange('contractor.repName', e.target.value)} />
                             </div>
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Titolo (es. Sig.)</label>
+                                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" placeholder="Sig."
+                                    value={data.contractor.repTitle || ''} onChange={e => handleChange('contractor.repTitle', e.target.value)} />
+                            </div>
                              <div>
                                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Ruolo / Titolo</label>
                                 <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" placeholder="Es. Amministratore Unico"

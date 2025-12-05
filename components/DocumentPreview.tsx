@@ -181,12 +181,26 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       }
   };
 
+  const formatNameWithTitle = (contact: { title?: string, name: string }) => {
+      const titlePrefix = contact.title ? `${contact.title} ` : '';
+      return `${titlePrefix}${contact.name}`;
+  };
+  
   const getDefaultAttendees = () => {
       const lines = [];
-      if (project.subjects.rup.contact.name) lines.push(`Responsabile Unico del Progetto: ${project.subjects.rup.contact.title || ''} ${project.subjects.rup.contact.name}`);
-      if (project.subjects.dl.contact.name) lines.push(`Direttore dei Lavori: ${project.subjects.dl.contact.title || ''} ${project.subjects.dl.contact.name}`);
-      if (project.subjects.cse.contact.name) lines.push(`Coord. Sicurezza Esecuzione: ${project.subjects.cse.contact.title || ''} ${project.subjects.cse.contact.name}`);
-      if (project.contractor.name) lines.push(`per l'Impresa ${project.contractor.name} (${project.contractor.role || 'Legale Rappresentante'}): ${project.contractor.repName}`);
+      const { rup, dl, cse } = project.subjects;
+      
+      if (rup.contact.name) lines.push(`Responsabile Unico del Progetto: ${formatNameWithTitle(rup.contact)}`);
+      if (dl.contact.name) lines.push(`Direttore dei Lavori: ${formatNameWithTitle(dl.contact)}`);
+      if (cse.contact.name) lines.push(`Coord. Sicurezza Esecuzione: ${formatNameWithTitle(cse.contact)}`);
+      
+      if (project.contractor.name) {
+          const c = project.contractor;
+          const role = c.role || 'Legale Rappresentante';
+          const repTitle = c.repTitle ? `${c.repTitle} ` : 'Sig. ';
+          lines.push(`per l'Impresa ${c.name} (${role}): ${repTitle}${c.repName}`);
+      }
+      
       return lines.join('\n');
   };
   
@@ -299,9 +313,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
                 {/* Attendees Logic */}
                 {isCollaudo ? (
-                    <p>Sono presenti, oltre al sottoscritto Collaudatore {project.subjects.tester.contact.title} {project.subjects.tester.contact.name}:</p>
+                    <p>Sono presenti, oltre al sottoscritto Collaudatore {project.subjects.tester.contact.title ? project.subjects.tester.contact.title + ' ' : ''}{project.subjects.tester.contact.name}:</p>
                 ) : (
-                    <p>Sono presenti, oltre al sottoscritto Direttore dei Lavori {project.subjects.dl.contact.title} {project.subjects.dl.contact.name}:</p>
+                    <p>Sono presenti, oltre al sottoscritto Direttore dei Lavori {project.subjects.dl.contact.title ? project.subjects.dl.contact.title + ' ' : ''}{project.subjects.dl.contact.name}:</p>
                 )}
                 
                 <div className="whitespace-pre-line pl-4 mb-4 font-normal italic bg-slate-50 p-2 print:bg-transparent print:p-0 print:font-normal print:italic">

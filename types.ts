@@ -10,6 +10,7 @@ export interface ContactInfo {
   vat?: string; // P.IVA / C.F.
   repName?: string; // Rappresentante Legale Name
   repRole?: string; // Rappresentante Legale Role
+  repTitle?: string; // NEW: Titolo Rappresentante (es. Sig., Dott.)
   professionalOrder?: string; // NEW: Albo/Ordine di appartenenza
   registrationNumber?: string; // NEW: Numero iscrizione
 }
