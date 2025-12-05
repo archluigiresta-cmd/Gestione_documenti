@@ -18,7 +18,7 @@ interface TestingManagerProps {
 // STANDARD TEXT PRESETS
 const REQUEST_OPTIONS = [
     "se rispetto al progetto appaltato vi siano previsioni di varianti e, in caso di riscontro positivo, se le stesse siano state gestite formalmente.",
-    "se vi siano ritardi rispetto al cronoprogramma dei lavori e, in caso di riscontro positivo, cosa si stia facendo per allineare le attività al cronoprogramma."
+    "se vi siano ritardi rispetto al cronoprogramma e, in caso di riscontro positivo, cosa si stia facendo per allineare le attività al cronoprogramma."
 ];
 
 const INVITATION_OPTIONS = [
