@@ -99,14 +99,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   };
 
   // Helper to get works for a specific visit number
-  // Priorities: 
-  // 1. "Riepilogo Lavori" (TesterVisitSummary) corresponding to the index (Visit N -> Summary N-1)
-  // 2. The document's internal "worksExecuted" list (fallback)
   const getWorksForVisit = (visitNum: number, fallbackWorks: string[]) => {
       const summaries = project.executionPhase.testerVisitSummaries || [];
-      // Assuming sequential 1:1 mapping (Visit 1 -> Summary 0, Visit 2 -> Summary 1)
       const summary = summaries[visitNum - 1];
-      
       if (summary && summary.works && summary.works.length > 0) {
           return summary.works;
       }
@@ -120,15 +115,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
       return prevDocs.map((prevDoc, index) => {
           const date = formatShortDate(prevDoc.date);
-          
-          // Fetch works from Summary if available, otherwise use doc data
           const worksList = getWorksForVisit(prevDoc.visitNumber, prevDoc.worksExecuted);
           const worksText = worksList.map((w, i) => `${i + 1}. ${w}`).join(';\n');
-          
           const worksInProgress = prevDoc.worksInProgress ? `Era in corso il ${prevDoc.worksInProgress}.` : '';
 
           if (prevDoc.visitNumber === 1) {
-              // TEMPLATE FOR VISIT #1 REFERENCE (Activates from 2nd visit onwards)
               return (
                   <div key={prevDoc.id} className="mb-4 text-justify">
                       <p>
@@ -144,8 +135,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                   </div>
               );
           } else {
-              // TEMPLATE FOR VISIT #2+ REFERENCE (Activates from 3rd visit onwards)
-              // Find date of the visit BEFORE prevDoc to determine the interval
               const visitBeforePrev = allDocuments.find(d => d.visitNumber === prevDoc.visitNumber - 1);
               const dateBefore = visitBeforePrev ? formatShortDate(visitBeforePrev.date) : '...';
 
@@ -166,22 +155,21 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       });
   };
 
-  // Logic to determine reference date for current visit body
   const getPreviousVisitDateDescription = () => {
       const prevDocs = getPreviousDocuments();
       if (prevDocs.length > 0) {
-          // Last visit date
           const lastDoc = prevDocs[prevDocs.length - 1];
           return `il ${formatShortDate(lastDoc.date)}`;
       } else {
-          // No previous visit, use Delivery Date
           return project.executionPhase.deliveryDate 
              ? `il ${formatShortDate(project.executionPhase.deliveryDate)}`
              : 'la consegna dei lavori';
       }
   };
 
+  // Helper to format name with Title
   const formatNameWithTitle = (contact: { title?: string, name: string }) => {
+      if (!contact.name) return '...';
       const titlePrefix = contact.title ? `${contact.title} ` : '';
       return `${titlePrefix}${contact.name}`;
   };
@@ -204,7 +192,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       return lines.join('\n');
   };
   
-  // Resolve current works list
   const currentWorksList = getWorksForVisit(doc.visitNumber, doc.worksExecuted);
 
   // --------------------------------------------------------
@@ -231,7 +218,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                 </h2>
             </div>
 
-            {/* --- DATA BLOCK (Used Table for better Word export) --- */}
+            {/* --- DATA BLOCK --- */}
             <table className="w-full text-sm mb-8 leading-relaxed">
                 <tbody>
                     {/* Impresa */}
@@ -274,19 +261,19 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                     {/* RUP */}
                     <tr>
                         <td className="w-[220px] font-bold align-top py-1">Responsabile Unico del Progetto:</td>
-                        <td className="align-top py-1">{project.subjects.rup.contact.title} {project.subjects.rup.contact.name}</td>
+                        <td className="align-top py-1">{formatNameWithTitle(project.subjects.rup.contact)}</td>
                     </tr>
 
                     {/* DL */}
                     <tr>
                         <td className="w-[220px] font-bold align-top py-1">Direttore dei Lavori:</td>
-                        <td className="align-top py-1">{project.subjects.dl.contact.title} {project.subjects.dl.contact.name}</td>
+                        <td className="align-top py-1">{formatNameWithTitle(project.subjects.dl.contact)}</td>
                     </tr>
 
                     {/* CSE */}
                     <tr>
                         <td className="w-[220px] font-bold align-top py-1">CSE:</td>
-                        <td className="align-top py-1">{project.subjects.cse.contact.title} {project.subjects.cse.contact.name}</td>
+                        <td className="align-top py-1">{formatNameWithTitle(project.subjects.cse.contact)}</td>
                     </tr>
                 </tbody>
             </table>
@@ -297,14 +284,12 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             {/* Body Content */}
             <div className="text-sm text-justify space-y-4">
                 {isCollaudo ? (
-                    // Collaudo Intro
                     <p>
                         Il giorno <strong>{verboseDate.day}</strong> del mese di <strong>{verboseDate.month}</strong> dell'anno <strong>{verboseDate.year}</strong>, 
                         alle ore <strong>{doc.time}</strong>, presso il luogo dei lavori in <strong>{project.location}</strong>, 
                         ha avvio la <strong>{doc.visitNumber}ª</strong> visita di collaudo in corso d'opera convocata con nota via <strong>{doc.convocationMethod || '...'}</strong> del <strong>{formatShortDate(doc.convocationDate)}</strong>.
                     </p>
                 ) : (
-                    // Generic Intro for other acts
                     <p>
                         L'anno <strong>{verboseDate.year}</strong>, il giorno <strong>{verboseDate.day}</strong> del mese di <strong>{verboseDate.month}</strong>, 
                         presso il luogo dei lavori in <strong>{project.location}</strong>.
@@ -313,9 +298,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
                 {/* Attendees Logic */}
                 {isCollaudo ? (
-                    <p>Sono presenti, oltre al sottoscritto Collaudatore {project.subjects.tester.contact.title ? project.subjects.tester.contact.title + ' ' : ''}{project.subjects.tester.contact.name}:</p>
+                    <p>Sono presenti, oltre al sottoscritto Collaudatore {formatNameWithTitle(project.subjects.tester.contact)}:</p>
                 ) : (
-                    <p>Sono presenti, oltre al sottoscritto Direttore dei Lavori {project.subjects.dl.contact.title ? project.subjects.dl.contact.title + ' ' : ''}{project.subjects.dl.contact.name}:</p>
+                    <p>Sono presenti, oltre al sottoscritto Direttore dei Lavori {formatNameWithTitle(project.subjects.dl.contact)}:</p>
                 )}
                 
                 <div className="whitespace-pre-line pl-4 mb-4 font-normal italic bg-slate-50 p-2 print:bg-transparent print:p-0 print:font-normal print:italic">
@@ -327,13 +312,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                     <div className="whitespace-pre-line pl-2 mb-4">
                          {isCollaudo ? (
                              <>
-                                {/* Point 1: Appointment (Always present) */}
                                 <p className="mb-2 text-justify">{generateCollaudoPreamblePoint1()}</p>
-                                
-                                {/* Points 2, 3...: History based on previous docs */}
                                 {generateHistoricalPoints()}
-
-                                {/* Manual Premise (if any added by user) */}
                                 {doc.premis && (
                                     <div className="mt-4 pt-4 border-t border-dotted border-gray-400">
                                         <p className="italic text-xs text-gray-500 mb-1">[Premesse Manuali Aggiuntive]:</p>
@@ -346,7 +326,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                          )}
                     </div>
                     
-                    {/* --- BODY SECTION (Replaces "Si dà atto che" for Collaudo) --- */}
+                    {/* --- BODY SECTION --- */}
                     {isCollaudo ? (
                         <div className="mt-6">
                             <p className="text-justify mb-2">
@@ -384,7 +364,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                             )}
                         </div>
                     ) : (
-                        // Generic Body for other docs
                         <>
                              <p className="font-bold underline mb-2">Si dà atto che:</p>
                              {doc.worksExecuted.length > 0 ? (
@@ -411,19 +390,23 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             <p className="mt-8">La visita si conclude alle ore {parseInt(doc.time.split(':')[0]) + 1}:00.</p>
         </div>
 
-        {/* Signatures using Table for alignment */}
+        {/* Signatures */}
         <table className="mt-16 w-full text-sm break-inside-avoid">
             <tbody>
                 <tr>
                     <td className="w-1/2 align-top pb-16">
                         <p>Il Direttore dei Lavori:</p>
-                        <p className="font-bold mt-8 border-b border-black w-2/3">{project.subjects.dl.contact.name}</p>
+                        <p className="font-bold mt-8 border-b border-black w-2/3">
+                            {formatNameWithTitle(project.subjects.dl.contact)}
+                        </p>
                     </td>
                     <td className="w-1/2 align-top pb-16 text-right">
                          {isCollaudo && (
                             <div className="flex flex-col items-end">
                                 <p>Il Collaudatore:</p>
-                                <p className="font-bold mt-8 border-b border-black w-48">{project.subjects.tester.contact.name}</p>
+                                <p className="font-bold mt-8 border-b border-black w-48">
+                                    {formatNameWithTitle(project.subjects.tester.contact)}
+                                </p>
                             </div>
                          )}
                     </td>
@@ -431,7 +414,10 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                 <tr>
                     <td className="w-1/2 align-top">
                         <p>L'Impresa:</p>
-                        <p className="font-bold mt-8 border-b border-black w-2/3">{project.contractor.repName}</p>
+                        <p className="font-bold mt-8 border-b border-black w-2/3">
+                            {project.contractor.repTitle ? `${project.contractor.repTitle} ` : 'Sig. '}
+                            {project.contractor.repName}
+                        </p>
                     </td>
                     <td className="w-1/2"></td>
                 </tr>
@@ -441,7 +427,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
         {/* Footer */}
         {isCollaudo && (
             <div className="mt-8 border-t border-slate-300 pt-4 text-[10px] text-slate-500 text-center uppercase tracking-wider">
-                <p className="font-bold text-black">{project.subjects.tester.contact.title} {project.subjects.tester.contact.name}</p>
+                <p className="font-bold text-black">{formatNameWithTitle(project.subjects.tester.contact)}</p>
                 <p>{project.subjects.tester.contact.email} - {project.subjects.tester.contact.pec}</p>
                 {project.subjects.tester.contact.professionalOrder && (
                     <p>Iscritto all'Albo {project.subjects.tester.contact.professionalOrder} n. {project.subjects.tester.contact.registrationNumber}</p>
@@ -449,7 +435,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             </div>
         )}
 
-        {/* Photos Page (Appended if photos exist) */}
+        {/* Photos Page */}
         {doc.photos && doc.photos.length > 0 && (
              <div className="break-before-page mt-8 pt-8 border-t-2 border-slate-100">
                 <h3 className="font-bold text-center uppercase mb-6">Rilievo Fotografico Allegato</h3>

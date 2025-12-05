@@ -75,6 +75,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   // --- Logic for Smart Attendees Selection ---
   // Helper to format name with optional title safely
   const formatName = (contact: { title?: string, name: string }) => {
+      if (!contact.name) return '';
       const titlePrefix = contact.title ? `${contact.title} ` : '';
       return `${titlePrefix}${contact.name}`;
   };
@@ -98,20 +99,28 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
       { 
           id: 'contractor', 
           label: 'Impresa', 
-          // Format: per l'Impresa X (Ruolo): Sig. Y
+          // Format: per l'Impresa [Nome] ([Ruolo]): [Titolo] [NomeRep]
           fullText: (() => {
               const c = project.contractor;
+              if (!c.name) return '';
               const role = c.role || 'Legale Rappresentante';
               const repTitle = c.repTitle ? `${c.repTitle} ` : 'Sig. ';
-              return `per l'Impresa ${c.name} (${role}): ${repTitle}${c.repName}`;
+              const repName = c.repName || '...';
+              return `per l'Impresa ${c.name} (${role}): ${repTitle}${repName}`;
           })()
       },
-  ];
+  ].filter(p => p.fullText !== ''); // Remove empty entries if data is missing
 
   const toggleAttendee = (fullText: string) => {
       if (readOnly) return;
       const currentText = currentDoc.attendees || '';
       
+      // Normalize spaces for comparison
+      const normalize = (s: string) => s.replace(/\s+/g, ' ').trim();
+      const normFullText = normalize(fullText);
+      const normCurrentText = normalize(currentText);
+
+      // Simple check: if current text *contains* this exact string
       if (currentText.includes(fullText)) {
           // Remove
           const newText = currentText.replace(fullText, '').replace('\n\n', '\n').trim();
@@ -338,7 +347,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                           <div className="flex flex-wrap gap-2">
                               {potentialAttendees.map(p => {
                                   // Check using partial match if possible or exact
-                                  const isSelected = currentDoc.attendees?.includes(p.fullText);
+                                  const isSelected = (currentDoc.attendees || '').includes(p.fullText);
                                   return (
                                     <button 
                                       key={p.id}
