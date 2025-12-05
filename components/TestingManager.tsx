@@ -571,12 +571,11 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                         disabled={readOnly}
                         className="w-full p-2 border border-blue-300 rounded text-sm bg-white"
                         onChange={(e) => {
-                            if(e.target.value === 'OTHER') {
-                                setActiveCustomField('testerRequests');
-                            } else if(e.target.value) {
-                                handlePresetInsert('testerRequests', e.target.value);
-                                e.target.value = ''; // Reset select
-                            }
+                            const val = e.target.value;
+                            if (!val) return;
+                            setActiveCustomField('testerRequests');
+                            setCustomText(val === 'OTHER' ? '' : val);
+                            e.target.value = ''; // Reset select
                         }}
                       >
                           <option value="">Seleziona una richiesta standard...</option>
@@ -585,18 +584,19 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                       </select>
 
                       {activeCustomField === 'testerRequests' && (
-                          <div className="mt-3 flex gap-2 animate-in fade-in">
-                              <input 
-                                type="text" 
-                                className="flex-1 p-2 border border-blue-300 rounded text-sm focus:ring-2 focus:ring-blue-500" 
-                                placeholder="Scrivi la richiesta personalizzata..."
+                          <div className="mt-3 flex flex-col gap-2 animate-in fade-in">
+                              <textarea 
+                                className="w-full p-2 border border-blue-300 rounded text-sm focus:ring-2 focus:ring-blue-500" 
+                                placeholder="Modifica o scrivi la richiesta personalizzata..."
+                                rows={3}
                                 value={customText}
                                 onChange={e => setCustomText(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleCustomConfirm()}
                                 autoFocus
                               />
-                              <button onClick={handleCustomConfirm} className="bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 text-xs font-bold flex items-center gap-1"><Plus className="w-4 h-4"/> Aggiungi</button>
-                              <button onClick={handleCustomCancel} className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded hover:bg-slate-300"><X className="w-4 h-4"/></button>
+                              <div className="flex justify-end gap-2">
+                                <button onClick={handleCustomCancel} className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded hover:bg-slate-300 text-xs font-bold"><X className="w-4 h-4 inline-block mr-1"/> Annulla</button>
+                                <button onClick={handleCustomConfirm} className="bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 text-xs font-bold flex items-center gap-1"><Plus className="w-4 h-4"/> Aggiungi</button>
+                              </div>
                           </div>
                       )}
                   </div>
@@ -618,12 +618,11 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                         disabled={readOnly}
                         className="w-full p-2 border border-amber-300 rounded text-sm bg-white"
                         onChange={(e) => {
-                            if(e.target.value === 'OTHER') {
-                                setActiveCustomField('testerInvitations');
-                            } else if(e.target.value) {
-                                handlePresetInsert('testerInvitations', e.target.value);
-                                e.target.value = ''; 
-                            }
+                            const val = e.target.value;
+                            if (!val) return;
+                            setActiveCustomField('testerInvitations');
+                            setCustomText(val === 'OTHER' ? '' : val);
+                            e.target.value = ''; 
                         }}
                       >
                           <option value="">Seleziona un invito standard...</option>
@@ -632,18 +631,19 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                       </select>
 
                       {activeCustomField === 'testerInvitations' && (
-                          <div className="mt-3 flex gap-2 animate-in fade-in">
-                              <input 
-                                type="text" 
-                                className="flex-1 p-2 border border-amber-300 rounded text-sm focus:ring-2 focus:ring-amber-500" 
-                                placeholder="Scrivi l'invito personalizzato..."
+                          <div className="mt-3 flex flex-col gap-2 animate-in fade-in">
+                              <textarea
+                                className="w-full p-2 border border-amber-300 rounded text-sm focus:ring-2 focus:ring-amber-500" 
+                                placeholder="Modifica o scrivi l'invito personalizzato..."
+                                rows={3}
                                 value={customText}
                                 onChange={e => setCustomText(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleCustomConfirm()}
                                 autoFocus
                               />
-                              <button onClick={handleCustomConfirm} className="bg-amber-600 text-white px-3 py-1.5 rounded hover:bg-amber-700 text-xs font-bold flex items-center gap-1"><Plus className="w-4 h-4"/> Aggiungi</button>
-                              <button onClick={handleCustomCancel} className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded hover:bg-slate-300"><X className="w-4 h-4"/></button>
+                              <div className="flex justify-end gap-2">
+                                <button onClick={handleCustomCancel} className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded hover:bg-slate-300 text-xs font-bold"><X className="w-4 h-4 inline-block mr-1"/> Annulla</button>
+                                <button onClick={handleCustomConfirm} className="bg-amber-600 text-white px-3 py-1.5 rounded hover:bg-amber-700 text-xs font-bold flex items-center gap-1"><Plus className="w-4 h-4"/> Aggiungi</button>
+                              </div>
                           </div>
                       )}
                   </div>
@@ -665,12 +665,11 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                         disabled={readOnly}
                         className="w-full p-2 border border-slate-300 rounded text-sm bg-white"
                         onChange={(e) => {
-                            if(e.target.value === 'OTHER') {
-                                setActiveCustomField('commonParts');
-                            } else if(e.target.value) {
-                                handlePresetInsert('commonParts', e.target.value);
-                                e.target.value = ''; 
-                            }
+                            const val = e.target.value;
+                            if (!val) return;
+                            setActiveCustomField('commonParts');
+                            setCustomText(val === 'OTHER' ? '' : val);
+                            e.target.value = ''; 
                         }}
                       >
                           <option value="">Seleziona una frase standard...</option>
@@ -679,18 +678,19 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                       </select>
 
                       {activeCustomField === 'commonParts' && (
-                          <div className="mt-3 flex gap-2 animate-in fade-in">
-                              <input 
-                                type="text" 
-                                className="flex-1 p-2 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-slate-500" 
-                                placeholder="Scrivi la frase personalizzata..."
+                          <div className="mt-3 flex flex-col gap-2 animate-in fade-in">
+                              <textarea
+                                className="w-full p-2 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-slate-500" 
+                                placeholder="Modifica o scrivi la frase personalizzata..."
+                                rows={3}
                                 value={customText}
                                 onChange={e => setCustomText(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && handleCustomConfirm()}
                                 autoFocus
                               />
-                              <button onClick={handleCustomConfirm} className="bg-slate-800 text-white px-3 py-1.5 rounded hover:bg-slate-900 text-xs font-bold flex items-center gap-1"><Plus className="w-4 h-4"/> Aggiungi</button>
-                              <button onClick={handleCustomCancel} className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded hover:bg-slate-300"><X className="w-4 h-4"/></button>
+                              <div className="flex justify-end gap-2">
+                                <button onClick={handleCustomCancel} className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded hover:bg-slate-300 text-xs font-bold"><X className="w-4 h-4 inline-block mr-1"/> Annulla</button>
+                                <button onClick={handleCustomConfirm} className="bg-slate-800 text-white px-3 py-1.5 rounded hover:bg-slate-900 text-xs font-bold flex items-center gap-1"><Plus className="w-4 h-4"/> Aggiungi</button>
+                              </div>
                           </div>
                       )}
                   </div>
