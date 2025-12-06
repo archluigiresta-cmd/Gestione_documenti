@@ -6,7 +6,7 @@ interface DocumentPreviewProps {
   project: ProjectConstants;
   doc: DocumentVariables;
   type: DocumentType;
-  allDocuments?: DocumentVariables[]; // Added to access history
+  allDocuments?: DocumentVariables[]; 
 }
 
 export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, type, allDocuments = [] }) => {
@@ -65,7 +65,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
   // --- Specific Preamble Generation Logic for Collaudo ---
 
-  // Point 1: Nomination (Always present)
   const generateCollaudoPreamblePoint1 = () => {
       const t = project.subjects.testerAppointment;
       const tester = project.subjects.tester.contact;
@@ -91,14 +90,12 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       return text;
   };
 
-  // Helper to get previous documents sorted
   const getPreviousDocuments = () => {
       return allDocuments
-          .filter(d => d.visitNumber < doc.visitNumber) // Only previous
+          .filter(d => d.visitNumber < doc.visitNumber) 
           .sort((a, b) => a.visitNumber - b.visitNumber);
   };
 
-  // Helper to get works for a specific visit number
   const getWorksForVisit = (visitNum: number, fallbackWorks: string[]) => {
       const summaries = project.executionPhase.testerVisitSummaries || [];
       const summary = summaries[visitNum - 1];
@@ -108,7 +105,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       return fallbackWorks;
   };
 
-  // Point 2, 3, etc.: Historical visits
   const generateHistoricalPoints = () => {
       const prevDocs = getPreviousDocuments();
       if (prevDocs.length === 0) return null;
@@ -167,7 +163,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       }
   };
 
-  // Helper to format name with Title
   const formatNameWithTitle = (contact: { title?: string, name: string }) => {
       if (!contact || !contact.name) return '...';
       const titlePrefix = contact.title ? `${contact.title} ` : '';
@@ -203,28 +198,48 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       <div className="bg-white shadow-lg p-[2cm] min-h-[29.7cm] print-page mb-8 relative flex flex-col justify-between">
         
         <div>
-            {/* Header */}
-            <div className="text-center mb-8">
-                <h1 className="uppercase font-bold text-base tracking-widest mb-6">
-                    {project.entity}
-                    {project.entityProvince && <span className="block text-sm mt-1 normal-case tracking-normal">(Provincia di {project.entityProvince})</span>}
-                </h1>
-                <div className="mb-6 px-4">
-                    <p className="text-sm font-bold text-center uppercase leading-relaxed text-black">lavori di "{project.projectName}"</p>
-                    <p className="text-sm font-bold text-center uppercase mt-1 text-black">CUP {project.cup} {project.cig && `- CIG ${project.cig}`}</p>
-                </div>
-                <h2 className="font-bold text-lg uppercase my-6 border-b-2 border-black pb-2 inline-block">
-                    {getDocumentTitle()}
-                </h2>
+            {/* Header - Using Tables for Word Compatibility */}
+            <div className="mb-8">
+                <table style={{ width: '100%' }}>
+                    <tbody>
+                        <tr>
+                            <td style={{ textAlign: 'center', verticalAlign: 'top' }}>
+                                <p className="uppercase font-bold text-base tracking-widest mb-0">
+                                    {project.entity}
+                                </p>
+                                {project.entityProvince && (
+                                    <p className="text-sm mt-1 normal-case tracking-normal">
+                                        (Provincia di {project.entityProvince})
+                                    </p>
+                                )}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style={{ textAlign: 'center', padding: '16px 0' }}>
+                                <p className="text-sm font-bold uppercase leading-relaxed text-black">lavori di "{project.projectName}"</p>
+                                <p className="text-sm font-bold uppercase mt-1 text-black">CUP {project.cup} {project.cig && `- CIG ${project.cig}`}</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style={{ textAlign: 'center', padding: '16px 0' }}>
+                                <div style={{ borderBottom: '2px solid black', display: 'inline-block', paddingBottom: '4px' }}>
+                                    <h2 className="font-bold text-lg uppercase mb-0">
+                                        {getDocumentTitle()}
+                                    </h2>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
-            {/* --- DATA BLOCK --- */}
+            {/* --- DATA BLOCK (Table) --- */}
             <table className="w-full text-sm mb-8 leading-relaxed">
                 <tbody>
                     {/* Impresa */}
                     <tr>
-                        <td className="w-[220px] font-bold align-top py-1">Impresa:</td>
-                        <td className="align-top py-1">
+                        <td style={{ width: '220px', fontWeight: 'bold', verticalAlign: 'top' }}>Impresa:</td>
+                        <td style={{ verticalAlign: 'top' }}>
                             {project.contractor.name} <br/>
                             {project.contractor.address} - P.IVA {project.contractor.vat}
                             {project.contractor.isATI && " (Mandataria ATI)"}
@@ -233,8 +248,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
                     {/* Contratto */}
                     <tr>
-                        <td className="w-[220px] font-bold align-top py-1">Contratto d'appalto:</td>
-                        <td className="align-top py-1">
+                        <td style={{ width: '220px', fontWeight: 'bold', verticalAlign: 'top' }}>Contratto d'appalto:</td>
+                        <td style={{ verticalAlign: 'top' }}>
                             stipulato in data {formatShortDate(project.contract.date)}, giusto Rep. {project.contract.repNumber}
                             {project.contract.regDate && `, Registrato a ${project.contract.regPlace} il ${formatShortDate(project.contract.regDate)} al n. ${project.contract.regNumber}`}
                         </td>
@@ -242,16 +257,16 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
                     {/* Importo */}
                     <tr>
-                        <td className="w-[220px] font-bold align-top py-1">Importo Contrattuale:</td>
-                        <td className="align-top py-1">
+                        <td style={{ width: '220px', fontWeight: 'bold', verticalAlign: 'top' }}>Importo Contrattuale:</td>
+                        <td style={{ verticalAlign: 'top' }}>
                             {formatCurrency(project.contract.totalAmount)}, di cui {formatCurrency(project.contract.securityCosts)} per la prestazione relativa alla sicurezza, oltre IVA.
                         </td>
                     </tr>
 
                     {/* Scadenza */}
                     <tr>
-                        <td className="w-[220px] font-bold align-top py-1">Scadenza contrattuale lavori:</td>
-                        <td className="align-top py-1">
+                        <td style={{ width: '220px', fontWeight: 'bold', verticalAlign: 'top' }}>Scadenza contrattuale lavori:</td>
+                        <td style={{ verticalAlign: 'top' }}>
                             giorni {project.contract.durationDays || '...'} naturali e consecutivi, per l'esecuzione di tutte le lavorazioni, 
                             decorrenti dal {formatShortDate(project.executionPhase.deliveryDate)}, 
                             data del verbale di consegna dei lavori per cui l'ultimazione dovrà avvenire entro il {formatShortDate(project.executionPhase.completionDate)}.
@@ -260,20 +275,20 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
                     {/* RUP */}
                     <tr>
-                        <td className="w-[220px] font-bold align-top py-1">Responsabile Unico del Progetto:</td>
-                        <td className="align-top py-1">{formatNameWithTitle(project.subjects.rup.contact)}</td>
+                        <td style={{ width: '220px', fontWeight: 'bold', verticalAlign: 'top' }}>Responsabile Unico del Progetto:</td>
+                        <td style={{ verticalAlign: 'top' }}>{formatNameWithTitle(project.subjects.rup.contact)}</td>
                     </tr>
 
                     {/* DL */}
                     <tr>
-                        <td className="w-[220px] font-bold align-top py-1">Direttore dei Lavori:</td>
-                        <td className="align-top py-1">{formatNameWithTitle(project.subjects.dl.contact)}</td>
+                        <td style={{ width: '220px', fontWeight: 'bold', verticalAlign: 'top' }}>Direttore dei Lavori:</td>
+                        <td style={{ verticalAlign: 'top' }}>{formatNameWithTitle(project.subjects.dl.contact)}</td>
                     </tr>
 
                     {/* CSE */}
                     <tr>
-                        <td className="w-[220px] font-bold align-top py-1">CSE:</td>
-                        <td className="align-top py-1">{formatNameWithTitle(project.subjects.cse.contact)}</td>
+                        <td style={{ width: '220px', fontWeight: 'bold', verticalAlign: 'top' }}>CSE:</td>
+                        <td style={{ verticalAlign: 'top' }}>{formatNameWithTitle(project.subjects.cse.contact)}</td>
                     </tr>
                 </tbody>
             </table>
@@ -363,8 +378,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                                 <p className="italic pl-8 mb-4">Nessuna attività specifica pianificata.</p>
                             )}
 
-                            {/* --- NEW SECTIONS: REQUESTS & INVITATIONS --- */}
-                            
+                            {/* --- REQUESTS & INVITATIONS --- */}
                             {(doc.testerRequests || doc.testerInvitations) && (
                                 <div className="mt-8 mb-4">
                                     <p className="mb-4 font-bold">Dopo aver preso visione di tutte le aree di cantiere il Collaudatore:</p>
@@ -398,7 +412,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                                     {doc.commonParts}
                                 </div>
                             )}
-
                         </div>
                     ) : (
                         <>
@@ -427,74 +440,93 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             <p className="mt-8">La visita si conclude alle ore {parseInt(doc.time.split(':')[0]) + 1}:00.</p>
         </div>
 
-        {/* Signatures */}
+        {/* Signatures using Table for Word Preservation */}
         {isCollaudo ? (
-            <div className="mt-24 space-y-16 break-inside-avoid text-sm">
-                {/* 1. Il Collaudatore (First) */}
-                <div className="flex items-end justify-between">
-                    <span>Il Collaudatore: {formatNameWithTitle(project.subjects.tester.contact)}</span>
-                    <span className="w-[280px] border-b border-black"></span>
-                </div>
+            <div className="mt-24 break-inside-avoid text-sm">
+                <table style={{ width: '100%', marginBottom: '30px' }}>
+                    <tbody>
+                        {/* 1. Il Collaudatore */}
+                        <tr>
+                            <td style={{ verticalAlign: 'bottom', paddingBottom: '30px' }}>
+                                Il Collaudatore: <br/>{formatNameWithTitle(project.subjects.tester.contact)}
+                            </td>
+                            <td style={{ verticalAlign: 'bottom', textAlign: 'right', paddingBottom: '30px' }}>
+                                <div className="signature-line" style={{ width: '250px' }}></div>
+                            </td>
+                        </tr>
 
-                {/* 2. Il RUP */}
-                {project.subjects.rup.contact.name && (
-                    <div className="flex items-end justify-between">
-                        <span>Il Responsabile Unico del Procedimento: {formatNameWithTitle(project.subjects.rup.contact)}</span>
-                        <span className="w-[280px] border-b border-black"></span>
-                    </div>
-                )}
+                        {/* 2. Il RUP */}
+                        {project.subjects.rup.contact.name && (
+                            <tr>
+                                <td style={{ verticalAlign: 'bottom', paddingBottom: '30px' }}>
+                                    Il Responsabile Unico del Procedimento: <br/>{formatNameWithTitle(project.subjects.rup.contact)}
+                                </td>
+                                <td style={{ verticalAlign: 'bottom', textAlign: 'right', paddingBottom: '30px' }}>
+                                    <div className="signature-line" style={{ width: '250px' }}></div>
+                                </td>
+                            </tr>
+                        )}
 
-                {/* 3. Il DL (e CSE) */}
-                <div className="flex items-end justify-between">
-                    <span>
-                         {project.subjects.dl.contact.name === project.subjects.cse.contact.name
-                            ? "Il Direttore dei Lavori e CSE"
-                            : "Il Direttore dei Lavori"}
-                         : {formatNameWithTitle(project.subjects.dl.contact)}
-                    </span>
-                    <span className="w-[280px] border-b border-black"></span>
-                </div>
-                {project.subjects.dl.contact.name !== project.subjects.cse.contact.name && project.subjects.cse.contact.name && (
-                     <div className="flex items-end justify-between">
-                        <span>Il Coordinatore Sicurezza Esecuzione: {formatNameWithTitle(project.subjects.cse.contact)}</span>
-                        <span className="w-[280px] border-b border-black"></span>
-                    </div>
-                )}
+                        {/* 3. DL & CSE */}
+                        <tr>
+                            <td style={{ verticalAlign: 'bottom', paddingBottom: '30px' }}>
+                                {project.subjects.dl.contact.name === project.subjects.cse.contact.name
+                                    ? "Il Direttore dei Lavori e CSE"
+                                    : "Il Direttore dei Lavori"}
+                                : <br/>{formatNameWithTitle(project.subjects.dl.contact)}
+                            </td>
+                            <td style={{ verticalAlign: 'bottom', textAlign: 'right', paddingBottom: '30px' }}>
+                                <div className="signature-line" style={{ width: '250px' }}></div>
+                            </td>
+                        </tr>
+                        
+                        {project.subjects.dl.contact.name !== project.subjects.cse.contact.name && project.subjects.cse.contact.name && (
+                            <tr>
+                                <td style={{ verticalAlign: 'bottom', paddingBottom: '30px' }}>
+                                    Il Coordinatore Sicurezza Esecuzione: <br/>{formatNameWithTitle(project.subjects.cse.contact)}
+                                </td>
+                                <td style={{ verticalAlign: 'bottom', textAlign: 'right', paddingBottom: '30px' }}>
+                                    <div className="signature-line" style={{ width: '250px' }}></div>
+                                </td>
+                            </tr>
+                        )}
 
-                {/* 4. L'Impresa */}
-                <div>
-                    <p>Il rappresentante legale dell'impresa appaltatrice {project.contractor.name}:</p>
-                    <div className="flex items-end justify-between mt-8">
-                        <span>
-                            {project.contractor.repTitle ? `${project.contractor.repTitle} ` : 'Sig. '}
-                            {project.contractor.repName}
-                        </span>
-                        <span className="w-[280px] border-b border-black"></span>
-                    </div>
-                </div>
+                        {/* 4. Impresa */}
+                        <tr>
+                            <td style={{ verticalAlign: 'bottom' }}>
+                                Il rappresentante legale dell'impresa appaltatrice {project.contractor.name}: <br/>
+                                {project.contractor.repTitle ? `${project.contractor.repTitle} ` : 'Sig. '}
+                                {project.contractor.repName}
+                            </td>
+                            <td style={{ verticalAlign: 'bottom', textAlign: 'right' }}>
+                                <div className="signature-line" style={{ width: '250px' }}></div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         ) : (
             // Standard layout for other documents
-            <table className="mt-16 w-full text-sm break-inside-avoid">
+            <table className="mt-16 w-full text-sm break-inside-avoid" style={{ width: '100%' }}>
                 <tbody>
                     <tr>
-                        <td className="w-1/2 align-top pb-16">
+                        <td style={{ width: '50%', verticalAlign: 'top', paddingBottom: '60px' }}>
                             <p>Il Direttore dei Lavori:</p>
-                            <p className="font-bold mt-8 border-b border-black w-2/3">
+                            <div className="signature-line" style={{ width: '80%', marginTop: '30px' }}>
                                 {formatNameWithTitle(project.subjects.dl.contact)}
-                            </p>
+                            </div>
                         </td>
-                        <td className="w-1/2 align-top pb-16 text-right"></td>
+                        <td style={{ width: '50%' }}></td>
                     </tr>
                     <tr>
-                        <td className="w-1/2 align-top">
+                        <td style={{ width: '50%', verticalAlign: 'top' }}>
                             <p>L'Impresa:</p>
-                            <p className="font-bold mt-8 border-b border-black w-2/3">
+                            <div className="signature-line" style={{ width: '80%', marginTop: '30px' }}>
                                 {project.contractor.repTitle ? `${project.contractor.repTitle} ` : 'Sig. '}
                                 {project.contractor.repName}
-                            </p>
+                            </div>
                         </td>
-                        <td className="w-1/2"></td>
+                        <td style={{ width: '50%' }}></td>
                     </tr>
                 </tbody>
             </table>
@@ -515,14 +547,30 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
         {doc.photos && doc.photos.length > 0 && (
              <div className="break-before-page mt-8 pt-8 border-t-2 border-slate-100">
                 <h3 className="font-bold text-center uppercase mb-6">Rilievo Fotografico Allegato</h3>
-                <div className="grid grid-cols-2 gap-4">
-                    {doc.photos.map((photo, i) => (
-                        <div key={i} className="break-inside-avoid mb-4">
-                            <img src={photo.url} className="w-full h-auto border border-slate-200" alt={`Foto ${i+1}`} />
-                            <p className="text-xs mt-1 italic text-center">{photo.description || `Foto n. ${i+1}`}</p>
-                        </div>
-                    ))}
-                </div>
+                <table style={{ width: '100%' }}>
+                    <tbody>
+                        {Array.from({ length: Math.ceil(doc.photos.length / 2) }).map((_, i) => (
+                            <tr key={i}>
+                                <td style={{ width: '50%', padding: '10px' }}>
+                                    {doc.photos[i * 2] && (
+                                        <div className="break-inside-avoid">
+                                            <img src={doc.photos[i * 2].url} style={{ width: '100%', height: 'auto', border: '1px solid #e2e8f0' }} alt={`Foto ${i * 2 + 1}`} />
+                                            <p className="text-xs mt-1 italic text-center">{doc.photos[i * 2].description || `Foto n. ${i * 2 + 1}`}</p>
+                                        </div>
+                                    )}
+                                </td>
+                                <td style={{ width: '50%', padding: '10px' }}>
+                                    {doc.photos[i * 2 + 1] && (
+                                        <div className="break-inside-avoid">
+                                            <img src={doc.photos[i * 2 + 1].url} style={{ width: '100%', height: 'auto', border: '1px solid #e2e8f0' }} alt={`Foto ${i * 2 + 2}`} />
+                                            <p className="text-xs mt-1 italic text-center">{doc.photos[i * 2 + 1].description || `Foto n. ${i * 2 + 2}`}</p>
+                                        </div>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
              </div>
         )}
 
