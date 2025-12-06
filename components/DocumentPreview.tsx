@@ -199,31 +199,36 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
         
         <div>
             {/* Header - Using Tables for Word Compatibility */}
+            {/* We use align="center" on TD to force Word to respect it better than CSS */}
             <div className="mb-8">
-                <table style={{ width: '100%' }}>
+                <table className="header-table" style={{ width: '100%' }}>
                     <tbody>
                         <tr>
-                            <td style={{ textAlign: 'center', verticalAlign: 'top' }}>
-                                <p className="uppercase font-bold text-base tracking-widest mb-0">
+                            <td align="center" style={{ textAlign: 'center', verticalAlign: 'top' }}>
+                                <p className="uppercase font-bold text-base tracking-widest mb-0" style={{ textAlign: 'center' }}>
                                     {project.entity}
                                 </p>
                                 {project.entityProvince && (
-                                    <p className="text-sm mt-1 normal-case tracking-normal">
+                                    <p className="text-sm mt-1 normal-case tracking-normal" style={{ textAlign: 'center' }}>
                                         (Provincia di {project.entityProvince})
                                     </p>
                                 )}
                             </td>
                         </tr>
                         <tr>
-                            <td style={{ textAlign: 'center', padding: '16px 0' }}>
-                                <p className="text-sm font-bold uppercase leading-relaxed text-black">lavori di "{project.projectName}"</p>
-                                <p className="text-sm font-bold uppercase mt-1 text-black">CUP {project.cup} {project.cig && `- CIG ${project.cig}`}</p>
+                            <td align="center" style={{ textAlign: 'center', padding: '16px 0' }}>
+                                <p className="text-sm font-bold uppercase leading-relaxed text-black" style={{ textAlign: 'center' }}>
+                                    lavori di "{project.projectName}"
+                                </p>
+                                <p className="text-sm font-bold uppercase mt-1 text-black" style={{ textAlign: 'center' }}>
+                                    CUP {project.cup} {project.cig && `- CIG ${project.cig}`}
+                                </p>
                             </td>
                         </tr>
                         <tr>
-                            <td style={{ textAlign: 'center', padding: '16px 0' }}>
+                            <td align="center" style={{ textAlign: 'center', padding: '16px 0' }}>
                                 <div style={{ borderBottom: '2px solid black', display: 'inline-block', paddingBottom: '4px' }}>
-                                    <h2 className="font-bold text-lg uppercase mb-0">
+                                    <h2 className="font-bold text-lg uppercase mb-0" style={{ textAlign: 'center' }}>
                                         {getDocumentTitle()}
                                     </h2>
                                 </div>
@@ -531,15 +536,23 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                 </tbody>
             </table>
         )}
-        
-        {/* Footer */}
+
+        {/* --- TRUE MSO FOOTER SECTION --- */}
+        {/* This div is hidden in web view by CSS but used by Word as the repeating footer */}
         {isCollaudo && (
-            <div className="mt-8 border-t border-slate-300 pt-4 text-[10px] text-slate-500 text-center uppercase tracking-wider">
-                <p className="font-bold text-black">{formatNameWithTitle(project.subjects.tester.contact)}</p>
-                <p>{project.subjects.tester.contact.email} - {project.subjects.tester.contact.pec}</p>
-                {project.subjects.tester.contact.professionalOrder && (
-                    <p>Iscritto all'Albo {project.subjects.tester.contact.professionalOrder} n. {project.subjects.tester.contact.registrationNumber}</p>
-                )}
+            <div id="f1">
+                <div style={{ borderTop: '1px solid #ccc', paddingTop: '10pt', marginTop: '20pt', fontSize: '9pt', color: '#666', textAlign: 'center', fontFamily: 'Arial, sans-serif' }}>
+                    <p style={{ margin: '0', fontWeight: 'bold', color: '#000' }}>
+                        {formatNameWithTitle(project.subjects.tester.contact)}
+                    </p>
+                    {project.subjects.tester.contact.address && (
+                        <p style={{ margin: '0' }}>{project.subjects.tester.contact.address}</p>
+                    )}
+                    <p style={{ margin: '0' }}>
+                        {project.subjects.tester.contact.email} 
+                        {project.subjects.tester.contact.pec ? ` - ${project.subjects.tester.contact.pec}` : ''}
+                    </p>
+                </div>
             </div>
         )}
 

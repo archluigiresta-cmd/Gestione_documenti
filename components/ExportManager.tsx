@@ -39,9 +39,6 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
     // Get the HTML content
     let content = element.innerHTML;
 
-    // Clean up specific elements that might cause issues or aren't needed in Word
-    // Note: Since we are using innerHTML, React event handlers are already gone.
-
     const htmlDoc = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head>
@@ -60,19 +57,26 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
           /* PAGE SETUP */
           @page {
             size: A4;
-            margin: 2.5cm 2cm 2cm 2cm;
+            margin: 2.0cm 2cm 2.0cm 2cm; /* Top, Right, Bottom, Left */
             mso-page-orientation: portrait;
+            mso-footer: f1; /* LINK TO FOOTER ID */
           }
           
+          /* DEFINIZIONE FOOTER PER WORD */
+          div#f1 {
+            margin: 0;
+            mso-element: footer;
+          }
+
           body {
             font-family: 'Times New Roman', serif;
             font-size: 12pt;
-            line-height: 1.3;
+            line-height: 1.2;
             color: #000000;
             background: #ffffff;
           }
 
-          /* RESET TAILWIND/WEB STYLES */
+          /* RESET & UTILS */
           .bg-white, .shadow-lg, .min-h-\\[29\\.7cm\\], .print-page {
             background: transparent !important;
             box-shadow: none !important;
@@ -80,54 +84,45 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
             margin: 0 !important;
             padding: 0 !important;
             width: 100% !important;
-            max-width: 100% !important;
           }
 
           /* TYPOGRAPHY */
-          h1, h2, h3, h4 { font-family: Arial, sans-serif; margin-bottom: 12pt; page-break-after: avoid; }
-          p { margin-bottom: 8pt; text-align: justify; }
+          h1, h2, h3, h4 { font-family: Arial, sans-serif; margin-bottom: 6pt; page-break-after: avoid; }
+          p { margin-bottom: 6pt; text-align: justify; }
           
-          /* UTILITIES MAPPED TO CSS */
+          .text-center { text-align: center !important; }
+          .text-justify { text-align: justify !important; }
+          .text-right { text-align: right !important; }
           .font-bold { font-weight: bold; }
-          .italic { font-style: italic; }
           .uppercase { text-transform: uppercase; }
-          .text-center { text-align: center; }
-          .text-justify { text-align: justify; }
-          .text-right { text-align: right; }
           .underline { text-decoration: underline; }
           .text-sm { font-size: 11pt; }
           .text-xs { font-size: 10pt; }
-          
-          /* TABLES (Crucial for Layout in Word) */
-          table { width: 100%; border-collapse: collapse; margin-bottom: 12pt; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
-          td, th { vertical-align: top; padding: 4pt 2pt; }
-          
-          /* LISTS */
-          ul, ol { margin-top: 0; margin-bottom: 12pt; padding-left: 0.5cm; }
-          li { margin-bottom: 4pt; }
+          .italic { font-style: italic; }
 
-          /* SPECIFIC COMPONENTS */
-          .border-b { border-bottom: 1px solid #000; }
-          .border-t { border-top: 1px solid #000; }
-          .border-black { border-color: #000 !important; }
+          /* TABLES */
+          table { width: 100%; border-collapse: collapse; margin-bottom: 12pt; }
+          td, th { vertical-align: top; padding: 2pt; }
           
+          /* HEADER SPECIFICS */
+          .header-table td { text-align: center; }
+
           /* SIGNATURE LINES */
           .signature-line {
              border-bottom: 1px solid black;
              display: inline-block;
              width: 100%;
-             margin-top: 40px;
+             margin-top: 30px;
           }
-
-          /* IMAGES */
-          img { max-width: 100%; height: auto; }
           
           /* PAGE BREAKS */
           .break-before-page { page-break-before: always; }
           .break-inside-avoid { page-break-inside: avoid; }
         </style>
       </head>
-      <body>${content}</body>
+      <body>
+        ${content}
+      </body>
       </html>
     `;
 
