@@ -177,14 +177,44 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       if (dl.contact.name) lines.push(`Direttore dei Lavori: ${formatNameWithTitle(dl.contact)}`);
       if (cse.contact.name) lines.push(`Coord. Sicurezza Esecuzione: ${formatNameWithTitle(cse.contact)}`);
       
-      if (project.contractor.name) {
-          const c = project.contractor;
+      if (project.contractor.mainCompany.name) {
+          const c = project.contractor.mainCompany;
           const role = c.role || 'Legale Rappresentante';
           const repTitle = c.repTitle ? `${c.repTitle} ` : 'Sig. ';
           lines.push(`per l'Impresa ${c.name} (${role}): ${repTitle}${c.repName}`);
       }
       
       return lines.join('\n');
+  };
+  
+  const renderContractorInfo = () => {
+      const { type, mainCompany, mandants, executors } = project.contractor;
+      
+      if (type === 'ati' && mandants && mandants.length > 0) {
+          const mandantNames = mandants.map(m => m.name).join(', ');
+          return (
+              <span>
+                  <strong>ATI (Associazione Temporanea di Imprese)</strong> costituita da: <br/>
+                  - <strong>{mainCompany.name}</strong> (Capogruppo Mandataria), con sede in {mainCompany.address} - P.IVA {mainCompany.vat}; <br/>
+                  - <strong>{mandantNames}</strong> (Mandanti).
+              </span>
+          );
+      } else if (type === 'consortium' && executors && executors.length > 0) {
+          const execNames = executors.map(e => e.name).join(', ');
+          return (
+              <span>
+                  <strong>{mainCompany.name}</strong> (Consorzio Stabile), con sede in {mainCompany.address} - P.IVA {mainCompany.vat}, <br/>
+                  per conto delle imprese esecutrici consorziate: <strong>{execNames}</strong>.
+              </span>
+          );
+      } else {
+          return (
+              <span>
+                  <strong>{mainCompany.name}</strong> <br/>
+                  {mainCompany.address} - P.IVA {mainCompany.vat}
+              </span>
+          );
+      }
   };
   
   const currentWorksList = getWorksForVisit(doc.visitNumber, doc.worksExecuted);
@@ -206,8 +236,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                         <tr>
                             <td align="center" style={{ textAlign: 'center', verticalAlign: 'middle', paddingBottom: '10px', borderBottom: '1px solid #000' }}>
                                 {project.headerLogo && (
-                                    <div style={{ marginBottom: '5px' }}>
-                                        <img src={project.headerLogo} style={{ maxHeight: '2.5cm', width: 'auto' }} alt="Logo" />
+                                    <div style={{ marginBottom: '5px', textAlign: 'center' }}>
+                                        {/* Inline block is safer for Word centering */}
+                                        <img src={project.headerLogo} style={{ maxHeight: '2.5cm', width: 'auto', display: 'inline-block' }} alt="Logo" />
                                     </div>
                                 )}
                                 <p className="uppercase font-bold text-base tracking-widest mb-0" style={{ textAlign: 'center', margin: 0 }}>
@@ -231,7 +262,10 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                         <tr>
                             <td align="center" style={{ textAlign: 'center', padding: '16px 0' }}>
                                 <p className="text-sm font-bold uppercase leading-relaxed text-black" style={{ textAlign: 'center' }}>
-                                    lavori di "{project.projectName}"
+                                    lavori di: <br/>
+                                    {project.projectName.split('\n').map((line, i) => (
+                                        <React.Fragment key={i}>"{line}"<br/></React.Fragment>
+                                    ))}
                                 </p>
                                 <p className="text-sm font-bold uppercase mt-1 text-black" style={{ textAlign: 'center' }}>
                                     CUP {project.cup} {project.cig && `- CIG ${project.cig}`}
@@ -254,13 +288,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             {/* --- DATA BLOCK (Table) --- */}
             <table className="w-full text-sm mb-8 leading-relaxed">
                 <tbody>
-                    {/* Impresa */}
+                    {/* Impresa - Dynamic Rendering */}
                     <tr>
                         <td style={{ width: '220px', fontWeight: 'bold', verticalAlign: 'top' }}>Impresa:</td>
                         <td style={{ verticalAlign: 'top' }}>
-                            {project.contractor.name} <br/>
-                            {project.contractor.address} - P.IVA {project.contractor.vat}
-                            {project.contractor.isATI && " (Mandataria ATI)"}
+                            {renderContractorInfo()}
                         </td>
                     </tr>
 
@@ -512,9 +544,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                         {/* 4. Impresa */}
                         <tr>
                             <td style={{ verticalAlign: 'bottom' }}>
-                                Il rappresentante legale dell'impresa appaltatrice {project.contractor.name}: <br/>
-                                {project.contractor.repTitle ? `${project.contractor.repTitle} ` : 'Sig. '}
-                                {project.contractor.repName}
+                                Il rappresentante legale dell'impresa appaltatrice {project.contractor.mainCompany.name}: <br/>
+                                {project.contractor.mainCompany.repTitle ? `${project.contractor.mainCompany.repTitle} ` : 'Sig. '}
+                                {project.contractor.mainCompany.repName}
                             </td>
                             <td style={{ verticalAlign: 'bottom', textAlign: 'right' }}>
                                 <div className="signature-line" style={{ width: '250px' }}></div>
@@ -540,8 +572,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                         <td style={{ width: '50%', verticalAlign: 'top' }}>
                             <p>L'Impresa:</p>
                             <div className="signature-line" style={{ width: '80%', marginTop: '30px' }}>
-                                {project.contractor.repTitle ? `${project.contractor.repTitle} ` : 'Sig. '}
-                                {project.contractor.repName}
+                                {project.contractor.mainCompany.repTitle ? `${project.contractor.mainCompany.repTitle} ` : 'Sig. '}
+                                {project.contractor.mainCompany.repName}
                             </div>
                         </td>
                         <td style={{ width: '50%' }}></td>

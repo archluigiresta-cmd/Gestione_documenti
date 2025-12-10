@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { ProjectConstants, ContactInfo, SubjectProfile, AppointmentData } from '../types';
-import { Save, User, Users, Mail, ShieldCheck, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote, ChevronDown, ImagePlus, X } from 'lucide-react';
+import { ProjectConstants, ContactInfo, SubjectProfile, AppointmentData, CompanyType } from '../types';
+import { Save, User, Users, Mail, ShieldCheck, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote, ChevronDown, ImagePlus, X, BriefcaseBusiness, Network, Hammer } from 'lucide-react';
 
 // --- HELPER COMPONENTS (Moved outside to prevent re-render focus loss) ---
 
@@ -71,14 +71,18 @@ interface ContactCardProps {
     showAppointment?: boolean;
     readOnly: boolean;
     onChange: (path: string, value: any) => void;
+    // New props for extended contractor fields
+    showRepInfo?: boolean; 
+    roleLabel?: string; // e.g., "Categoria Lavori" instead of just Role
 }
 
-const ContactCard: React.FC<ContactCardProps> = ({ label, path, profile, showAppointment = true, readOnly, onChange }) => {
+const ContactCard: React.FC<ContactCardProps> = ({ 
+    label, path, profile, showAppointment = true, readOnly, onChange,
+    showRepInfo = false, roleLabel = "Ruolo / Titolo"
+}) => {
     // Determine if current title is standard or custom
     const currentTitle = profile.contact.title || '';
     const isStandardTitle = TITLES.includes(currentTitle);
-    // If it's empty, we consider it "Standard" (showing "Seleziona...") until user picks Altro or types.
-    // If it has a value but not in list, it's custom.
     const showCustomInput = !isStandardTitle && currentTitle !== '';
 
     return (
@@ -169,6 +173,26 @@ const ContactCard: React.FC<ContactCardProps> = ({ label, path, profile, showApp
                         value={profile.contact.address || ''} onChange={e => onChange(`${path}.contact.address`, e.target.value)} />
                 </div>
             </div>
+
+            {showRepInfo && (
+                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+                    <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Rappresentante Legale (Nome)</label>
+                        <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" 
+                            value={profile.contact.repName || ''} onChange={e => onChange(`${path}.contact.repName`, e.target.value)} />
+                    </div>
+                    <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Titolo Rappresentante (es. Sig.)</label>
+                        <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" placeholder="Sig."
+                            value={profile.contact.repTitle || ''} onChange={e => onChange(`${path}.contact.repTitle`, e.target.value)} />
+                    </div>
+                    <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">{roleLabel}</label>
+                        <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" placeholder={roleLabel === "Ruolo / Titolo" ? "Es. Amministratore Unico" : "Es. Opere in CA"}
+                            value={profile.contact.role || ''} onChange={e => onChange(`${path}.contact.role`, e.target.value)} />
+                    </div>
+                </div>
+            )}
         </div>
         
         {showAppointment && <AppointmentFields appointment={profile.appointment} path={`${path}.appointment`} readOnly={readOnly} onChange={onChange} />}
@@ -192,7 +216,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
         case 'general': return 'info';
         case 'design': return 'docfap';
         case 'subjects': return 'rup';
-        case 'contractor': return 'registry';
+        case 'contractor': return 'main'; // Changed to main
         default: return 'default';
     }
   };
@@ -242,12 +266,13 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                 {section === 'design' && 'Progettazione'}
                 {section === 'subjects' && 'Soggetti Responsabili'}
                 {section === 'tender' && 'Gara'}
-                {section === 'contractor' && 'Dati Impresa'}
+                {section === 'contractor' && 'Dati Impresa & Subappalti'}
             </h2>
             <p className="text-slate-500 text-sm mt-1">
                {section === 'general' && 'Gestisci inquadramento, contratto e registrazione.'}
                {section === 'design' && 'Documenti preliminari, definitivi ed esecutivi.'}
                {section === 'subjects' && 'Anagrafica e nomine di tutte le figure tecniche.'}
+               {section === 'contractor' && 'Gestione completa di Imprese (singole, ATI, Consorzi) e Subappalti.'}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -273,6 +298,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                 { id: 'notes', label: 'Note', icon: StickyNote },
             ]} />
 
+            {/* ... Content of General Tabs ... */}
             {subTab === 'info' && (
                 <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-right-4 duration-300">
                     <h3 className="text-lg font-bold text-slate-800 mb-6">Inquadramento Opera</h3>
@@ -328,6 +354,9 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                             <label className="block text-sm font-semibold text-slate-700 mb-2">Oggetto Lavori</label>
                             <textarea disabled={readOnly} className="w-full p-3 border border-slate-300 rounded-lg h-32 leading-relaxed"
                                 value={data.projectName} onChange={(e) => handleChange('projectName', e.target.value)} />
+                            <p className="text-xs text-slate-500 mt-1 italic">
+                                Suggerimento: Usa il tasto <strong>Invio</strong> per andare a capo. L'impaginazione che vedi qui verrà mantenuta nel file esportato (puoi usare più righe per migliorare l'estetica).
+                            </p>
                         </div>
                         <div>
                             <label className="block text-sm font-semibold text-slate-700 mb-2">Luogo dei Lavori</label>
@@ -426,7 +455,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
         </>
       )}
 
-      {/* Design Phase */}
+      {/* ... Design Phase (No Changes) ... */}
       {section === 'design' && (
         <>
             <SubNav activeTab={subTab} onTabChange={setSubTab} items={[
@@ -438,6 +467,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
             
             {data.designPhase && data.designPhase[subTab as keyof typeof data.designPhase] ? (
             <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-right-4 duration-300">
+               {/* ... Keep existing design phase content ... */}
                <h3 className="text-lg font-bold text-slate-800 mb-6">
                   {subTab === 'docfap' && 'Documento di Fattibilità delle Alternative Progettuali'}
                   {subTab === 'dip' && 'Documento di Indirizzo alla Progettazione'}
@@ -509,9 +539,10 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
         </>
       )}
 
-      {/* Subjects Phase */}
+      {/* ... Subjects Phase (No Changes) ... */}
       {section === 'subjects' && (
         <>
+            {/* ... Keep subjects subnav and content ... */}
             <SubNav activeTab={subTab} onTabChange={setSubTab} items={[
                 { id: 'rup', label: 'RUP', icon: User },
                 { id: 'designers', label: 'Progettisti', icon: PencilRuler },
@@ -713,84 +744,172 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
       {section === 'contractor' && (
         <>
             <SubNav activeTab={subTab} onTabChange={setSubTab} items={[
-                { id: 'registry', label: 'Anagrafica' },
-                { id: 'structure', label: 'Struttura (ATI/Sub)' },
+                { id: 'main', label: 'Generale & Capogruppo', icon: BriefcaseBusiness },
+                { id: 'structure', label: 'Mandanti / Esecutrici', icon: Network },
+                { id: 'subcontractors', label: 'Subappaltatori', icon: Hammer },
             ]} />
             
-            {subTab === 'registry' && (
+            {subTab === 'main' && (
                 <div className="animate-in slide-in-from-right-4 duration-300">
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-4">
-                        <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-3">
-                            <HardHat className="w-5 h-5 text-blue-500 bg-blue-50 p-1 rounded-full"/> Dati Impresa
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-6">
+                        <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <HardHat className="w-5 h-5 text-blue-500"/> Tipologia Impresa
                         </h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="md:col-span-2">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Ragione Sociale</label>
-                                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" 
-                                    value={data.contractor.name} onChange={e => handleChange('contractor.name', e.target.value)} />
-                            </div>
-                            <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">P.IVA / C.F.</label>
-                                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" 
-                                    value={data.contractor.vat} onChange={e => handleChange('contractor.vat', e.target.value)} />
-                            </div>
-                            <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Indirizzo Sede Legale</label>
-                                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" 
-                                    value={data.contractor.address} onChange={e => handleChange('contractor.address', e.target.value)} />
-                            </div>
-                            <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Rappresentante Legale (Nome)</label>
-                                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" 
-                                    value={data.contractor.repName} onChange={e => handleChange('contractor.repName', e.target.value)} />
-                            </div>
-                            <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Titolo (es. Sig.)</label>
-                                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" placeholder="Sig."
-                                    value={data.contractor.repTitle || ''} onChange={e => handleChange('contractor.repTitle', e.target.value)} />
-                            </div>
-                             <div>
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Ruolo / Titolo</label>
-                                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" placeholder="Es. Amministratore Unico"
-                                    value={data.contractor.role} onChange={e => handleChange('contractor.role', e.target.value)} />
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <label className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all ${data.contractor.type === 'single' ? 'bg-blue-50 border-blue-500 text-blue-800 ring-1 ring-blue-500' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                                <input disabled={readOnly} type="radio" name="companyType" className="w-4 h-4 text-blue-600"
+                                    checked={data.contractor.type === 'single'} onChange={() => handleChange('contractor.type', 'single')} />
+                                <span className="font-medium text-sm">Impresa Singola</span>
+                            </label>
+                            <label className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all ${data.contractor.type === 'ati' ? 'bg-blue-50 border-blue-500 text-blue-800 ring-1 ring-blue-500' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                                <input disabled={readOnly} type="radio" name="companyType" className="w-4 h-4 text-blue-600"
+                                    checked={data.contractor.type === 'ati'} onChange={() => handleChange('contractor.type', 'ati')} />
+                                <div className="text-sm">
+                                    <span className="font-medium block">ATI / RTI</span>
+                                    <span className="text-xs opacity-70">Associazione Temporanea</span>
+                                </div>
+                            </label>
+                            <label className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all ${data.contractor.type === 'consortium' ? 'bg-blue-50 border-blue-500 text-blue-800 ring-1 ring-blue-500' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                                <input disabled={readOnly} type="radio" name="companyType" className="w-4 h-4 text-blue-600"
+                                    checked={data.contractor.type === 'consortium'} onChange={() => handleChange('contractor.type', 'consortium')} />
+                                <span className="font-medium text-sm">Consorzio Stabile</span>
+                            </label>
                         </div>
                     </div>
+
+                    {/* Wrapper object to make ContactInfo compatible with ContactCard expecting SubjectProfile */}
+                    <ContactCard 
+                        label={
+                            data.contractor.type === 'ati' ? 'Impresa Mandataria (Capogruppo)' : 
+                            data.contractor.type === 'consortium' ? 'Dati Consorzio' : 'Dati Impresa Appaltatrice'
+                        } 
+                        path="contractor.mainCompany" 
+                        profile={{ contact: data.contractor.mainCompany, appointment: { type: '', number: '', date: '' } }} 
+                        showAppointment={false} 
+                        showRepInfo={true}
+                        readOnly={readOnly} 
+                        onChange={handleChange} 
+                    />
                 </div>
             )}
 
             {subTab === 'structure' && (
-                <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-right-4 duration-300">
-                    <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
-                        <h3 className="text-lg font-bold text-slate-800">Struttura Societaria</h3>
-                        <label className="flex items-center gap-2 cursor-pointer bg-blue-50 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors">
-                            <input disabled={readOnly} type="checkbox" className="w-5 h-5 text-blue-600 rounded" checked={data.contractor.isATI} onChange={e => handleChange('contractor.isATI', e.target.checked)} />
-                            <span className="text-sm font-bold text-blue-800">È un'ATI (Associazione Temporanea)</span>
-                        </label>
+                <div className="animate-in slide-in-from-right-4 duration-300">
+                    <div className="bg-slate-50 p-4 rounded-lg mb-6 border border-slate-200 text-sm text-slate-600">
+                        {data.contractor.type === 'single' && "Questa sezione non è necessaria per le imprese singole."}
+                        {data.contractor.type === 'ati' && "Inserisci qui tutte le imprese MANDANTI del raggruppamento."}
+                        {data.contractor.type === 'consortium' && "Inserisci qui le imprese ESECUTRICI designate dal consorzio."}
+                    </div>
+
+                    {data.contractor.type === 'ati' && (
+                        <div className="space-y-6">
+                            {(data.contractor.mandants || []).map((mandant, idx) => (
+                                <div key={idx} className="relative group">
+                                    <ContactCard 
+                                        label={`Impresa Mandante n. ${idx + 1}`} 
+                                        path={`contractor.mandants.${idx}`} 
+                                        profile={{ contact: mandant, appointment: { type: '', number: '', date: '' } }} 
+                                        showAppointment={false} 
+                                        showRepInfo={true}
+                                        readOnly={readOnly} 
+                                        onChange={handleChange} 
+                                    />
+                                    {!readOnly && (
+                                        <button onClick={() => {
+                                            const newMandants = [...data.contractor.mandants];
+                                            newMandants.splice(idx, 1);
+                                            handleChange('contractor.mandants', newMandants);
+                                        }} className="absolute top-6 right-6 text-slate-400 hover:text-red-500 bg-white p-2 rounded-lg shadow-sm border border-slate-100">
+                                            <Trash2 className="w-5 h-5"/>
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            {!readOnly && (
+                                <button onClick={() => {
+                                    const emptyCompany = { name: '', vat: '', address: '', email: '', pec: '', repName: '', repRole: 'Legale Rappresentante', repTitle: 'Sig.' };
+                                    handleChange('contractor.mandants', [...(data.contractor.mandants || []), emptyCompany]);
+                                }} className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2 font-medium">
+                                    <Plus className="w-5 h-5"/> Aggiungi Impresa Mandante
+                                </button>
+                            )}
+                        </div>
+                    )}
+
+                    {data.contractor.type === 'consortium' && (
+                        <div className="space-y-6">
+                            {(data.contractor.executors || []).map((executor, idx) => (
+                                <div key={idx} className="relative group">
+                                    <ContactCard 
+                                        label={`Impresa Esecutrice n. ${idx + 1}`} 
+                                        path={`contractor.executors.${idx}`} 
+                                        profile={{ contact: executor, appointment: { type: '', number: '', date: '' } }} 
+                                        showAppointment={false} 
+                                        showRepInfo={true}
+                                        readOnly={readOnly} 
+                                        onChange={handleChange} 
+                                    />
+                                    {!readOnly && (
+                                        <button onClick={() => {
+                                            const newExecutors = [...data.contractor.executors];
+                                            newExecutors.splice(idx, 1);
+                                            handleChange('contractor.executors', newExecutors);
+                                        }} className="absolute top-6 right-6 text-slate-400 hover:text-red-500 bg-white p-2 rounded-lg shadow-sm border border-slate-100">
+                                            <Trash2 className="w-5 h-5"/>
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            {!readOnly && (
+                                <button onClick={() => {
+                                    const emptyCompany = { name: '', vat: '', address: '', email: '', pec: '', repName: '', repRole: 'Legale Rappresentante', repTitle: 'Sig.' };
+                                    handleChange('contractor.executors', [...(data.contractor.executors || []), emptyCompany]);
+                                }} className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2 font-medium">
+                                    <Plus className="w-5 h-5"/> Aggiungi Impresa Esecutrice
+                                </button>
+                            )}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {subTab === 'subcontractors' && (
+                <div className="animate-in slide-in-from-right-4 duration-300">
+                    <div className="bg-slate-50 p-4 rounded-lg mb-6 border border-slate-200 text-sm text-slate-600">
+                        Inserisci qui i dati completi di tutte le ditte subappaltatrici autorizzate.
                     </div>
                     
-                    <div className="space-y-4">
-                       <h4 className="font-bold text-slate-800 flex items-center gap-2"><FileText className="w-5 h-5 text-slate-400"/> Subappaltatori</h4>
-                       {data.contractor.subcontractors?.map((sub, idx) => (
-                           <div key={idx} className="flex gap-3 mb-2 animate-in fade-in">
-                               <input disabled={readOnly} type="text" value={sub.name} readOnly className="flex-1 p-3 border border-slate-200 bg-slate-50 rounded-lg text-slate-700"/>
+                    <div className="space-y-6">
+                       {(data.contractor.subcontractors || []).map((sub, idx) => (
+                           <div key={idx} className="relative group">
+                               <ContactCard 
+                                   label={`Ditta Subappaltatrice n. ${idx + 1}`} 
+                                   path={`contractor.subcontractors.${idx}`} 
+                                   profile={{ contact: sub, appointment: { type: '', number: '', date: '' } }} 
+                                   showAppointment={false} 
+                                   showRepInfo={true}
+                                   roleLabel="Categoria Lavori / Attività"
+                                   readOnly={readOnly} 
+                                   onChange={handleChange} 
+                               />
                                {!readOnly && (
                                    <button onClick={() => {
                                        const newSubs = [...data.contractor.subcontractors];
                                        newSubs.splice(idx, 1);
                                        handleChange('contractor.subcontractors', newSubs);
-                                   }} className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-3 rounded-lg transition-colors"><Trash2 className="w-5 h-5"/></button>
+                                   }} className="absolute top-6 right-6 text-slate-400 hover:text-red-500 bg-white p-2 rounded-lg shadow-sm border border-slate-100">
+                                       <Trash2 className="w-5 h-5"/>
+                                   </button>
                                )}
                            </div>
                        ))}
                        {!readOnly && (
                            <button onClick={() => {
-                               const name = prompt("Nome Subappaltatore:");
-                               if(name) {
-                                   handleChange('contractor.subcontractors', [...(data.contractor.subcontractors || []), { name, activity: '' }]);
-                               }
-                           }} className="flex items-center gap-2 text-sm font-bold text-blue-600 hover:bg-blue-50 px-4 py-3 rounded-lg transition-colors border border-dashed border-blue-200 w-full justify-center">
-                               <Plus className="w-4 h-4"/> Aggiungi Subappaltatore
+                               // Note: reusing 'role' field for Activity description
+                               const emptyCompany = { name: '', vat: '', address: '', email: '', pec: '', role: '', repName: '', repRole: 'Titolare', repTitle: 'Sig.' };
+                               handleChange('contractor.subcontractors', [...(data.contractor.subcontractors || []), emptyCompany]);
+                           }} className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2 font-medium">
+                               <Plus className="w-5 h-5"/> Aggiungi Subappaltatore
                            </button>
                        )}
                     </div>

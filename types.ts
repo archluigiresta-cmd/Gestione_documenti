@@ -2,7 +2,7 @@
 export interface ContactInfo {
   name: string; // Nome e Cognome o Ragione Sociale
   title?: string; // Arch., Ing., Geom.
-  role?: string; // Ruolo specifico (es. Direttore Tecnico)
+  role?: string; // Ruolo specifico o Categoria Lavori (per subappalti)
   address?: string;
   email?: string;
   pec?: string;
@@ -31,10 +31,14 @@ export interface DesignerProfile extends SubjectProfile {
 }
 
 // Struttura per ATI / Imprese
-export interface ContractorStructure extends ContactInfo {
-  isATI: boolean;
-  mandants: ContactInfo[]; // Imprese mandanti in caso di ATI
-  subcontractors: { name: string; activity: string }[];
+export type CompanyType = 'single' | 'ati' | 'consortium';
+
+export interface ContractorStructure {
+  type: CompanyType;
+  mainCompany: ContactInfo; // Impresa Singola, Capogruppo ATI, o Consorzio
+  mandants: ContactInfo[]; // Solo per ATI: Imprese Mandanti
+  executors: ContactInfo[]; // Solo per Consorzi: Imprese Esecutrici
+  subcontractors: ContactInfo[]; // Subappaltatori con anagrafica completa
 }
 
 export interface DesignPhaseData {

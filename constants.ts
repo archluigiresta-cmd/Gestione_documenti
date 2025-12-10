@@ -1,7 +1,7 @@
 
-import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData } from './types';
+import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData, ContactInfo } from './types';
 
-const emptyContact = { name: '', title: '', email: '', pec: '', phone: '', professionalOrder: '', registrationNumber: '' };
+const emptyContact: ContactInfo = { name: '', title: '', email: '', pec: '', phone: '', professionalOrder: '', registrationNumber: '' };
 const emptyAppointment = { type: 'Determina', number: '', date: '' };
 
 const createEmptySubject = (): SubjectProfile => ({
@@ -84,16 +84,14 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
   },
 
   contractor: {
-    name: '',
-    address: '',
-    vat: '',
-    repName: '',
-    role: 'Legale Rappresentante',
-    email: '',
-    pec: '',
-    phone: '',
-    isATI: false,
+    type: 'single',
+    mainCompany: { 
+        ...emptyContact, 
+        role: 'Legale Rappresentante', // Default role for rep
+        repTitle: 'Sig.'
+    },
     mandants: [],
+    executors: [],
     subcontractors: []
   },
 
