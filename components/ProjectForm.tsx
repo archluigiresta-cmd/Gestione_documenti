@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ProjectConstants, ContactInfo, SubjectProfile, AppointmentData } from '../types';
-import { Save, User, Users, Mail, ShieldCheck, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote, ChevronDown } from 'lucide-react';
+import { Save, User, Users, Mail, ShieldCheck, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote, ChevronDown, ImagePlus, X } from 'lucide-react';
 
 // --- HELPER COMPONENTS (Moved outside to prevent re-render focus loss) ---
 
@@ -217,6 +217,18 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
     onChange(newData);
   };
 
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (readOnly) return;
+    const file = e.target.files?.[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            handleChange('headerLogo', reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    }
+  };
+
   // Safety check for design phase data
   if (section === 'design' && !data.designPhase) return null;
 
@@ -265,6 +277,40 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                 <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-right-4 duration-300">
                     <h3 className="text-lg font-bold text-slate-800 mb-6">Inquadramento Opera</h3>
                     <div className="grid grid-cols-1 gap-6">
+                        {/* HEADER LOGO UPLOAD */}
+                        <div className="p-4 bg-slate-50 rounded-lg border border-dashed border-slate-300">
+                             <div className="flex items-center justify-between">
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-1">Logo / Intestazione (Opzionale)</label>
+                                    <p className="text-xs text-slate-500">
+                                        Carica un'immagine (logo, stemma) da usare come intestazione dei verbali. 
+                                        Se presente, verrà visualizzata in alto al centro.
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    {data.headerLogo && (
+                                        <div className="relative h-12 w-auto border bg-white p-1 rounded">
+                                            <img src={data.headerLogo} alt="Logo" className="h-full w-auto object-contain" />
+                                            {!readOnly && (
+                                                <button 
+                                                    onClick={() => handleChange('headerLogo', '')}
+                                                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5 hover:bg-red-600"
+                                                >
+                                                    <X className="w-3 h-3" />
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                    {!readOnly && (
+                                        <label className="cursor-pointer bg-white border border-slate-300 hover:bg-slate-50 text-slate-600 px-3 py-2 rounded-lg text-sm font-medium flex items-center gap-2 shadow-sm">
+                                            <ImagePlus className="w-4 h-4"/> Scegli File...
+                                            <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+                                        </label>
+                                    )}
+                                </div>
+                             </div>
+                        </div>
+
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                             <div className="md:col-span-3">
                                 <label className="block text-sm font-semibold text-slate-700 mb-2">Ente Appaltante</label>

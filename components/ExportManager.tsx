@@ -59,10 +59,15 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
             size: A4;
             margin: 2.0cm 2cm 2.0cm 2cm; /* Top, Right, Bottom, Left */
             mso-page-orientation: portrait;
+            mso-header: h1; /* LINK TO HEADER ID */
             mso-footer: f1; /* LINK TO FOOTER ID */
           }
           
-          /* DEFINIZIONE FOOTER PER WORD */
+          /* DEFINIZIONE HEADER/FOOTER PER WORD */
+          div#h1 {
+            margin: 0;
+            mso-element: header;
+          }
           div#f1 {
             margin: 0;
             mso-element: footer;

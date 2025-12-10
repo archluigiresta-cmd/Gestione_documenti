@@ -25,6 +25,7 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
   displayOrder: 0, // Initial order, will be overwritten by logic
   entity: 'PROVINCIA DI TARANTO', 
   entityProvince: '', 
+  headerLogo: '', // NEW
   projectName: '',
   location: '',
   cup: '',

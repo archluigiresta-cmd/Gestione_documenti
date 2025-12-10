@@ -198,23 +198,36 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       <div className="bg-white shadow-lg p-[2cm] min-h-[29.7cm] print-page mb-8 relative flex flex-col justify-between">
         
         <div>
-            {/* Header - Using Tables for Word Compatibility */}
-            {/* We use align="center" on TD to force Word to respect it better than CSS */}
-            <div className="mb-8">
-                <table className="header-table" style={{ width: '100%' }}>
+            {/* --- TRUE MSO HEADER SECTION --- */}
+            {/* This div is shown at top in web view, and used by Word as the repeating header */}
+            <div id="h1">
+                <table style={{ width: '100%', marginBottom: '10pt' }}>
                     <tbody>
                         <tr>
-                            <td align="center" style={{ textAlign: 'center', verticalAlign: 'top' }}>
-                                <p className="uppercase font-bold text-base tracking-widest mb-0" style={{ textAlign: 'center' }}>
+                            <td align="center" style={{ textAlign: 'center', verticalAlign: 'middle', paddingBottom: '10px', borderBottom: '1px solid #000' }}>
+                                {project.headerLogo && (
+                                    <div style={{ marginBottom: '5px' }}>
+                                        <img src={project.headerLogo} style={{ maxHeight: '2.5cm', width: 'auto' }} alt="Logo" />
+                                    </div>
+                                )}
+                                <p className="uppercase font-bold text-base tracking-widest mb-0" style={{ textAlign: 'center', margin: 0 }}>
                                     {project.entity}
                                 </p>
                                 {project.entityProvince && (
-                                    <p className="text-sm mt-1 normal-case tracking-normal" style={{ textAlign: 'center' }}>
+                                    <p className="text-sm mt-1 normal-case tracking-normal" style={{ textAlign: 'center', margin: 0 }}>
                                         (Provincia di {project.entityProvince})
                                     </p>
                                 )}
                             </td>
                         </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            {/* Document Specific Header Info (Title, Project Name) - This stays in body */}
+            <div className="mb-8">
+                <table className="header-table" style={{ width: '100%' }}>
+                    <tbody>
                         <tr>
                             <td align="center" style={{ textAlign: 'center', padding: '16px 0' }}>
                                 <p className="text-sm font-bold uppercase leading-relaxed text-black" style={{ textAlign: 'center' }}>

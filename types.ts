@@ -105,6 +105,7 @@ export interface ProjectConstants {
   displayOrder: number; // NEW: Custom sort order
   entity: string; // Ente Appaltante
   entityProvince?: string; // Provincia dell'Ente
+  headerLogo?: string; // NEW: Logo Intestazione (Base64)
   projectName: string;
   location: string;
   cup: string; 
