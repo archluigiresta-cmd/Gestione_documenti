@@ -269,6 +269,23 @@ const App: React.FC = () => {
     }
   };
 
+  const handleExportData = async () => {
+      try {
+          const data = await db.getDatabaseBackup();
+          const jsonString = JSON.stringify(data, null, 2);
+          const blob = new Blob([jsonString], { type: "application/json" });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `edilapp_full_backup_${new Date().toISOString().split('T')[0]}.json`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+      } catch (e) {
+          alert("Errore durante l'esportazione dei dati.");
+      }
+  };
+
   // --- RENDER ---
 
   if (!currentUser) {
@@ -306,6 +323,7 @@ const App: React.FC = () => {
           onOpenAdmin={() => setView('admin-panel')}
           onUpdateOrder={handleUpdateProjectOrder}
           onMoveProject={handleMoveProject}
+          onExportData={handleExportData} // Pass export handler
           currentUser={currentUser}
         />
         {showShareModal && projectToShare && (

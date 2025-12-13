@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ProjectConstants, User } from '../types';
-import { FolderPlus, Trash2, Shield, Share2, Building2, Calendar, ChevronUp, ChevronDown } from 'lucide-react';
+import { FolderPlus, Trash2, Shield, Share2, Building2, Calendar, ChevronUp, ChevronDown, Download } from 'lucide-react';
 
 interface DashboardProps {
   projects: ProjectConstants[];
@@ -10,8 +10,9 @@ interface DashboardProps {
   onDeleteProject: (id: string) => void;
   onShareProject: (id: string) => void; 
   onOpenAdmin: () => void;
-  onUpdateOrder: (id: string, newOrder: number) => void; // New
-  onMoveProject: (id: string, direction: 'up' | 'down') => void; // New
+  onUpdateOrder: (id: string, newOrder: number) => void; 
+  onMoveProject: (id: string, direction: 'up' | 'down') => void; 
+  onExportData: () => void; // New Prop
   currentUser: User | null;
 }
 
@@ -24,6 +25,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenAdmin,
   onUpdateOrder,
   onMoveProject,
+  onExportData,
   currentUser
 }) => {
 
@@ -44,6 +46,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <p className="text-slate-500 mt-2">Gestione opere pubbliche: elenco interventi e stato avanzamento.</p>
         </div>
         <div className="flex gap-3">
+             <button
+                onClick={onExportData}
+                className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-3 rounded-lg shadow-sm flex items-center gap-2 font-medium transition-colors text-sm"
+                title="Scarica tutti i dati in JSON per trasferirli su un altro dispositivo"
+             >
+                <Download className="w-5 h-5"/>
+                Scarica Backup
+             </button>
              {currentUser?.isSystemAdmin && (
                  <button 
                    onClick={onOpenAdmin}

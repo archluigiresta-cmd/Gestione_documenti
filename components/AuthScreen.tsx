@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
-import { User } from '../types';
+import React, { useState, useRef } from 'react';
+import { User, BackupData } from '../types';
 import { db } from '../db';
-import { Building2, KeyRound, Mail, UserPlus, ArrowRight, ShieldCheck, Info } from 'lucide-react';
+import { Building2, KeyRound, Mail, UserPlus, ArrowRight, ShieldCheck, Info, Upload, Download } from 'lucide-react';
 
 interface AuthScreenProps {
   onLogin: (user: User) => void;
@@ -15,6 +15,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +42,28 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
     } catch (err: any) {
       setError(err.message || "Si è verificato un errore.");
     }
+  };
+
+  const handleRestore = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+          try {
+              const json = JSON.parse(ev.target?.result as string) as BackupData;
+              if (confirm(`Rilevati ${json.projects.length} progetti nel file. Vuoi importare questi dati su questo dispositivo? \n\nATTENZIONE: I dati attuali del browser verranno sovrascritti.`)) {
+                  await db.restoreDatabaseBackup(json);
+                  setSuccessMsg("Dati importati con successo! Ora puoi effettuare il login con le tue credenziali.");
+                  // Optional: clear inputs
+                  setEmail('');
+                  setPassword('');
+              }
+          } catch (err) {
+              setError("Il file selezionato non è un backup valido.");
+          }
+      };
+      reader.readAsText(file);
   };
 
   return (
@@ -121,10 +144,22 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
                   <ArrowRight className="w-4 h-4" />
                </button>
             </form>
+
+            {/* QUICK RESTORE FOR NEW DEVICES */}
+            <div className="mt-8 pt-6 border-t border-slate-100 text-center">
+                <p className="text-xs text-slate-400 mb-3">Primo accesso su questo dispositivo?</p>
+                <button 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-blue-600 text-xs font-bold hover:text-blue-800 flex items-center justify-center gap-2 w-full p-2 hover:bg-blue-50 rounded transition-colors"
+                >
+                    <Upload className="w-3 h-3"/> Importa Dati da File (Backup)
+                </button>
+                <input type="file" ref={fileInputRef} onChange={handleRestore} accept=".json" className="hidden"/>
+            </div>
          </div>
          
          <div className="bg-slate-50 p-4 text-center text-xs text-slate-400 border-t border-slate-100">
-             © 2025 EdilApp v2.2 - Gestione Lavori Pubblici
+             © 2025 EdilApp v2.3 - Gestione Lavori Pubblici
          </div>
       </div>
     </div>
