@@ -27,7 +27,11 @@ export interface SubjectProfile {
 }
 
 export interface DesignerProfile extends SubjectProfile {
-  specificRole: string; // Es. Strutturale, Architettonico
+  designLevels: string[]; // NEW: ['PFTE', 'Esecutivo', ...]
+  roles: string[]; // NEW: ['Architettonico', 'Strutturale', ...] (Multiselect)
+  isLegalEntity: boolean; // NEW: True if RTP or Engineering Society
+  operatingDesigners: ContactInfo[]; // NEW: List of actual people doing the work if Entity
+  // specificRole: string; // DEPRECATED in favor of roles[]
 }
 
 // Struttura per ATI / Imprese
@@ -42,6 +46,7 @@ export interface ContractorStructure {
 }
 
 export interface DesignPhaseData {
+  deliveryProtocol: string; // NEW: Protocollo Consegna
   deliveryDate: string;
   economicFramework: string; // Quadro Economico
   approvalType: string; // Tipo atto approvazione

@@ -200,6 +200,44 @@ const ContactCard: React.FC<ContactCardProps> = ({
     );
 };
 
+// --- MULTI-SELECT CHECKBOX GROUP COMPONENT ---
+interface CheckboxGroupProps {
+    options: string[];
+    selected: string[];
+    onChange: (newSelected: string[]) => void;
+    readOnly?: boolean;
+}
+
+const CheckboxGroup: React.FC<CheckboxGroupProps> = ({ options, selected = [], onChange, readOnly }) => {
+    const toggle = (option: string) => {
+        if (readOnly) return;
+        if (selected.includes(option)) {
+            onChange(selected.filter(s => s !== option));
+        } else {
+            onChange([...selected, option]);
+        }
+    };
+
+    return (
+        <div className="flex flex-wrap gap-2">
+            {options.map(opt => (
+                <button
+                    key={opt}
+                    onClick={() => toggle(opt)}
+                    disabled={readOnly}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
+                        selected.includes(opt) 
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm' 
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'
+                    }`}
+                >
+                    {opt}
+                </button>
+            ))}
+        </div>
+    );
+};
+
 // --- MAIN COMPONENT ---
 
 interface ProjectFormProps {
@@ -216,7 +254,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
         case 'general': return 'info';
         case 'design': return 'docfap';
         case 'subjects': return 'rup';
-        case 'contractor': return 'main'; // Changed to main
+        case 'contractor': return 'main'; 
         default: return 'default';
     }
   };
@@ -298,7 +336,6 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                 { id: 'notes', label: 'Note', icon: StickyNote },
             ]} />
 
-            {/* ... Content of General Tabs ... */}
             {subTab === 'info' && (
                 <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-right-4 duration-300">
                     <h3 className="text-lg font-bold text-slate-800 mb-6">Inquadramento Opera</h3>
@@ -455,7 +492,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
         </>
       )}
 
-      {/* ... Design Phase (No Changes) ... */}
+      {/* Design Phase */}
       {section === 'design' && (
         <>
             <SubNav activeTab={subTab} onTabChange={setSubTab} items={[
@@ -467,7 +504,6 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
             
             {data.designPhase && data.designPhase[subTab as keyof typeof data.designPhase] ? (
             <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 animate-in slide-in-from-right-4 duration-300">
-               {/* ... Keep existing design phase content ... */}
                <h3 className="text-lg font-bold text-slate-800 mb-6">
                   {subTab === 'docfap' && 'Documento di Fattibilità delle Alternative Progettuali'}
                   {subTab === 'dip' && 'Documento di Indirizzo alla Progettazione'}
@@ -475,7 +511,13 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                   {subTab === 'executive' && 'Progetto Esecutivo'}
                </h3>
                
-               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                   <div>
+                       <label className="block text-sm font-semibold text-slate-700 mb-2">Protocollo Consegna</label>
+                       <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg"
+                           value={data.designPhase[subTab as keyof typeof data.designPhase].deliveryProtocol || ''} 
+                           onChange={(e) => handleChange(`designPhase.${subTab}.deliveryProtocol`, e.target.value)} />
+                   </div>
                    <div>
                        <label className="block text-sm font-semibold text-slate-700 mb-2">Data Consegna Elaborati</label>
                        <input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg"
@@ -539,10 +581,9 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
         </>
       )}
 
-      {/* ... Subjects Phase (No Changes) ... */}
+      {/* Subjects Phase */}
       {section === 'subjects' && (
         <>
-            {/* ... Keep subjects subnav and content ... */}
             <SubNav activeTab={subTab} onTabChange={setSubTab} items={[
                 { id: 'rup', label: 'RUP', icon: User },
                 { id: 'designers', label: 'Progettisti', icon: PencilRuler },
@@ -647,42 +688,151 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                              )}
                              
                              <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                                <PencilRuler className="w-4 h-4 text-blue-500"/> Progettista {idx + 1}
+                                <PencilRuler className="w-4 h-4 text-blue-500"/> {designer.isLegalEntity ? 'Società / RTP' : 'Progettista'} {idx + 1}
                              </h4>
                              
-                             <div className="mb-4">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Incarico Specifico</label>
-                                <select disabled={readOnly} className="w-full p-2 border border-slate-300 rounded mt-1 text-sm bg-white"
-                                        value={designer.specificRole} 
-                                        onChange={(e) => {
+                             {/* ENTITY SWITCH */}
+                             <div className="flex items-center gap-3 mb-6 bg-slate-50 p-3 rounded-lg border border-slate-200 w-fit">
+                                 <span className="text-xs font-bold text-slate-500 uppercase">Tipologia:</span>
+                                 <label className="flex items-center gap-2 cursor-pointer">
+                                     <input 
+                                        disabled={readOnly}
+                                        type="radio" 
+                                        name={`type-${idx}`}
+                                        className="w-4 h-4 text-blue-600"
+                                        checked={!designer.isLegalEntity} 
+                                        onChange={() => {
                                             const newD = [...data.subjects.designers];
-                                            newD[idx].specificRole = e.target.value;
+                                            newD[idx].isLegalEntity = false;
                                             handleChange('subjects.designers', newD);
-                                        }}>
-                                    <option value="">Seleziona...</option>
-                                    <option value="Architettonico">Architettonico</option>
-                                    <option value="Strutturale">Strutturale</option>
-                                    <option value="Impianti">Impianti</option>
-                                    <option value="Geologico">Geologico</option>
-                                    <option value="Ambientale">Ambientale</option>
-                                    <option value="Altro">Altro</option>
-                                </select>
+                                        }}
+                                     />
+                                     <span className="text-sm">Professionista Singolo</span>
+                                 </label>
+                                 <label className="flex items-center gap-2 cursor-pointer">
+                                     <input 
+                                        disabled={readOnly}
+                                        type="radio" 
+                                        name={`type-${idx}`}
+                                        className="w-4 h-4 text-blue-600"
+                                        checked={designer.isLegalEntity} 
+                                        onChange={() => {
+                                            const newD = [...data.subjects.designers];
+                                            newD[idx].isLegalEntity = true;
+                                            handleChange('subjects.designers', newD);
+                                        }}
+                                     />
+                                     <span className="text-sm">Società / RTP</span>
+                                 </label>
+                             </div>
+
+                             {/* LEVELS & ROLES */}
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                 <div>
+                                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wide block mb-2">Livelli di Progettazione</label>
+                                     <CheckboxGroup 
+                                        options={['DocFAP', 'DIP', 'PFTE', 'Esecutivo', 'Definitivo (Ex)']} 
+                                        selected={designer.designLevels || []} 
+                                        onChange={(newLevels) => {
+                                            const newD = [...data.subjects.designers];
+                                            newD[idx].designLevels = newLevels;
+                                            handleChange('subjects.designers', newD);
+                                        }}
+                                        readOnly={readOnly}
+                                     />
+                                 </div>
+                                 <div>
+                                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wide block mb-2">Incarico Specifico</label>
+                                     <CheckboxGroup 
+                                        options={['Architettonico', 'Strutturale', 'Impianti', 'Geologico', 'Sicurezza', 'Ambientale', 'Acustica', 'Antincendio']} 
+                                        selected={designer.roles || []} 
+                                        onChange={(newRoles) => {
+                                            const newD = [...data.subjects.designers];
+                                            newD[idx].roles = newRoles;
+                                            handleChange('subjects.designers', newD);
+                                        }}
+                                        readOnly={readOnly}
+                                     />
+                                 </div>
                              </div>
                              
-                             <ContactCard label="Dati Progettista" path={`subjects.designers.${idx}`} profile={designer} showAppointment={true} readOnly={readOnly} onChange={handleChange} />
+                             <ContactCard 
+                                label={designer.isLegalEntity ? "Dati Società / Capogruppo" : "Dati Professionista"} 
+                                path={`subjects.designers.${idx}`} 
+                                profile={designer} 
+                                showAppointment={true} 
+                                readOnly={readOnly} 
+                                onChange={handleChange}
+                                showRepInfo={designer.isLegalEntity} 
+                             />
+
+                             {/* OPERATING DESIGNERS SUB-SECTION (For Entities) */}
+                             {designer.isLegalEntity && (
+                                 <div className="mt-6 border-t border-slate-200 pt-6">
+                                     <h5 className="font-bold text-slate-700 text-sm mb-4 flex items-center gap-2">
+                                         <Users className="w-4 h-4"/> Progettisti Operativi / Firmatari
+                                     </h5>
+                                     <div className="space-y-4">
+                                         {(designer.operatingDesigners || []).map((op, opIdx) => (
+                                             <div key={opIdx} className="relative group">
+                                                 <ContactCard 
+                                                    label={`Esecutore ${opIdx + 1}`} 
+                                                    path={`subjects.designers.${idx}.operatingDesigners.${opIdx}`} 
+                                                    profile={{ contact: op, appointment: {type:'', number:'', date:''} }} // Dummy appointment wrapper
+                                                    showAppointment={false}
+                                                    readOnly={readOnly} 
+                                                    onChange={(path, val) => {
+                                                        // Custom handler needed because ContactCard expects SubjectProfile structure but operatingDesigners is ContactInfo[]
+                                                        // path will be `subjects.designers.0.operatingDesigners.0.contact.name`
+                                                        // We need to strip `.contact` from it
+                                                        const field = path.split('.').pop(); // e.g. name, title
+                                                        const newD = [...data.subjects.designers];
+                                                        // @ts-ignore
+                                                        newD[idx].operatingDesigners[opIdx][field] = val;
+                                                        handleChange('subjects.designers', newD);
+                                                    }}
+                                                 />
+                                                 {!readOnly && (
+                                                     <button onClick={() => {
+                                                         const newD = [...data.subjects.designers];
+                                                         newD[idx].operatingDesigners.splice(opIdx, 1);
+                                                         handleChange('subjects.designers', newD);
+                                                     }} className="absolute top-6 right-6 text-slate-400 hover:text-red-500 bg-white p-2 rounded-lg shadow-sm border border-slate-100">
+                                                         <Trash2 className="w-5 h-5"/>
+                                                     </button>
+                                                 )}
+                                             </div>
+                                         ))}
+                                         {!readOnly && (
+                                             <button onClick={() => {
+                                                 const newD = [...data.subjects.designers];
+                                                 if(!newD[idx].operatingDesigners) newD[idx].operatingDesigners = [];
+                                                 newD[idx].operatingDesigners.push({ name: '', title: 'Arch.', email: '', pec: '' });
+                                                 handleChange('subjects.designers', newD);
+                                             }} className="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2 font-medium text-sm">
+                                                 <Plus className="w-4 h-4"/> Aggiungi Esecutore Materiale
+                                             </button>
+                                         )}
+                                     </div>
+                                 </div>
+                             )}
                         </div>
                     ))}
                     
                     {!readOnly && (
                         <button onClick={() => {
                             const emptyDesigner = { 
-                                specificRole: 'Architettonico', 
+                                designLevels: [],
+                                roles: [],
+                                isLegalEntity: false,
+                                operatingDesigners: [],
                                 contact: { name: '', title: 'Arch.', email: '', pec: '', phone: '', address: '', professionalOrder: '', registrationNumber: '' },
                                 appointment: { type: 'Disciplinare', number: '', date: '' }
                             };
+                            // @ts-ignore
                             handleChange('subjects.designers', [...data.subjects.designers, emptyDesigner]);
                         }} className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2 font-medium">
-                            <Plus className="w-5 h-5"/> Aggiungi Progettista
+                            <Plus className="w-5 h-5"/> Aggiungi Nuovo Soggetto (Singolo o Società)
                         </button>
                     )}
                 </div>

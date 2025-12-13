@@ -335,6 +335,30 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                         <td style={{ verticalAlign: 'top' }}>{formatNameWithTitle(project.subjects.dl.contact)}</td>
                     </tr>
 
+                    {/* Designers - Dynamic List */}
+                    {project.subjects.designers && project.subjects.designers.length > 0 && (
+                        <tr>
+                            <td style={{ width: '220px', fontWeight: 'bold', verticalAlign: 'top' }}>Progettazione:</td>
+                            <td style={{ verticalAlign: 'top' }}>
+                                {project.subjects.designers.map((d, i) => {
+                                    const levels = d.designLevels && d.designLevels.length > 0 ? `(${d.designLevels.join(', ')})` : '';
+                                    const roles = d.roles && d.roles.length > 0 ? d.roles.join(', ') : '';
+                                    
+                                    let text = "";
+                                    if (d.isLegalEntity) {
+                                        const ops = d.operatingDesigners?.map(op => formatNameWithTitle(op)).join(', ');
+                                        text = `Incarico ${levels} a ${d.contact.name} ${roles ? `per opere ${roles}` : ''}`;
+                                        if (ops) text += ` (Esecutori: ${ops})`;
+                                    } else {
+                                        text = `${formatNameWithTitle(d.contact)} ${levels}`;
+                                        if (roles) text += ` - ${roles}`;
+                                    }
+                                    return <div key={i} style={{ marginBottom: '4px' }}>{text}</div>;
+                                })}
+                            </td>
+                        </tr>
+                    )}
+
                     {/* CSE */}
                     <tr>
                         <td style={{ width: '220px', fontWeight: 'bold', verticalAlign: 'top' }}>CSE:</td>

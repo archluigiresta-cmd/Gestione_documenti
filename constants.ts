@@ -10,6 +10,7 @@ const createEmptySubject = (): SubjectProfile => ({
 });
 
 const createEmptyDesignPhase = (): DesignPhaseData => ({
+    deliveryProtocol: '',
     deliveryDate: '',
     economicFramework: '',
     approvalType: 'Delibera/Determina',
