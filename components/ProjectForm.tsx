@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ProjectConstants, ContactInfo, SubjectProfile, AppointmentData, CompanyType } from '../types';
+import { ProjectConstants, ContactInfo, SubjectProfile, AppointmentData, CompanyType, DesignerProfile } from '../types';
 import { Save, User, Users, Mail, ShieldCheck, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote, ChevronDown, ImagePlus, X, BriefcaseBusiness, Network, Hammer } from 'lucide-react';
 
 // --- HELPER COMPONENTS (Moved outside to prevent re-render focus loss) ---
@@ -196,6 +196,160 @@ const ContactCard: React.FC<ContactCardProps> = ({
         </div>
         
         {showAppointment && <AppointmentFields appointment={profile.appointment} path={`${path}.appointment`} readOnly={readOnly} onChange={onChange} />}
+        </div>
+    );
+};
+
+// --- ENTITY AWARE CONTACT CARD (REUSABLE FOR DESIGNERS, DL, VERIFIERS) ---
+interface EntityAwareContactCardProps {
+    label: string;
+    path: string;
+    profile: DesignerProfile;
+    readOnly: boolean;
+    onChange: (path: string, value: any) => void;
+    roleOptions?: string[]; // Optional specific role options
+    onDelete?: () => void; // Optional delete action
+    isListMode?: boolean; // If true, rendering in a list (like designers)
+}
+
+const EntityAwareContactCard: React.FC<EntityAwareContactCardProps> = ({ 
+    label, path, profile, readOnly, onChange, roleOptions, onDelete, isListMode = false 
+}) => {
+    return (
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative mb-6">
+             {!readOnly && onDelete && (
+                 <button onClick={onDelete} className="absolute top-4 right-4 text-slate-400 hover:text-red-500"><Trash2 className="w-5 h-5"/></button>
+             )}
+             
+             <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <Briefcase className="w-4 h-4 text-blue-500"/> {label}
+             </h4>
+             
+             {/* ENTITY SWITCH */}
+             <div className="flex items-center gap-3 mb-6 bg-slate-50 p-3 rounded-lg border border-slate-200 w-fit">
+                 <span className="text-xs font-bold text-slate-500 uppercase">Tipologia:</span>
+                 <label className="flex items-center gap-2 cursor-pointer">
+                     <input 
+                        disabled={readOnly}
+                        type="radio" 
+                        name={`type-${path}`}
+                        className="w-4 h-4 text-blue-600"
+                        checked={!profile.isLegalEntity} 
+                        onChange={() => onChange(`${path}.isLegalEntity`, false)}
+                     />
+                     <span className="text-sm">Professionista Singolo</span>
+                 </label>
+                 <label className="flex items-center gap-2 cursor-pointer">
+                     <input 
+                        disabled={readOnly}
+                        type="radio" 
+                        name={`type-${path}`}
+                        className="w-4 h-4 text-blue-600"
+                        checked={profile.isLegalEntity} 
+                        onChange={() => onChange(`${path}.isLegalEntity`, true)}
+                     />
+                     <span className="text-sm">Società / RTP</span>
+                 </label>
+             </div>
+
+             {/* FLAGS: Levels & Roles (Only for Designers or if options provided) */}
+             {(roleOptions || isListMode) && (
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                     {isListMode && (
+                         <div>
+                             <label className="text-xs font-bold text-slate-500 uppercase tracking-wide block mb-2">Livelli di Progettazione</label>
+                             <CheckboxGroup 
+                                options={['DocFAP', 'DIP', 'PFTE', 'Esecutivo', 'Definitivo (Ex)']} 
+                                selected={profile.designLevels || []} 
+                                onChange={(newLevels) => onChange(`${path}.designLevels`, newLevels)}
+                                readOnly={readOnly}
+                             />
+                         </div>
+                     )}
+                     <div>
+                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wide block mb-2">Incarico Specifico</label>
+                         <CheckboxGroup 
+                            options={roleOptions || ['Architettonico', 'Strutturale', 'Impianti', 'Geologico', 'Sicurezza', 'Ambientale', 'Acustica', 'Antincendio']} 
+                            selected={profile.roles || []} 
+                            onChange={(newRoles) => onChange(`${path}.roles`, newRoles)}
+                            readOnly={readOnly}
+                         />
+                     </div>
+                 </div>
+             )}
+             
+             <ContactCard 
+                label={profile.isLegalEntity ? "Dati Società / Capogruppo" : "Dati Professionista"} 
+                path={path} 
+                profile={profile} 
+                showAppointment={true} 
+                readOnly={readOnly} 
+                onChange={onChange}
+                showRepInfo={profile.isLegalEntity} 
+             />
+
+             {/* OPERATING DESIGNERS SUB-SECTION (For Entities) */}
+             {profile.isLegalEntity && (
+                 <div className="mt-6 border-t border-slate-200 pt-6">
+                     <h5 className="font-bold text-slate-700 text-sm mb-4 flex items-center gap-2">
+                         <Users className="w-4 h-4"/> Progettisti Operativi / Firmatari
+                     </h5>
+                     <div className="space-y-4">
+                         {(profile.operatingDesigners || []).map((op, opIdx) => (
+                             <div key={opIdx} className="relative group">
+                                 <ContactCard 
+                                    label={`Esecutore ${opIdx + 1}`} 
+                                    path={`${path}.operatingDesigners.${opIdx}`} 
+                                    profile={{ contact: op, appointment: {type:'', number:'', date:''} }} // Dummy appointment wrapper
+                                    showAppointment={false}
+                                    readOnly={readOnly} 
+                                    roleLabel="Ruolo Tecnico (es. Direttore Operativo)"
+                                    onChange={(subPath, val) => {
+                                        // subPath e.g. subjects.dl.operatingDesigners.0.contact.name
+                                        // We need to strip .contact if it comes from ContactCard internal structure assumption
+                                        const parts = subPath.split('.');
+                                        const field = parts[parts.length - 1];
+                                        // We need to construct the update for the specific field in the array
+                                        // But `onChange` expects full path. 
+                                        // The ContactCard calls onChange with `${path}.contact.name`.
+                                        // Since we passed `${path}.operatingDesigners.${opIdx}`, it calls with that prefix.
+                                        // operatingDesigners is ContactInfo[], not SubjectProfile.
+                                        // So we need to manually handle this because ContactCard assumes SubjectProfile structure.
+                                        
+                                        // HACK: Re-implement ContactCard logic for Operating Designers or use a custom handler?
+                                        // Actually, ContactCard is hardcoded to append .contact.name.
+                                        // We can fix this by intercepting.
+                                        
+                                        // Let's create a specific handler for this section.
+                                        const newOpDesigners = [...(profile.operatingDesigners || [])];
+                                        // @ts-ignore
+                                        newOpDesigners[opIdx][field] = val;
+                                        onChange(`${path}.operatingDesigners`, newOpDesigners);
+                                    }}
+                                 />
+                                 {!readOnly && (
+                                     <button onClick={() => {
+                                         const newOps = [...(profile.operatingDesigners || [])];
+                                         newOps.splice(opIdx, 1);
+                                         onChange(`${path}.operatingDesigners`, newOps);
+                                     }} className="absolute top-6 right-6 text-slate-400 hover:text-red-500 bg-white p-2 rounded-lg shadow-sm border border-slate-100">
+                                         <Trash2 className="w-5 h-5"/>
+                                     </button>
+                                 )}
+                             </div>
+                         ))}
+                         {!readOnly && (
+                             <button onClick={() => {
+                                 const newOps = [...(profile.operatingDesigners || [])];
+                                 newOps.push({ name: '', title: 'Arch.', email: '', pec: '', role: '' });
+                                 onChange(`${path}.operatingDesigners`, newOps);
+                             }} className="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2 font-medium text-sm">
+                                 <Plus className="w-4 h-4"/> Aggiungi Esecutore Materiale
+                             </button>
+                         )}
+                     </div>
+                 </div>
+             )}
         </div>
     );
 };
@@ -596,10 +750,46 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
             ]} />
 
             {subTab === 'rup' && data.subjects.rup && <ContactCard label="Responsabile Unico di Progetto" path="subjects.rup" profile={data.subjects.rup} readOnly={readOnly} onChange={handleChange} />}
-            {subTab === 'csp' && data.subjects.csp && <ContactCard label="Coord. Sicurezza Progettazione" path="subjects.csp" profile={data.subjects.csp} readOnly={readOnly} onChange={handleChange} />}
-            {subTab === 'cse' && data.subjects.cse && <ContactCard label="Coord. Sicurezza Esecuzione" path="subjects.cse" profile={data.subjects.cse} readOnly={readOnly} onChange={handleChange} />}
-            {subTab === 'verifier' && data.subjects.verifier && <ContactCard label="Verificatore Progetto" path="subjects.verifier" profile={data.subjects.verifier} readOnly={readOnly} onChange={handleChange} />}
-            {subTab === 'dl' && data.subjects.dl && <ContactCard label="Direttore dei Lavori" path="subjects.dl" profile={data.subjects.dl} readOnly={readOnly} onChange={handleChange} />}
+            
+            {subTab === 'csp' && data.subjects.csp && (
+                <EntityAwareContactCard 
+                    label="Coordinatore Sicurezza Progettazione" 
+                    path="subjects.csp" 
+                    profile={data.subjects.csp} 
+                    readOnly={readOnly} 
+                    onChange={handleChange} 
+                />
+            )}
+            
+            {subTab === 'cse' && data.subjects.cse && (
+                <EntityAwareContactCard 
+                    label="Coordinatore Sicurezza Esecuzione" 
+                    path="subjects.cse" 
+                    profile={data.subjects.cse} 
+                    readOnly={readOnly} 
+                    onChange={handleChange} 
+                />
+            )}
+            
+            {subTab === 'verifier' && data.subjects.verifier && (
+                <EntityAwareContactCard 
+                    label="Verificatore Progetto" 
+                    path="subjects.verifier" 
+                    profile={data.subjects.verifier} 
+                    readOnly={readOnly} 
+                    onChange={handleChange} 
+                />
+            )}
+            
+            {subTab === 'dl' && data.subjects.dl && (
+                <EntityAwareContactCard 
+                    label="Direttore dei Lavori" 
+                    path="subjects.dl" 
+                    profile={data.subjects.dl} 
+                    readOnly={readOnly} 
+                    onChange={handleChange} 
+                />
+            )}
             
             {subTab === 'tester' && data.subjects.tester && (
                 <div className="space-y-6">
@@ -678,145 +868,20 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
             {subTab === 'designers' && data.subjects.designers && (
                 <div className="space-y-6">
                     {data.subjects.designers.map((designer, idx) => (
-                        <div key={idx} className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm relative">
-                             {!readOnly && (
-                                 <button onClick={() => {
-                                     const newDesigners = [...data.subjects.designers];
-                                     newDesigners.splice(idx, 1);
-                                     handleChange('subjects.designers', newDesigners);
-                                 }} className="absolute top-4 right-4 text-slate-400 hover:text-red-500"><Trash2 className="w-5 h-5"/></button>
-                             )}
-                             
-                             <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                                <PencilRuler className="w-4 h-4 text-blue-500"/> {designer.isLegalEntity ? 'Società / RTP' : 'Progettista'} {idx + 1}
-                             </h4>
-                             
-                             {/* ENTITY SWITCH */}
-                             <div className="flex items-center gap-3 mb-6 bg-slate-50 p-3 rounded-lg border border-slate-200 w-fit">
-                                 <span className="text-xs font-bold text-slate-500 uppercase">Tipologia:</span>
-                                 <label className="flex items-center gap-2 cursor-pointer">
-                                     <input 
-                                        disabled={readOnly}
-                                        type="radio" 
-                                        name={`type-${idx}`}
-                                        className="w-4 h-4 text-blue-600"
-                                        checked={!designer.isLegalEntity} 
-                                        onChange={() => {
-                                            const newD = [...data.subjects.designers];
-                                            newD[idx].isLegalEntity = false;
-                                            handleChange('subjects.designers', newD);
-                                        }}
-                                     />
-                                     <span className="text-sm">Professionista Singolo</span>
-                                 </label>
-                                 <label className="flex items-center gap-2 cursor-pointer">
-                                     <input 
-                                        disabled={readOnly}
-                                        type="radio" 
-                                        name={`type-${idx}`}
-                                        className="w-4 h-4 text-blue-600"
-                                        checked={designer.isLegalEntity} 
-                                        onChange={() => {
-                                            const newD = [...data.subjects.designers];
-                                            newD[idx].isLegalEntity = true;
-                                            handleChange('subjects.designers', newD);
-                                        }}
-                                     />
-                                     <span className="text-sm">Società / RTP</span>
-                                 </label>
-                             </div>
-
-                             {/* LEVELS & ROLES */}
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                                 <div>
-                                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wide block mb-2">Livelli di Progettazione</label>
-                                     <CheckboxGroup 
-                                        options={['DocFAP', 'DIP', 'PFTE', 'Esecutivo', 'Definitivo (Ex)']} 
-                                        selected={designer.designLevels || []} 
-                                        onChange={(newLevels) => {
-                                            const newD = [...data.subjects.designers];
-                                            newD[idx].designLevels = newLevels;
-                                            handleChange('subjects.designers', newD);
-                                        }}
-                                        readOnly={readOnly}
-                                     />
-                                 </div>
-                                 <div>
-                                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wide block mb-2">Incarico Specifico</label>
-                                     <CheckboxGroup 
-                                        options={['Architettonico', 'Strutturale', 'Impianti', 'Geologico', 'Sicurezza', 'Ambientale', 'Acustica', 'Antincendio']} 
-                                        selected={designer.roles || []} 
-                                        onChange={(newRoles) => {
-                                            const newD = [...data.subjects.designers];
-                                            newD[idx].roles = newRoles;
-                                            handleChange('subjects.designers', newD);
-                                        }}
-                                        readOnly={readOnly}
-                                     />
-                                 </div>
-                             </div>
-                             
-                             <ContactCard 
-                                label={designer.isLegalEntity ? "Dati Società / Capogruppo" : "Dati Professionista"} 
-                                path={`subjects.designers.${idx}`} 
-                                profile={designer} 
-                                showAppointment={true} 
-                                readOnly={readOnly} 
-                                onChange={handleChange}
-                                showRepInfo={designer.isLegalEntity} 
-                             />
-
-                             {/* OPERATING DESIGNERS SUB-SECTION (For Entities) */}
-                             {designer.isLegalEntity && (
-                                 <div className="mt-6 border-t border-slate-200 pt-6">
-                                     <h5 className="font-bold text-slate-700 text-sm mb-4 flex items-center gap-2">
-                                         <Users className="w-4 h-4"/> Progettisti Operativi / Firmatari
-                                     </h5>
-                                     <div className="space-y-4">
-                                         {(designer.operatingDesigners || []).map((op, opIdx) => (
-                                             <div key={opIdx} className="relative group">
-                                                 <ContactCard 
-                                                    label={`Esecutore ${opIdx + 1}`} 
-                                                    path={`subjects.designers.${idx}.operatingDesigners.${opIdx}`} 
-                                                    profile={{ contact: op, appointment: {type:'', number:'', date:''} }} // Dummy appointment wrapper
-                                                    showAppointment={false}
-                                                    readOnly={readOnly} 
-                                                    onChange={(path, val) => {
-                                                        // Custom handler needed because ContactCard expects SubjectProfile structure but operatingDesigners is ContactInfo[]
-                                                        // path will be `subjects.designers.0.operatingDesigners.0.contact.name`
-                                                        // We need to strip `.contact` from it
-                                                        const field = path.split('.').pop(); // e.g. name, title
-                                                        const newD = [...data.subjects.designers];
-                                                        // @ts-ignore
-                                                        newD[idx].operatingDesigners[opIdx][field] = val;
-                                                        handleChange('subjects.designers', newD);
-                                                    }}
-                                                 />
-                                                 {!readOnly && (
-                                                     <button onClick={() => {
-                                                         const newD = [...data.subjects.designers];
-                                                         newD[idx].operatingDesigners.splice(opIdx, 1);
-                                                         handleChange('subjects.designers', newD);
-                                                     }} className="absolute top-6 right-6 text-slate-400 hover:text-red-500 bg-white p-2 rounded-lg shadow-sm border border-slate-100">
-                                                         <Trash2 className="w-5 h-5"/>
-                                                     </button>
-                                                 )}
-                                             </div>
-                                         ))}
-                                         {!readOnly && (
-                                             <button onClick={() => {
-                                                 const newD = [...data.subjects.designers];
-                                                 if(!newD[idx].operatingDesigners) newD[idx].operatingDesigners = [];
-                                                 newD[idx].operatingDesigners.push({ name: '', title: 'Arch.', email: '', pec: '' });
-                                                 handleChange('subjects.designers', newD);
-                                             }} className="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2 font-medium text-sm">
-                                                 <Plus className="w-4 h-4"/> Aggiungi Esecutore Materiale
-                                             </button>
-                                         )}
-                                     </div>
-                                 </div>
-                             )}
-                        </div>
+                        <EntityAwareContactCard
+                            key={idx}
+                            label={`Progettista ${idx + 1}`}
+                            path={`subjects.designers.${idx}`}
+                            profile={designer}
+                            readOnly={readOnly}
+                            onChange={handleChange}
+                            isListMode={true}
+                            onDelete={() => {
+                                const newDesigners = [...data.subjects.designers];
+                                newDesigners.splice(idx, 1);
+                                handleChange('subjects.designers', newDesigners);
+                            }}
+                        />
                     ))}
                     
                     {!readOnly && (

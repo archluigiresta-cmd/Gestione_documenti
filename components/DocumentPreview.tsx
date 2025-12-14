@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
+import { ProjectConstants, DocumentVariables, DocumentType, DesignerProfile } from '../types';
 
 interface DocumentPreviewProps {
   project: ProjectConstants;
@@ -168,14 +168,33 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       const titlePrefix = contact.title ? `${contact.title} ` : '';
       return `${titlePrefix}${contact.name}`;
   };
+
+  const renderSubjectString = (profile: DesignerProfile | any) => {
+      if (!profile || !profile.contact) return '...';
+      if (profile.isLegalEntity) {
+          let text = `${profile.contact.name}`;
+          if (profile.contact.repName) {
+              text += ` (Rappr. da: ${profile.contact.repTitle || ''} ${profile.contact.repName})`;
+          }
+          if (profile.operatingDesigners && profile.operatingDesigners.length > 0) {
+              const ops = profile.operatingDesigners.map((op: any) => formatNameWithTitle(op)).join(', ');
+              text += ` - Esecutori: ${ops}`;
+          }
+          return text;
+      } else {
+          return formatNameWithTitle(profile.contact);
+      }
+  };
   
   const getDefaultAttendees = () => {
       const lines = [];
       const { rup, dl, cse } = project.subjects;
       
       if (rup.contact.name) lines.push(`Responsabile Unico del Progetto: ${formatNameWithTitle(rup.contact)}`);
-      if (dl.contact.name) lines.push(`Direttore dei Lavori: ${formatNameWithTitle(dl.contact)}`);
-      if (cse.contact.name) lines.push(`Coord. Sicurezza Esecuzione: ${formatNameWithTitle(cse.contact)}`);
+      
+      if (dl.contact.name) lines.push(`Direttore dei Lavori: ${renderSubjectString(dl)}`);
+      
+      if (cse.contact.name) lines.push(`Coord. Sicurezza Esecuzione: ${renderSubjectString(cse)}`);
       
       if (project.contractor.mainCompany.name) {
           const c = project.contractor.mainCompany;
@@ -332,7 +351,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                     {/* DL */}
                     <tr>
                         <td style={{ width: '220px', fontWeight: 'bold', verticalAlign: 'top' }}>Direttore dei Lavori:</td>
-                        <td style={{ verticalAlign: 'top' }}>{formatNameWithTitle(project.subjects.dl.contact)}</td>
+                        <td style={{ verticalAlign: 'top' }}>{renderSubjectString(project.subjects.dl)}</td>
                     </tr>
 
                     {/* Designers - Dynamic List */}
@@ -343,17 +362,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                                 {project.subjects.designers.map((d, i) => {
                                     const levels = d.designLevels && d.designLevels.length > 0 ? `(${d.designLevels.join(', ')})` : '';
                                     const roles = d.roles && d.roles.length > 0 ? d.roles.join(', ') : '';
-                                    
-                                    let text = "";
-                                    if (d.isLegalEntity) {
-                                        const ops = d.operatingDesigners?.map(op => formatNameWithTitle(op)).join(', ');
-                                        text = `Incarico ${levels} a ${d.contact.name} ${roles ? `per opere ${roles}` : ''}`;
-                                        if (ops) text += ` (Esecutori: ${ops})`;
-                                    } else {
-                                        text = `${formatNameWithTitle(d.contact)} ${levels}`;
-                                        if (roles) text += ` - ${roles}`;
-                                    }
-                                    return <div key={i} style={{ marginBottom: '4px' }}>{text}</div>;
+                                    return <div key={i} style={{ marginBottom: '4px' }}>{renderSubjectString(d)} {levels} {roles ? `- ${roles}` : ''}</div>;
                                 })}
                             </td>
                         </tr>
@@ -362,7 +371,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                     {/* CSE */}
                     <tr>
                         <td style={{ width: '220px', fontWeight: 'bold', verticalAlign: 'top' }}>CSE:</td>
-                        <td style={{ verticalAlign: 'top' }}>{formatNameWithTitle(project.subjects.cse.contact)}</td>
+                        <td style={{ verticalAlign: 'top' }}>{renderSubjectString(project.subjects.cse)}</td>
                     </tr>
                 </tbody>
             </table>
@@ -389,7 +398,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                 {isCollaudo ? (
                     <p>Sono presenti, oltre al sottoscritto Collaudatore {formatNameWithTitle(project.subjects.tester.contact)}:</p>
                 ) : (
-                    <p>Sono presenti, oltre al sottoscritto Direttore dei Lavori {formatNameWithTitle(project.subjects.dl.contact)}:</p>
+                    <p>Sono presenti, oltre al sottoscritto Direttore dei Lavori {renderSubjectString(project.subjects.dl)}:</p>
                 )}
                 
                 <div className="whitespace-pre-line pl-4 mb-4 font-normal italic bg-slate-50 p-2 print:bg-transparent print:p-0 print:font-normal print:italic">
@@ -547,7 +556,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                                 {project.subjects.dl.contact.name === project.subjects.cse.contact.name
                                     ? "Il Direttore dei Lavori e CSE"
                                     : "Il Direttore dei Lavori"}
-                                : <br/>{formatNameWithTitle(project.subjects.dl.contact)}
+                                : <br/>
+                                {project.subjects.dl.isLegalEntity ? project.subjects.dl.contact.name : formatNameWithTitle(project.subjects.dl.contact)}
                             </td>
                             <td style={{ verticalAlign: 'bottom', textAlign: 'right', paddingBottom: '30px' }}>
                                 <div className="signature-line" style={{ width: '250px' }}></div>
@@ -557,7 +567,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                         {project.subjects.dl.contact.name !== project.subjects.cse.contact.name && project.subjects.cse.contact.name && (
                             <tr>
                                 <td style={{ verticalAlign: 'bottom', paddingBottom: '30px' }}>
-                                    Il Coordinatore Sicurezza Esecuzione: <br/>{formatNameWithTitle(project.subjects.cse.contact)}
+                                    Il Coordinatore Sicurezza Esecuzione: <br/>
+                                    {project.subjects.cse.isLegalEntity ? project.subjects.cse.contact.name : formatNameWithTitle(project.subjects.cse.contact)}
                                 </td>
                                 <td style={{ verticalAlign: 'bottom', textAlign: 'right', paddingBottom: '30px' }}>
                                     <div className="signature-line" style={{ width: '250px' }}></div>
@@ -587,7 +598,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                         <td style={{ width: '50%', verticalAlign: 'top', paddingBottom: '60px' }}>
                             <p>Il Direttore dei Lavori:</p>
                             <div className="signature-line" style={{ width: '80%', marginTop: '30px' }}>
-                                {formatNameWithTitle(project.subjects.dl.contact)}
+                                {project.subjects.dl.isLegalEntity ? project.subjects.dl.contact.name : formatNameWithTitle(project.subjects.dl.contact)}
                             </div>
                         </td>
                         <td style={{ width: '50%' }}></td>

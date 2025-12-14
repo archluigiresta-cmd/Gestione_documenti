@@ -1,5 +1,5 @@
 
-import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData, ContactInfo } from './types';
+import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData, ContactInfo, DesignerProfile } from './types';
 
 const emptyContact: ContactInfo = { name: '', title: '', email: '', pec: '', phone: '', professionalOrder: '', registrationNumber: '' };
 const emptyAppointment = { type: 'Determina', number: '', date: '' };
@@ -7,6 +7,14 @@ const emptyAppointment = { type: 'Determina', number: '', date: '' };
 const createEmptySubject = (): SubjectProfile => ({
     contact: { ...emptyContact },
     appointment: { ...emptyAppointment }
+});
+
+const createEmptyDesignerProfile = (): DesignerProfile => ({
+    ...createEmptySubject(),
+    designLevels: [],
+    roles: [],
+    isLegalEntity: false,
+    operatingDesigners: []
 });
 
 const createEmptyDesignPhase = (): DesignPhaseData => ({
@@ -56,11 +64,11 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
   subjects: {
     rup: createEmptySubject(),
     designers: [],
-    csp: createEmptySubject(),
-    verifier: createEmptySubject(),
-    dl: createEmptySubject(),
+    csp: createEmptyDesignerProfile(),
+    verifier: createEmptyDesignerProfile(),
+    dl: createEmptyDesignerProfile(),
     dlOffice: [],
-    cse: createEmptySubject(),
+    cse: createEmptyDesignerProfile(),
     tester: { 
         contact: { ...emptyContact, title: 'Arch.' },
         appointment: { ...emptyAppointment }

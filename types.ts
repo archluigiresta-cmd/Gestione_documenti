@@ -147,11 +147,11 @@ export interface ProjectConstants {
   subjects: {
     rup: SubjectProfile; // Resp. Unico Progetto
     designers: DesignerProfile[]; // Progettisti multipli
-    csp: SubjectProfile; // Coord. Sicurezza Progettazione
-    verifier: SubjectProfile; // Verificatore
-    dl: SubjectProfile; // Direttore Lavori
+    csp: DesignerProfile; // Coord. Sicurezza Progettazione - UPDATED
+    verifier: DesignerProfile; // Verificatore - UPDATED
+    dl: DesignerProfile; // Direttore Lavori - UPDATED
     dlOffice: SubjectProfile[]; // Ufficio Direzione Lavori
-    cse: SubjectProfile; // Coord. Sicurezza Esecuzione
+    cse: DesignerProfile; // Coord. Sicurezza Esecuzione - UPDATED
     tester: SubjectProfile; // Collaudatore
     testerAppointment: { 
         nominationType: string;
