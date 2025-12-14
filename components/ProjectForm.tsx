@@ -71,14 +71,14 @@ interface ContactCardProps {
     showAppointment?: boolean;
     readOnly: boolean;
     onChange: (path: string, value: any) => void;
-    // New props for extended contractor fields
     showRepInfo?: boolean; 
-    roleLabel?: string; // e.g., "Categoria Lavori" instead of just Role
+    roleLabel?: string; 
+    isCompany?: boolean; // NEW: If true, hides personal professional details (Title, Order)
 }
 
 const ContactCard: React.FC<ContactCardProps> = ({ 
     label, path, profile, showAppointment = true, readOnly, onChange,
-    showRepInfo = false, roleLabel = "Ruolo / Titolo"
+    showRepInfo = false, roleLabel = "Ruolo / Titolo", isCompany = false
 }) => {
     // Determine if current title is standard or custom
     const currentTitle = profile.contact.title || '';
@@ -91,54 +91,58 @@ const ContactCard: React.FC<ContactCardProps> = ({
             <User className="w-5 h-5 text-blue-500 bg-blue-50 p-1 rounded-full"/> {label}
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="md:col-span-2">
+            <div className={isCompany ? "md:col-span-2" : "md:col-span-2"}>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Nome / Ragione Sociale</label>
                 <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all disabled:bg-slate-100" 
                     value={profile.contact.name} onChange={e => onChange(`${path}.contact.name`, e.target.value)} />
             </div>
             
-            {/* Title Selection Logic */}
-            <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Titolo</label>
-                <div className="flex gap-2 mt-1">
-                    <div className="relative flex-1">
-                        <select 
-                            disabled={readOnly}
-                            className="w-full p-2.5 border border-slate-300 rounded-lg appearance-none bg-white disabled:bg-slate-100"
-                            value={showCustomInput ? 'Altro' : currentTitle}
-                            onChange={(e) => {
-                                const val = e.target.value;
-                                if (val === 'Altro') {
-                                    onChange(`${path}.contact.title`, ''); // Clear to allow typing
-                                } else {
-                                    onChange(`${path}.contact.title`, val);
-                                }
-                            }}
-                        >
-                            <option value="">Seleziona...</option>
-                            {TITLES.map(t => <option key={t} value={t}>{t}</option>)}
-                            <option value="Altro">Altro...</option>
-                        </select>
-                        <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-slate-400 pointer-events-none"/>
+            {/* Title Selection Logic - Hidden for Companies */}
+            {!isCompany && (
+                <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Titolo</label>
+                    <div className="flex gap-2 mt-1">
+                        <div className="relative flex-1">
+                            <select 
+                                disabled={readOnly}
+                                className="w-full p-2.5 border border-slate-300 rounded-lg appearance-none bg-white disabled:bg-slate-100"
+                                value={showCustomInput ? 'Altro' : currentTitle}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    if (val === 'Altro') {
+                                        onChange(`${path}.contact.title`, ''); 
+                                    } else {
+                                        onChange(`${path}.contact.title`, val);
+                                    }
+                                }}
+                            >
+                                <option value="">Seleziona...</option>
+                                {TITLES.map(t => <option key={t} value={t}>{t}</option>)}
+                                <option value="Altro">Altro...</option>
+                            </select>
+                            <ChevronDown className="absolute right-3 top-3 w-4 h-4 text-slate-400 pointer-events-none"/>
+                        </div>
+                        {showCustomInput && (
+                            <input 
+                                disabled={readOnly} 
+                                type="text" 
+                                placeholder="Specifica..." 
+                                className="flex-1 p-2.5 border border-slate-300 rounded-lg disabled:bg-slate-100 animate-in fade-in slide-in-from-left-2" 
+                                value={profile.contact.title} 
+                                onChange={e => onChange(`${path}.contact.title`, e.target.value)} 
+                            />
+                        )}
                     </div>
-                    {showCustomInput && (
-                        <input 
-                            disabled={readOnly} 
-                            type="text" 
-                            placeholder="Specifica..." 
-                            className="flex-1 p-2.5 border border-slate-300 rounded-lg disabled:bg-slate-100 animate-in fade-in slide-in-from-left-2" 
-                            value={profile.contact.title} 
-                            onChange={e => onChange(`${path}.contact.title`, e.target.value)} 
-                        />
-                    )}
                 </div>
-            </div>
+            )}
 
             <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">P.IVA / C.F.</label>
                 <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
                     value={profile.contact.vat || ''} onChange={e => onChange(`${path}.contact.vat`, e.target.value)} />
             </div>
+            
+            {/* Contact Details */}
             <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Email</label>
                 <div className="relative">
@@ -155,16 +159,23 @@ const ContactCard: React.FC<ContactCardProps> = ({
                         value={profile.contact.pec || ''} onChange={e => onChange(`${path}.contact.pec`, e.target.value)} />
                 </div>
             </div>
-            <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Albo / Ordine</label>
-                <input disabled={readOnly} type="text" placeholder="Es. Ordine Architetti Taranto" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                    value={profile.contact.professionalOrder || ''} onChange={e => onChange(`${path}.contact.professionalOrder`, e.target.value)} />
-            </div>
-            <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">N. Iscrizione</label>
-                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                    value={profile.contact.registrationNumber || ''} onChange={e => onChange(`${path}.contact.registrationNumber`, e.target.value)} />
-            </div>
+
+            {/* Order Info - Hidden for Companies */}
+            {!isCompany && (
+                <>
+                    <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Albo / Ordine</label>
+                        <input disabled={readOnly} type="text" placeholder="Es. Ordine Architetti Taranto" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
+                            value={profile.contact.professionalOrder || ''} onChange={e => onChange(`${path}.contact.professionalOrder`, e.target.value)} />
+                    </div>
+                    <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">N. Iscrizione</label>
+                        <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
+                            value={profile.contact.registrationNumber || ''} onChange={e => onChange(`${path}.contact.registrationNumber`, e.target.value)} />
+                    </div>
+                </>
+            )}
+
             <div className="md:col-span-2">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Indirizzo</label>
                 <div className="relative">
@@ -286,41 +297,29 @@ const EntityAwareContactCard: React.FC<EntityAwareContactCardProps> = ({
                 readOnly={readOnly} 
                 onChange={onChange}
                 showRepInfo={profile.isLegalEntity} 
+                isCompany={profile.isLegalEntity} // Pass isCompany prop
              />
 
              {/* OPERATING DESIGNERS SUB-SECTION (For Entities) */}
              {profile.isLegalEntity && (
                  <div className="mt-6 border-t border-slate-200 pt-6">
                      <h5 className="font-bold text-slate-700 text-sm mb-4 flex items-center gap-2">
-                         <Users className="w-4 h-4"/> Progettisti Operativi / Firmatari
+                         <Users className="w-4 h-4"/> Figure Tecniche Operative
                      </h5>
                      <div className="space-y-4">
                          {(profile.operatingDesigners || []).map((op, opIdx) => (
                              <div key={opIdx} className="relative group">
                                  <ContactCard 
-                                    label={`Esecutore ${opIdx + 1}`} 
+                                    label={`Tecnico ${opIdx + 1}`} 
                                     path={`${path}.operatingDesigners.${opIdx}`} 
                                     profile={{ contact: op, appointment: {type:'', number:'', date:''} }} // Dummy appointment wrapper
                                     showAppointment={false}
                                     readOnly={readOnly} 
+                                    isCompany={false} // Always a person
                                     roleLabel="Ruolo Tecnico (es. Direttore Operativo)"
                                     onChange={(subPath, val) => {
-                                        // subPath e.g. subjects.dl.operatingDesigners.0.contact.name
-                                        // We need to strip .contact if it comes from ContactCard internal structure assumption
                                         const parts = subPath.split('.');
                                         const field = parts[parts.length - 1];
-                                        // We need to construct the update for the specific field in the array
-                                        // But `onChange` expects full path. 
-                                        // The ContactCard calls onChange with `${path}.contact.name`.
-                                        // Since we passed `${path}.operatingDesigners.${opIdx}`, it calls with that prefix.
-                                        // operatingDesigners is ContactInfo[], not SubjectProfile.
-                                        // So we need to manually handle this because ContactCard assumes SubjectProfile structure.
-                                        
-                                        // HACK: Re-implement ContactCard logic for Operating Designers or use a custom handler?
-                                        // Actually, ContactCard is hardcoded to append .contact.name.
-                                        // We can fix this by intercepting.
-                                        
-                                        // Let's create a specific handler for this section.
                                         const newOpDesigners = [...(profile.operatingDesigners || [])];
                                         // @ts-ignore
                                         newOpDesigners[opIdx][field] = val;
@@ -344,7 +343,7 @@ const EntityAwareContactCard: React.FC<EntityAwareContactCardProps> = ({
                                  newOps.push({ name: '', title: 'Arch.', email: '', pec: '', role: '' });
                                  onChange(`${path}.operatingDesigners`, newOps);
                              }} className="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2 font-medium text-sm">
-                                 <Plus className="w-4 h-4"/> Aggiungi Esecutore Materiale
+                                 <Plus className="w-4 h-4"/> Aggiungi Tecnico
                              </button>
                          )}
                      </div>
@@ -1004,6 +1003,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                         showRepInfo={true}
                         readOnly={readOnly} 
                         onChange={handleChange} 
+                        isCompany={true} // Contractors are assumed companies in this context usually
                     />
                 </div>
             )}
@@ -1028,6 +1028,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                                         showRepInfo={true}
                                         readOnly={readOnly} 
                                         onChange={handleChange} 
+                                        isCompany={true}
                                     />
                                     {!readOnly && (
                                         <button onClick={() => {
@@ -1063,6 +1064,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                                         showRepInfo={true}
                                         readOnly={readOnly} 
                                         onChange={handleChange} 
+                                        isCompany={true}
                                     />
                                     {!readOnly && (
                                         <button onClick={() => {
@@ -1106,6 +1108,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                                    roleLabel="Categoria Lavori / Attività"
                                    readOnly={readOnly} 
                                    onChange={handleChange} 
+                                   isCompany={true}
                                />
                                {!readOnly && (
                                    <button onClick={() => {

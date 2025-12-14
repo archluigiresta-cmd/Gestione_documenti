@@ -169,21 +169,63 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       return `${titlePrefix}${contact.name}`;
   };
 
+  const formatProfessionalDetails = (contact: any) => {
+      let text = formatNameWithTitle(contact);
+      if (contact.professionalOrder) {
+          text += `, iscritto all'Albo ${contact.professionalOrder}`;
+          if (contact.registrationNumber) {
+              text += ` al n. ${contact.registrationNumber}`;
+          }
+      }
+      return text;
+  };
+
+  // Used for Data Block (Includes Professional Details)
   const renderSubjectString = (profile: DesignerProfile | any) => {
       if (!profile || !profile.contact) return '...';
+      
       if (profile.isLegalEntity) {
-          let text = `${profile.contact.name}`;
-          if (profile.contact.repName) {
-              text += ` (Rappr. da: ${profile.contact.repTitle || ''} ${profile.contact.repName})`;
-          }
+          const companyName = profile.contact.name;
+          
           if (profile.operatingDesigners && profile.operatingDesigners.length > 0) {
-              const ops = profile.operatingDesigners.map((op: any) => formatNameWithTitle(op)).join(', ');
-              text += ` - Esecutori: ${ops}`;
+              // "Ing. Vincenzo Sidoti [details] per SIDOTI ENGINEERING s.r.l."
+              return profile.operatingDesigners.map((op: any) => {
+                  return `${formatProfessionalDetails(op)} per ${companyName}`;
+              }).join('; ');
           }
+          
+          // Fallback to Legal Rep if no technical executor
+          if (profile.contact.repName) {
+               const repTitle = profile.contact.repTitle ? `${profile.contact.repTitle} ` : '';
+               return `${repTitle}${profile.contact.repName} (Legale Rappresentante) per ${companyName}`;
+          }
+          
+          // Fallback just Company
+          let text = `${companyName}`;
+          if (profile.contact.vat) text += ` (P.IVA ${profile.contact.vat})`;
           return text;
-      } else {
-          return formatNameWithTitle(profile.contact);
       }
+      
+      return formatProfessionalDetails(profile.contact);
+  };
+
+  // Used for Signature Block (Short Name)
+  const renderSignatureString = (profile: DesignerProfile | any) => {
+      if (!profile || !profile.contact) return '...';
+      if (profile.isLegalEntity) {
+          const companyName = profile.contact.name;
+          if (profile.operatingDesigners && profile.operatingDesigners.length > 0) {
+              return profile.operatingDesigners.map((op: any) => 
+                  `${formatNameWithTitle(op)} per ${companyName}`
+              ).join(' / ');
+          }
+          if (profile.contact.repName) {
+               const repTitle = profile.contact.repTitle ? `${profile.contact.repTitle} ` : '';
+               return `${repTitle}${profile.contact.repName} per ${companyName}`;
+          }
+          return companyName;
+      }
+      return formatNameWithTitle(profile.contact);
   };
   
   const getDefaultAttendees = () => {
@@ -373,6 +415,22 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                         <td style={{ width: '220px', fontWeight: 'bold', verticalAlign: 'top' }}>CSE:</td>
                         <td style={{ verticalAlign: 'top' }}>{renderSubjectString(project.subjects.cse)}</td>
                     </tr>
+
+                    {/* CSP - If present */}
+                    {project.subjects.csp && project.subjects.csp.contact && project.subjects.csp.contact.name && (
+                        <tr>
+                            <td style={{ width: '220px', fontWeight: 'bold', verticalAlign: 'top' }}>CSP:</td>
+                            <td style={{ verticalAlign: 'top' }}>{renderSubjectString(project.subjects.csp)}</td>
+                        </tr>
+                    )}
+
+                    {/* Verifier - If present */}
+                    {project.subjects.verifier && project.subjects.verifier.contact && project.subjects.verifier.contact.name && (
+                        <tr>
+                            <td style={{ width: '220px', fontWeight: 'bold', verticalAlign: 'top' }}>Verificatore:</td>
+                            <td style={{ verticalAlign: 'top' }}>{renderSubjectString(project.subjects.verifier)}</td>
+                        </tr>
+                    )}
                 </tbody>
             </table>
             {/* --------------------------- */}
@@ -557,7 +615,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                                     ? "Il Direttore dei Lavori e CSE"
                                     : "Il Direttore dei Lavori"}
                                 : <br/>
-                                {project.subjects.dl.isLegalEntity ? project.subjects.dl.contact.name : formatNameWithTitle(project.subjects.dl.contact)}
+                                {renderSignatureString(project.subjects.dl)}
                             </td>
                             <td style={{ verticalAlign: 'bottom', textAlign: 'right', paddingBottom: '30px' }}>
                                 <div className="signature-line" style={{ width: '250px' }}></div>
@@ -568,7 +626,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                             <tr>
                                 <td style={{ verticalAlign: 'bottom', paddingBottom: '30px' }}>
                                     Il Coordinatore Sicurezza Esecuzione: <br/>
-                                    {project.subjects.cse.isLegalEntity ? project.subjects.cse.contact.name : formatNameWithTitle(project.subjects.cse.contact)}
+                                    {renderSignatureString(project.subjects.cse)}
                                 </td>
                                 <td style={{ verticalAlign: 'bottom', textAlign: 'right', paddingBottom: '30px' }}>
                                     <div className="signature-line" style={{ width: '250px' }}></div>
@@ -598,7 +656,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                         <td style={{ width: '50%', verticalAlign: 'top', paddingBottom: '60px' }}>
                             <p>Il Direttore dei Lavori:</p>
                             <div className="signature-line" style={{ width: '80%', marginTop: '30px' }}>
-                                {project.subjects.dl.isLegalEntity ? project.subjects.dl.contact.name : formatNameWithTitle(project.subjects.dl.contact)}
+                                {renderSignatureString(project.subjects.dl)}
                             </div>
                         </td>
                         <td style={{ width: '50%' }}></td>
