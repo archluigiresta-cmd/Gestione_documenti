@@ -1,7 +1,7 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { DocumentVariables, ProjectConstants, TesterVisitSummary } from '../types';
-import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext, RefreshCw, MessageSquare, Bell, FileCheck2, X } from 'lucide-react';
+import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext, RefreshCw, MessageSquare, Bell, FileCheck2, X, TextQuote } from 'lucide-react';
 
 interface TestingManagerProps {
   project: ProjectConstants;
@@ -65,6 +65,34 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   const requestsSelectRef = useRef<HTMLSelectElement>(null);
   const invitationsSelectRef = useRef<HTMLSelectElement>(null);
   const commonSelectRef = useRef<HTMLSelectElement>(null);
+
+  // AUTO-POPULATE INTRO TEXT
+  useEffect(() => {
+    if (!currentDoc || readOnly) return;
+    if (!currentDoc.worksIntroText) {
+        // Calculation logic borrowed from DocumentPreview to maintain consistency
+        const prevDocs = documents
+            .filter(d => d.visitNumber < currentDoc.visitNumber) 
+            .sort((a, b) => a.visitNumber - b.visitNumber);
+
+        const formatShortDate = (dateStr: string) => {
+            if (!dateStr) return '...';
+            try { return new Date(dateStr).toLocaleDateString('it-IT'); } catch { return dateStr; }
+        };
+
+        let prevDateDesc = 'la consegna dei lavori';
+        if (prevDocs.length > 0) {
+            const lastDoc = prevDocs[prevDocs.length - 1];
+            prevDateDesc = `il ${formatShortDate(lastDoc.date)}`;
+        } else if (project.executionPhase.deliveryDate) {
+            prevDateDesc = `il ${formatShortDate(project.executionPhase.deliveryDate)}`;
+        }
+
+        const defaultText = `Durante il presente sopralluogo prende atto che, nel periodo intercorrente tra ${prevDateDesc} e la data odierna sono state effettuate le seguenti lavorazioni:`;
+        
+        handleUpdate({...currentDoc, worksIntroText: defaultText});
+    }
+  }, [currentDoc?.id]);
 
   if (!currentDoc) return <div className="p-8 text-center">Nessun verbale attivo. Crea un nuovo verbale dalla dashboard.</div>;
 
@@ -436,6 +464,21 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
           {step === 'works' && (
               <div className="animate-in fade-in slide-in-from-right-4 space-y-12">
                   <section>
+                      <div className="mb-8">
+                         <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
+                            <TextQuote className="w-4 h-4 text-slate-500"/>
+                            Frase Introduttiva (Editabile)
+                         </h3>
+                         <textarea 
+                            disabled={readOnly} 
+                            className="w-full p-4 border border-slate-300 rounded-xl h-24 text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none resize-none disabled:bg-slate-100 bg-slate-50"
+                            value={currentDoc.worksIntroText || ''} 
+                            onChange={e => handleUpdate({...currentDoc, worksIntroText: e.target.value})} 
+                            placeholder="Frase introduttiva del riepilogo lavori..."
+                         />
+                         <p className="text-xs text-slate-500 mt-1">Questa frase viene generata automaticamente ma puoi modificarla liberamente.</p>
+                      </div>
+
                       <div className="flex items-center justify-between border-b pb-2 mb-4">
                           <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                               <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>

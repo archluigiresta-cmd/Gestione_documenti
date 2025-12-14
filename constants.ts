@@ -1,4 +1,5 @@
 
+
 import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData, ContactInfo, DesignerProfile } from './types';
 
 const emptyContact: ContactInfo = { name: '', title: '', email: '', pec: '', phone: '', professionalOrder: '', registrationNumber: '' };
@@ -150,6 +151,7 @@ export const createInitialDocument = (projectId: string): DocumentVariables => (
   worksInProgress: '', 
   upcomingWorks: '', // NEW
   
+  worksIntroText: '', // NEW
   testerRequests: '', // NEW
   testerInvitations: '', // NEW
   commonParts: '', // NEW

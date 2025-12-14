@@ -485,8 +485,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                     {/* --- BODY SECTION --- */}
                     {isCollaudo ? (
                         <div className="mt-6">
-                            <p className="text-justify mb-2">
-                                Durante il presente sopralluogo prende atto che, nel periodo intercorrente tra {getPreviousVisitDateDescription()} e la data odierna sono state effettuate le seguenti lavorazioni:
+                            <p className="text-justify mb-2 whitespace-pre-line">
+                                {doc.worksIntroText || `Durante il presente sopralluogo prende atto che, nel periodo intercorrente tra ${getPreviousVisitDateDescription()} e la data odierna sono state effettuate le seguenti lavorazioni:`}
                             </p>
                             
                             {currentWorksList.length > 0 ? (

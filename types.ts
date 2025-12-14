@@ -1,4 +1,5 @@
 
+
 export interface ContactInfo {
   name: string; // Nome e Cognome o Ragione Sociale
   title?: string; // Arch., Ing., Geom.
@@ -256,6 +257,7 @@ export interface DocumentVariables {
   upcomingWorks: string; // NEW: Prossime attività previste
   
   // NEW FIELDS FOR COLLAUDO
+  worksIntroText: string; // NEW: Frase introduttiva modificabile
   testerRequests: string; // Richieste del Collaudatore
   testerInvitations: string; // Inviti del Collaudatore
   commonParts: string; // Parti Comuni (Chiusura)
