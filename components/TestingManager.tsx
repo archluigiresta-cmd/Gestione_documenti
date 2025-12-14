@@ -124,6 +124,14 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
       setInputVal('');
   };
 
+  const updateListInDoc = (field: 'worksInProgress' | 'upcomingWorks', index: number, newValue: string) => {
+      if (readOnly) return;
+      const currentText = currentDoc[field] || '';
+      const items = currentText.split('\n').filter(i => i.trim());
+      items[index] = newValue;
+      handleUpdate({ ...currentDoc, [field]: items.join('\n') });
+  };
+
   const removeFromListInDoc = (field: 'worksInProgress' | 'upcomingWorks', index: number) => {
       if (readOnly) return;
       const currentText = currentDoc[field] || '';
@@ -243,6 +251,13 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
           updateCurrentSummary('works', [...currentSummary.works, summaryManualInput]);
           setSummaryManualInput('');
       }
+  };
+
+  const updateWorkSummaryItem = (index: number, newValue: string) => {
+      if (readOnly || !onUpdateProject || !currentSummary) return;
+      const newWorks = [...currentSummary.works];
+      newWorks[index] = newValue;
+      updateCurrentSummary('works', newWorks);
   };
 
   const removeWorkSummary = (workIndex: number) => {
@@ -481,8 +496,15 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                                
                                <ul className="space-y-1 bg-white p-3 rounded border border-blue-100 min-h-[100px]">
                                    {currentSummary.works.map((work, wIdx) => (
-                                       <li key={wIdx} className="flex justify-between items-start text-sm p-1.5 hover:bg-slate-50 rounded group">
-                                           <span className="text-slate-700">{wIdx + 1}. {work}</span>
+                                       <li key={wIdx} className="flex justify-between items-center text-sm p-1.5 hover:bg-slate-50 rounded group gap-2">
+                                           <span className="text-slate-500 font-mono text-xs w-6">{wIdx + 1}.</span>
+                                           <input 
+                                             disabled={readOnly}
+                                             type="text"
+                                             className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-sm text-slate-700"
+                                             value={work}
+                                             onChange={(e) => updateWorkSummaryItem(wIdx, e.target.value)}
+                                           />
                                            {!readOnly && <button onClick={() => removeWorkSummary(wIdx)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4"/></button>}
                                        </li>
                                    ))}
@@ -512,11 +534,15 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                            
                            <ul className="space-y-1 bg-white p-3 rounded border border-amber-100 min-h-[100px]">
                                {(currentDoc.worksInProgress || '').split('\n').filter(i => i.trim()).map((work, idx) => (
-                                   <li key={idx} className="flex justify-between items-start text-sm p-1.5 hover:bg-slate-50 rounded group">
-                                       <div className="flex gap-2">
-                                            <Activity className="w-4 h-4 text-amber-500 mt-0.5 shrink-0"/>
-                                            <span className="text-slate-700">{work}</span>
-                                       </div>
+                                   <li key={idx} className="flex justify-between items-center text-sm p-1.5 hover:bg-slate-50 rounded group gap-2">
+                                       <Activity className="w-4 h-4 text-amber-500 mt-0.5 shrink-0"/>
+                                       <input 
+                                          disabled={readOnly}
+                                          type="text"
+                                          className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-sm text-slate-700"
+                                          value={work}
+                                          onChange={(e) => updateListInDoc('worksInProgress', idx, e.target.value)}
+                                       />
                                        {!readOnly && <button onClick={() => removeFromListInDoc('worksInProgress', idx)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4"/></button>}
                                    </li>
                                ))}
@@ -545,11 +571,15 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                            
                            <ul className="space-y-1 bg-white p-3 rounded border border-emerald-100 min-h-[100px]">
                                {(currentDoc.upcomingWorks || '').split('\n').filter(i => i.trim()).map((work, idx) => (
-                                   <li key={idx} className="flex justify-between items-start text-sm p-1.5 hover:bg-slate-50 rounded group">
-                                       <div className="flex gap-2">
-                                            <CalendarIconNext className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0"/>
-                                            <span className="text-slate-700">{work}</span>
-                                       </div>
+                                   <li key={idx} className="flex justify-between items-center text-sm p-1.5 hover:bg-slate-50 rounded group gap-2">
+                                       <CalendarIconNext className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0"/>
+                                       <input 
+                                          disabled={readOnly}
+                                          type="text"
+                                          className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-sm text-slate-700"
+                                          value={work}
+                                          onChange={(e) => updateListInDoc('upcomingWorks', idx, e.target.value)}
+                                       />
                                        {!readOnly && <button onClick={() => removeFromListInDoc('upcomingWorks', idx)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4"/></button>}
                                    </li>
                                ))}

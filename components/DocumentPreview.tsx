@@ -197,7 +197,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
           // Fallback to Legal Rep if no technical executor
           if (profile.contact.repName) {
                const repTitle = profile.contact.repTitle ? `${profile.contact.repTitle} ` : '';
-               return `${repTitle}${profile.contact.repName} (Legale Rappresentante) per ${companyName}`;
+               return `${repTitle}${profile.contact.repName} per ${companyName}`;
           }
           
           // Fallback just Company

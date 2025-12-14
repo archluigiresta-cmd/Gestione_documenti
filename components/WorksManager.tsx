@@ -72,6 +72,13 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
     }
   };
 
+  const updateWorkExecutedItem = (index: number, newValue: string) => {
+    if (readOnly) return;
+    const newWorks = [...currentDoc.worksExecuted];
+    newWorks[index] = newValue;
+    onUpdateDocument({ ...currentDoc, worksExecuted: newWorks });
+  };
+
   const removeWork = (index: number) => {
     if (readOnly) return;
     const newWorks = [...currentDoc.worksExecuted];
@@ -196,8 +203,15 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
                </div>
                <ul className="space-y-2">
                   {currentDoc.worksExecuted.map((work, idx) => (
-                     <li key={idx} className="flex justify-between items-center bg-slate-50 p-3 rounded border border-slate-100">
-                        <span className="text-sm text-slate-700"><span className="font-mono text-slate-400 mr-2">{idx+1}.</span> {work}</span>
+                     <li key={idx} className="flex justify-between items-center bg-slate-50 p-3 rounded border border-slate-100 gap-2">
+                        <span className="font-mono text-slate-400 text-sm">{idx+1}.</span>
+                        <input 
+                           disabled={readOnly}
+                           type="text"
+                           className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-sm text-slate-700"
+                           value={work}
+                           onChange={(e) => updateWorkExecutedItem(idx, e.target.value)}
+                        />
                         {!readOnly && (
                             <button onClick={() => removeWork(idx)} className="text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4"/></button>
                         )}
