@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { DocumentVariables, ProjectConstants, TesterVisitSummary } from '../types';
-import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext, RefreshCw, MessageSquare, Bell, FileCheck2, X, TextQuote } from 'lucide-react';
+import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext, RefreshCw, MessageSquare, Bell, FileCheck2, X, TextQuote, Wand2 } from 'lucide-react';
 
 interface TestingManagerProps {
   project: ProjectConstants;
@@ -66,11 +66,14 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   const invitationsSelectRef = useRef<HTMLSelectElement>(null);
   const commonSelectRef = useRef<HTMLSelectElement>(null);
 
-  // AUTO-POPULATE INTRO TEXT
-  useEffect(() => {
-    if (!currentDoc || readOnly) return;
-    if (!currentDoc.worksIntroText) {
-        // Calculation logic borrowed from DocumentPreview to maintain consistency
+  const handleUpdate = (updatedDoc: DocumentVariables) => {
+      if (!readOnly) onUpdateDocument(updatedDoc);
+  };
+
+  // Logic to generate the standard intro text
+  const generateIntroText = () => {
+        if(readOnly) return;
+        
         const prevDocs = documents
             .filter(d => d.visitNumber < currentDoc.visitNumber) 
             .sort((a, b) => a.visitNumber - b.visitNumber);
@@ -91,14 +94,17 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
         const defaultText = `Durante il presente sopralluogo prende atto che, nel periodo intercorrente tra ${prevDateDesc} e la data odierna sono state effettuate le seguenti lavorazioni:`;
         
         handleUpdate({...currentDoc, worksIntroText: defaultText});
+  };
+
+  // AUTO-POPULATE INTRO TEXT ON LOAD OR IF EMPTY
+  useEffect(() => {
+    if (!currentDoc || readOnly) return;
+    if (!currentDoc.worksIntroText || currentDoc.worksIntroText.trim() === '') {
+        generateIntroText();
     }
   }, [currentDoc?.id]);
 
   if (!currentDoc) return <div className="p-8 text-center">Nessun verbale attivo. Crea un nuovo verbale dalla dashboard.</div>;
-
-  const handleUpdate = (updatedDoc: DocumentVariables) => {
-      if (!readOnly) onUpdateDocument(updatedDoc);
-  };
 
   const handlePresetInsert = (field: 'testerRequests' | 'testerInvitations' | 'commonParts', text: string) => {
       if (readOnly) return;
@@ -169,7 +175,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   };
 
   // --- Logic for Smart Attendees Selection ---
-  // Helper to format name with optional title safely
   const formatName = (contact: { title?: string, name: string }) => {
       if (!contact || !contact.name) return '';
       const titlePrefix = contact.title ? `${contact.title} ` : '';
@@ -465,10 +470,17 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
               <div className="animate-in fade-in slide-in-from-right-4 space-y-12">
                   <section>
                       <div className="mb-8">
-                         <h3 className="text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                            <TextQuote className="w-4 h-4 text-slate-500"/>
-                            Frase Introduttiva (Editabile)
-                         </h3>
+                         <div className="flex items-center justify-between mb-2">
+                             <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                                <TextQuote className="w-4 h-4 text-slate-500"/>
+                                Frase Introduttiva (Editabile)
+                             </h3>
+                             {!readOnly && (
+                                <button onClick={generateIntroText} className="text-xs flex items-center gap-1 text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded">
+                                    <Wand2 className="w-3 h-3"/> Rigenera Testo
+                                </button>
+                             )}
+                         </div>
                          <textarea 
                             disabled={readOnly} 
                             className="w-full p-4 border border-slate-300 rounded-xl h-24 text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none resize-none disabled:bg-slate-100 bg-slate-50"
