@@ -185,23 +185,29 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
       { 
           id: 'rup', 
           label: 'RUP', 
-          fullText: `Responsabile Unico del Progetto: ${formatName(project.subjects.rup.contact)}`.trim()
+          fullText: project.subjects.rup.contact.name 
+            ? `Responsabile Unico del Progetto: ${formatName(project.subjects.rup.contact)}`
+            : ''
       },
       { 
           id: 'dl', 
           label: 'DL', 
-          fullText: `Direttore dei Lavori: ${formatName(project.subjects.dl.contact)}`.trim()
+          fullText: project.subjects.dl.contact.name 
+            ? `Direttore dei Lavori: ${formatName(project.subjects.dl.contact)}`
+            : ''
       },
       { 
           id: 'cse', 
           label: 'CSE', 
-          fullText: `Coord. Sicurezza Esecuzione: ${formatName(project.subjects.cse.contact)}`.trim()
+          fullText: project.subjects.cse.contact.name 
+            ? `Coord. Sicurezza Esecuzione: ${formatName(project.subjects.cse.contact)}`
+            : ''
       },
       { 
           id: 'contractor', 
           label: 'Impresa', 
           fullText: (() => {
-              const c = project.contractor;
+              const c = project.contractor.mainCompany;
               if (!c || !c.name) return '';
               const role = c.role || 'Legale Rappresentante';
               const repTitle = c.repTitle ? `${c.repTitle} ` : 'Sig. ';
