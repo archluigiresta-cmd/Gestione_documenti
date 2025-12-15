@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { DocumentVariables, ProjectConstants, TesterVisitSummary } from '../types';
+import { DocumentVariables, ProjectConstants, TesterVisitSummary, DesignerProfile } from '../types';
 import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext, RefreshCw, MessageSquare, Bell, FileCheck2, X, TextQuote, Wand2 } from 'lucide-react';
 
 interface TestingManagerProps {
@@ -175,10 +175,33 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   };
 
   // --- Logic for Smart Attendees Selection ---
-  const formatName = (contact: { title?: string, name: string }) => {
-      if (!contact || !contact.name) return '';
-      const titlePrefix = contact.title ? `${contact.title} ` : '';
-      return `${titlePrefix}${contact.name}`;
+  // Robust name getter handling both Individuals and Entities
+  const getSubjectName = (profile: any) => {
+      if (!profile || !profile.contact || !profile.contact.name) return '';
+      
+      // Handle Legal Entities (Società/RTP)
+      if (profile.isLegalEntity) {
+          // 1. Try Operating Designers (Technicians)
+          if (profile.operatingDesigners && profile.operatingDesigners.length > 0) {
+              // Just use the first one for the summary line, or join them
+              const names = profile.operatingDesigners.map((op: any) => {
+                  const title = op.title ? `${op.title} ` : '';
+                  return `${title}${op.name}`;
+              }).join('; ');
+              return `${names} (per ${profile.contact.name})`;
+          }
+          // 2. Fallback to Legal Rep
+          if (profile.contact.repName) {
+              const repTitle = profile.contact.repTitle ? `${profile.contact.repTitle} ` : '';
+              return `${repTitle}${profile.contact.repName} (Leg. Rep. ${profile.contact.name})`;
+          }
+          // 3. Fallback to Company Name
+          return profile.contact.name; 
+      }
+      
+      // Handle Individuals
+      const title = profile.contact.title ? `${profile.contact.title} ` : '';
+      return `${title}${profile.contact.name}`;
   };
 
   const potentialAttendees = [
@@ -186,21 +209,21 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
           id: 'rup', 
           label: 'RUP', 
           fullText: project.subjects.rup.contact.name 
-            ? `Responsabile Unico del Progetto: ${formatName(project.subjects.rup.contact)}`
+            ? `Responsabile Unico del Progetto: ${getSubjectName(project.subjects.rup)}`
             : ''
       },
       { 
           id: 'dl', 
           label: 'DL', 
           fullText: project.subjects.dl.contact.name 
-            ? `Direttore dei Lavori: ${formatName(project.subjects.dl.contact)}`
+            ? `Direttore dei Lavori: ${getSubjectName(project.subjects.dl)}`
             : ''
       },
       { 
           id: 'cse', 
           label: 'CSE', 
           fullText: project.subjects.cse.contact.name 
-            ? `Coord. Sicurezza Esecuzione: ${formatName(project.subjects.cse.contact)}`
+            ? `Coord. Sicurezza Esecuzione: ${getSubjectName(project.subjects.cse)}`
             : ''
       },
       { 
