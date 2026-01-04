@@ -243,6 +243,13 @@ export interface DocumentVariables {
   actSubject?: string;       // Oggetto specifico della lettera
   actRecipient?: string;     // Destinatario specifico (se diverso dall'Ente)
   actBodyOverride?: string;  // Testo custom per atti amministrativi
+  
+  // New fields for specific "Nulla Osta" according to PDF template
+  nullaOstaLegalRefs?: string; // Regolamenti e Delibere
+  nullaOstaRequestBlock?: string; // "Vista la richiesta del Commissario..."
+  nullaOstaAuthorityRequestBlock?: string; // "Vista la richiesta del Dirigente..."
+  nullaOstaObservationsBlock?: string; // "Accertato che... Valutata altresì..."
+  nullaOstaSignatory?: string; // Nome e ruolo di chi firma (es. Il Segretario Generale)
 }
 
 export interface AppState {

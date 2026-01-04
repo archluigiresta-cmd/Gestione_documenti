@@ -19,7 +19,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
   const formatCurrency = (val: string | number) => {
       if (!val) return '€ 0,00';
-      const num = typeof val === 'string' ? parseFloat(val.replace(',', '.')) : val;
+      const num = typeof val === 'string' ? parseFloat(val.replace(',', '.').replace(/\s/g, '')) : val;
       if (isNaN(num)) return val.toString();
       return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(num);
   };
@@ -50,7 +50,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       switch(type) {
           case 'VERBALE_COLLAUDO': return `VERBALE DI VISITA DI COLLAUDO${assignmentStringTitle} IN CORSO D'OPERA N. ${doc.visitNumber}`;
           case 'RICHIESTA_AUTORIZZAZIONE': return 'RICHIESTA AUTORIZZAZIONE ALL’ESPLETAMENTO DELL’INCARICO DI COLLAUDO';
-          case 'NULLA_OSTA_ENTE': return 'NULLA OSTA ALL’ESPLETAMENTO DELL’INCARICO DI COLLAUDO';
+          case 'NULLA_OSTA_ENTE': return 'CONFERIMENTO INCARICHI ESTERNI RETRIBUITI A PERSONALE DIPENDENTE';
           case 'LETTERA_CONVOCAZIONE': return 'CONVOCAZIONE VISITA DI COLLAUDO';
           case 'VERBALE_CONSEGNA': return 'VERBALE DI CONSEGNA DEI LAVORI';
           case 'SOSPENSIONE_LAVORI': return 'VERBALE DI SOSPENSIONE LAVORI';
@@ -65,7 +65,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   };
 
   const isCollaudo = type === 'VERBALE_COLLAUDO' || type === 'RELAZIONE_COLLAUDO';
-  const isLetter = type === 'RICHIESTA_AUTORIZZAZIONE' || type === 'NULLA_OSTA_ENTE' || type === 'LETTERA_CONVOCAZIONE';
+  const isLetter = type === 'RICHIESTA_AUTORIZZAZIONE' || type === 'LETTERA_CONVOCAZIONE';
+  const isNullaOsta = type === 'NULLA_OSTA_ENTE';
 
   const formatNameWithTitle = (contact: { title?: string, name: string }) => {
       if (!contact || !contact.name) return '...';
@@ -122,7 +123,84 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       return formatNameWithTitle(profile.contact);
   };
 
-  // --- LOGICA SPECIFICA LETTERE ---
+  // --- RENDERING NULLA OSTA (TEMPLATE PDF) ---
+  if (isNullaOsta) {
+      const tester = project.subjects.tester.contact;
+      const t = project.subjects.testerAppointment;
+      const feeNum = parseFloat(t.testerFee?.replace(',', '.').replace(/\s/g, '') || '0');
+      const reducedFee = feeNum / 2;
+
+      const legalRefs = doc.nullaOstaLegalRefs || "Regolamento per lo svolgimento degli incarichi esterni al personale dipendente e dirigente approvato con Deliberazione della Giunta Comunale N. 210 del 04/06/2019";
+      
+      const requestBlock = doc.nullaOstaRequestBlock || `Vista la richiesta del Commissario straordinario per la realizzazione degli interventi necessari allo svolgimento dei XX Giochi del Mediterraneo di Taranto 2026, relativa all’“AFFIDAMENTO DELL'INCARICO DI COLLAUDO STATICO, TECNICO-AMMINISTRATIVO E FUNZIONALE DEGLI IMPIANTI DELL’OPERA DENOMINATA “${project.projectName}” - CUP: ${project.cup}.”, giusta nota del Commissario Straordinario del ${formatShortDate(t.nominationDate)}, previo rilascio del nulla osta allo svolgimento dell’incarico di collaborazione esterna, ai sensi dell’art. 53 del D.Lgs. 165/2011;`;
+
+      const authorityBlock = doc.nullaOstaAuthorityRequestBlock || `Vista la richiesta del ${project.subjects.tester.contact.role || 'Dipendente'} ${formatNameWithTitle(tester)}, di autorizzazione, ai sensi dell’art. 53 comma 7 del D.Lgs n. 165/2001, allo svolgimento dell’incarico sopra specificato, avente anche il carattere della straordinarietà, assicurando lo svolgimento di tutte le attività di istituto e senza che il richiamato incarico possa influire su tale attività;`;
+
+      const observationsBlock = doc.nullaOstaObservationsBlock || `Accertato che, in relazione alla suddetta richiesta, non sussistono cause di incompatibilità di diritto e di fatto o situazioni, anche potenziali, di conflitto di interesse con le attività di istituto svolte dalla citata dipendente;\nValutata, altresì, la non prevalenza della prestazione richiesta sull’impegno derivante dal rapporto di lavoro (Corte dei Conti, Sez. Giurisdizionale Lombardia, sentenza n. 54 depositata in data 16.04.2015 e da ultima, Corte dei Conti, Sez. Giurisdizionale per la Regione Veneto, sentenza 13 settembre 2017, n. 2017) e la materiale compatibilità dello specifico incarico con i carichi di lavoro del dipendente;\nInformato il Responsabile per la prevenzione della corruzione;\nSentito il Dirigente del Servizio Personale`;
+
+      return (
+        <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
+            <div className="bg-white shadow-lg p-[2.5cm] min-h-[29.7cm] print-page relative flex flex-col">
+                
+                {/* INTESTAZIONE */}
+                <div className="text-center mb-10">
+                    {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2.2cm', margin: '0 auto 10px' }} alt="Logo" />}
+                    <h1 className="font-bold text-lg uppercase tracking-wider">{project.entity}</h1>
+                    {project.entityProvince && <p className="text-sm font-bold italic">Provincia di {project.entityProvince}</p>}
+                </div>
+
+                {/* TITOLO ATTO */}
+                <div className="text-center mb-6">
+                    <div className="inline-block bg-yellow-50 p-2 border border-dashed border-yellow-200 print:bg-transparent print:border-none">
+                        <h2 className="font-bold text-base underline uppercase">CONFERIMENTO INCARICHI ESTERNI RETRIBUITI A PERSONALE DIPENDENTE</h2>
+                        <p className="font-bold text-sm">(Art. 53 D.Lgs. 165/2001)</p>
+                    </div>
+                </div>
+
+                {/* CORPO NULLA OSTA */}
+                <div className="text-sm text-justify space-y-4 leading-relaxed">
+                    <p className="italic text-center mb-4">{legalRefs}</p>
+                    
+                    <p>{requestBlock}</p>
+                    <p>{authorityBlock}</p>
+
+                    <p>
+                        <span className="font-bold">Rilevato che</span> l’incarico ha carattere saltuario, con decorrenza dal {formatShortDate(t.nominationDate)} e fino al {formatShortDate(project.executionPhase.completionDate)}, per un compenso omnicomprensivo di <span className="font-bold">{formatCurrency(feeNum)}</span> (Il compenso spettante al dipendente pubblico è ridotto del 50%, quindi ad <span className="font-bold">{formatCurrency(reducedFee)}</span>, come previsto dall’art.61 c.9 del decreto legge 25/06/2008 n.112, convertito con modifiche dalla legge 6/08/2008 n.133).
+                    </p>
+
+                    <div className="whitespace-pre-wrap">{observationsBlock}</div>
+
+                    <div className="text-center py-6">
+                        <h3 className="font-bold text-lg tracking-[0.2em] border-y border-black inline-block px-10 py-1">SI AUTORIZZA</h3>
+                    </div>
+
+                    <p>
+                        Il {formatNameWithTitle(tester)}, allo svolgimento dell’incarico esterno, del Commissario straordinario per la realizzazione degli interventi necessari allo svolgimento dei XX Giochi del Mediterraneo di Taranto 2026, per l’individuazione di un collaudatore {assignmentStringClean} nell’ambito dell’intervento: <span className="font-bold">“{project.projectName}” - CUP: {project.cup}</span>, al di fuori del normale orario di servizio e, comunque, senza pregiudizio per le attività dell’Ente.
+                    </p>
+                    
+                    <p>
+                        Resta ferma l’osservanza da parte del soggetto che eroga i compensi previsti di darne comunicazione a questa Amministrazione secondo i termini e le modalità di cui all’art. 53, comma 11, del D.Lg. 30 marzo 2001, n. 165 e ss.mm.ii.
+                    </p>
+                </div>
+
+                {/* DATA E FIRMA */}
+                <div className="mt-16 flex justify-between items-end text-sm">
+                    <div>
+                        <p>Dalla Residenza Municipale, {formatShortDate(doc.date)}</p>
+                    </div>
+                    <div className="text-center w-64">
+                        <p className="font-bold uppercase mb-1">IL SEGRETARIO GENERALE</p>
+                        <p className="italic">{doc.nullaOstaSignatory || "Dott. Marco LESTO"}</p>
+                        <div className="mt-4 border-b border-black w-full opacity-30"></div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+      );
+  }
+
+  // --- LOGICA SPECIFICA LETTERE (RICHIESTA E CONVOCAZIONE) ---
   const getLetterSubject = () => {
       if (doc.actSubject) return doc.actSubject;
       return `Lavori di "${project.projectName}" - CUP: ${project.cup}. Incarico di Collaudo ${assignmentStringClean}.`;
@@ -134,8 +212,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       let baseText = "";
       if (type === 'RICHIESTA_AUTORIZZAZIONE') {
           baseText = `Il sottoscritto ${formatProfessionalDetails(tester)}, in riferimento all’incarico di collaudo ${assignmentStringClean} in oggetto, conferito con ${t.nominationType} n. ${t.nominationNumber} del ${formatShortDate(t.nominationDate)} per un importo di ${formatCurrency(t.testerFee || 0)}, richiede formale autorizzazione all'espletamento delle attività di collaudo in corso d'opera ai fini dell'acquisizione del Nulla Osta del proprio Ordine Professionale/Ente di appartenenza, ove necessario.`;
-      } else if (type === 'NULLA_OSTA_ENTE') {
-          baseText = `Si trasmette il presente Nulla Osta relativo all'incarico di collaudo ${assignmentStringClean} per i lavori in oggetto, a seguito della verifica della documentazione prodotta, della regolarità della nomina e della compatibilità dell'incarico con le vigenti normative.`;
       } else if (type === 'LETTERA_CONVOCAZIONE') {
           baseText = `Con la presente si comunica alle SS.LL. che lo scrivente Collaudatore, in data ${formatShortDate(doc.date)} alle ore ${doc.time}, terrà presso il cantiere dei lavori in oggetto la ${doc.visitNumber}ª visita di collaudo in corso d'opera. Si pregano le SS.LL. di voler partecipare muniti di tutta la documentazione tecnica e contabile necessaria al corretto espletamento del sopralluogo.`;
       }
@@ -148,6 +224,37 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
           </div>
       );
   };
+
+  const isLetterCustom = isLetter;
+
+  if (isLetterCustom) {
+      return (
+          <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
+              <div className="bg-white shadow-lg p-[2.5cm] min-h-[29.7cm] print-page relative flex flex-col">
+                  <div className="mb-12 text-sm border-l-2 border-slate-100 pl-4">
+                      <p className="font-bold uppercase tracking-wider">{formatNameWithTitle(project.subjects.tester.contact)}</p>
+                      <p className="text-xs uppercase text-slate-500 mb-2">Collaudatore</p>
+                      {project.subjects.tester.contact.address && <p>{project.subjects.tester.contact.address}</p>}
+                      {project.subjects.tester.contact.pec && <p><span className="font-bold">PEC:</span> {project.subjects.tester.contact.pec}</p>}
+                  </div>
+                  <div className="mb-16 ml-auto w-[65%] text-sm">
+                      <p className="font-bold uppercase tracking-wide">Spett.le</p>
+                      <p className="font-bold uppercase">{project.entity}</p>
+                      {doc.actRecipient ? <div className="mt-1 whitespace-pre-line">{doc.actRecipient}</div> : <p className="mt-1">All'attenzione del Responsabile Unico del Progetto</p>}
+                  </div>
+                  <div className="mb-12 text-right text-sm italic">
+                      <p>{project.entityProvince || project.location || '...'}, lì {formatShortDate(doc.date)}</p>
+                  </div>
+                  <div className="flex-1 text-sm md:text-base">{renderLetterContent()}</div>
+                  <div className="mt-24 ml-auto w-[50%] text-center text-sm md:text-base">
+                      <p className="mb-4">Il Collaudatore</p>
+                      <p className="font-bold uppercase tracking-widest">{formatNameWithTitle(project.subjects.tester.contact)}</p>
+                      <div className="mt-2 border-b border-black w-full opacity-50"></div>
+                  </div>
+              </div>
+          </div>
+      );
+  }
 
   // --- LOGICA SPECIFICA VERBALE ---
   const generateCollaudoPreamblePoint1 = () => {
@@ -217,37 +324,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       }
       return <span><strong>{mainCompany.name}</strong><br/>{mainCompany.address} - P.IVA {mainCompany.vat}</span>;
   };
-
-  // --- RENDER LOGIC ---
-
-  if (isLetter) {
-      return (
-          <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
-              <div className="bg-white shadow-lg p-[2.5cm] min-h-[29.7cm] print-page relative flex flex-col">
-                  <div className="mb-12 text-sm border-l-2 border-slate-100 pl-4">
-                      <p className="font-bold uppercase tracking-wider">{formatNameWithTitle(project.subjects.tester.contact)}</p>
-                      <p className="text-xs uppercase text-slate-500 mb-2">Collaudatore</p>
-                      {project.subjects.tester.contact.address && <p>{project.subjects.tester.contact.address}</p>}
-                      {project.subjects.tester.contact.pec && <p><span className="font-bold">PEC:</span> {project.subjects.tester.contact.pec}</p>}
-                  </div>
-                  <div className="mb-16 ml-auto w-[65%] text-sm">
-                      <p className="font-bold uppercase tracking-wide">Spett.le</p>
-                      <p className="font-bold uppercase">{project.entity}</p>
-                      {doc.actRecipient ? <div className="mt-1 whitespace-pre-line">{doc.actRecipient}</div> : <p className="mt-1">All'attenzione del Responsabile Unico del Progetto</p>}
-                  </div>
-                  <div className="mb-12 text-right text-sm italic">
-                      <p>{project.entityProvince || project.location || '...'}, lì {formatShortDate(doc.date)}</p>
-                  </div>
-                  <div className="flex-1 text-sm md:text-base">{renderLetterContent()}</div>
-                  <div className="mt-24 ml-auto w-[50%] text-center text-sm md:text-base">
-                      <p className="mb-4">Il Collaudatore</p>
-                      <p className="font-bold uppercase tracking-widest">{formatNameWithTitle(project.subjects.tester.contact)}</p>
-                      <div className="mt-2 border-b border-black w-full opacity-50"></div>
-                  </div>
-              </div>
-          </div>
-      );
-  }
 
   // --- RENDERING VERBALE TECNICO COMPLETO ---
   return (

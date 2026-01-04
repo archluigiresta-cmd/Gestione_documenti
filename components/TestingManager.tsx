@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { DocumentVariables, ProjectConstants, TesterVisitSummary, DesignerProfile } from '../types';
-import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext, RefreshCw, MessageSquare, Bell, FileCheck2, X, TextQuote, Wand2, FileSignature, FileText } from 'lucide-react';
+import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext, RefreshCw, MessageSquare, Bell, FileCheck2, X, TextQuote, Wand2, FileSignature, FileText, Gavel } from 'lucide-react';
 
 interface TestingManagerProps {
   project: ProjectConstants;
@@ -367,11 +367,44 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
           {step === 'admin-acts' && (
               <div className="animate-in fade-in slide-in-from-right-4">
                   <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4 flex items-center gap-2"><FileSignature className="w-5 h-5"/> Atti Amministrativi e Lettere</h3>
-                  <p className="text-sm text-slate-500 mb-6">In questa sezione puoi definire i dettagli per le lettere di richiesta autorizzazione, nulla osta e convocazione. Questi dati verranno usati nei rispettivi modelli di esportazione.</p>
+                  <p className="text-sm text-slate-500 mb-6">In questa sezione puoi personalizzare i contenuti fissi e variabili per le autorizzazioni e i nulla osta.</p>
                   
                   <div className="space-y-8">
+                      {/* NUOVA SEZIONE SPECIFICA NULLA OSTA */}
+                      <div className="p-6 bg-yellow-50 rounded-xl border border-yellow-200">
+                          <h4 className="font-bold text-yellow-900 mb-4 flex items-center gap-2"><Gavel className="w-5 h-5"/> Configurazione Nulla Osta (Modello PDF)</h4>
+                          
+                          <div className="space-y-4">
+                              <div>
+                                  <label className="block text-xs font-bold text-yellow-800 uppercase mb-1">Riferimenti Normativi / Delibere (Parte Alta)</label>
+                                  <textarea disabled={readOnly} className="w-full p-3 border border-yellow-300 rounded-lg h-20 text-xs focus:ring-2 focus:ring-yellow-500/20 outline-none" 
+                                    value={currentDoc.nullaOstaLegalRefs || ""} onChange={e => handleUpdate({...currentDoc, nullaOstaLegalRefs: e.target.value})} placeholder="Default: Regolamento approvato con Deliberazione N. 210 del 04/06/2019..."/>
+                              </div>
+                              
+                              <div>
+                                  <label className="block text-xs font-bold text-yellow-800 uppercase mb-1">Premessa Autorità (Vista la richiesta del Commissario...)</label>
+                                  <textarea disabled={readOnly} className="w-full p-3 border border-yellow-300 rounded-lg h-32 text-xs focus:ring-2 focus:ring-yellow-500/20 outline-none" 
+                                    value={currentDoc.nullaOstaRequestBlock || ""} onChange={e => handleUpdate({...currentDoc, nullaOstaRequestBlock: e.target.value})} placeholder="Lascia vuoto per usare il testo automatico con dati di progetto..."/>
+                              </div>
+
+                              <div>
+                                  <label className="block text-xs font-bold text-yellow-800 uppercase mb-1">Dichiarazioni Finali (Accertato che... Valutata altresì...)</label>
+                                  <textarea disabled={readOnly} className="w-full p-3 border border-yellow-300 rounded-lg h-32 text-xs focus:ring-2 focus:ring-yellow-500/20 outline-none" 
+                                    value={currentDoc.nullaOstaObservationsBlock || ""} onChange={e => handleUpdate({...currentDoc, nullaOstaObservationsBlock: e.target.value})} placeholder="Default: Testi su incompatibilità, conflitto interessi e carichi di lavoro..."/>
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div>
+                                      <label className="block text-xs font-bold text-yellow-800 uppercase mb-1">Firmatario Atto</label>
+                                      <input disabled={readOnly} type="text" className="w-full p-2 border border-yellow-300 rounded-lg text-sm" 
+                                        value={currentDoc.nullaOstaSignatory || ""} onChange={e => handleUpdate({...currentDoc, nullaOstaSignatory: e.target.value})} placeholder="Es: Dott. Marco LESTO"/>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+
                       <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
-                          <label className="block text-sm font-bold text-slate-700 mb-2">Oggetto della Lettera (Custom)</label>
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Oggetto della Lettera (Richiesta/Convocazione)</label>
                           <textarea 
                              disabled={readOnly}
                              className="w-full p-3 border border-slate-300 rounded-lg h-20 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none"
@@ -390,19 +423,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                              placeholder="Es: All'attenzione del Dirigente del Settore III..."
                              value={currentDoc.actRecipient || ''}
                              onChange={e => handleUpdate({...currentDoc, actRecipient: e.target.value})}
-                          />
-                      </div>
-
-                      <div className="p-6 bg-blue-50 rounded-xl border border-blue-100">
-                          <div className="flex items-center justify-between mb-4">
-                              <label className="block text-sm font-bold text-blue-900 flex items-center gap-2"><FileText className="w-4 h-4"/> Integrazioni Testo Atti (Opzionale)</label>
-                          </div>
-                          <textarea 
-                             disabled={readOnly}
-                             className="w-full p-4 border border-blue-200 rounded-lg h-40 text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none"
-                             placeholder="Inserisci qui eventuali parti variabili specifiche per le lettere (richieste documenti extra, note particolari per la convocazione ecc.). Questo testo verrà integrato nel modello base."
-                             value={currentDoc.actBodyOverride || ''}
-                             onChange={e => handleUpdate({...currentDoc, actBodyOverride: e.target.value})}
                           />
                       </div>
                   </div>
@@ -594,7 +614,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                       </select>
                       {activeCustomField === 'testerInvitations' && (
                           <div className="mt-3 flex flex-col gap-2 animate-in fade-in">
-                              <textarea className="w-full p-2 border border-amber-300 rounded text-sm" placeholder="Scrivi l'invito..." rows={3} value={customText} onChange={e => setCustomText(e.target.value)} autoFocus />
+                              <textarea className="w-full p-2 border border-blue-300 rounded text-sm" placeholder="Scrivi l'invito..." rows={3} value={customText} onChange={e => setCustomText(e.target.value)} autoFocus />
                               <div className="flex justify-end gap-2">
                                 <button onClick={handleCustomCancel} className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded text-xs font-bold">Annulla</button>
                                 <button onClick={handleCustomConfirm} className="bg-amber-600 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1">Aggiungi</button>
@@ -617,7 +637,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                       </select>
                       {activeCustomField === 'commonParts' && (
                           <div className="mt-3 flex flex-col gap-2 animate-in fade-in">
-                              <textarea className="w-full p-2 border border-slate-300 rounded text-sm" placeholder="Scrivi la frase..." rows={3} value={customText} onChange={e => setCustomText(e.target.value)} autoFocus />
+                              <textarea className="w-full p-2 border border-blue-300 rounded text-sm" placeholder="Scrivi la frase..." rows={3} value={customText} onChange={e => setCustomText(e.target.value)} autoFocus />
                               <div className="flex justify-end gap-2">
                                 <button onClick={handleCustomCancel} className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded text-xs font-bold">Annulla</button>
                                 <button onClick={handleCustomConfirm} className="bg-slate-800 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1">Aggiungi</button>
