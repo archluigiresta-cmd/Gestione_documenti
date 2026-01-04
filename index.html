@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="it">
   <head>
@@ -10,11 +11,30 @@
       
       /* Print styles to ensure the preview looks like the Word doc */
       @media print {
-        @page { margin: 2cm; }
-        body { -webkit-print-color-adjust: exact; }
+        @page { 
+          margin: 2cm; 
+          size: A4 portrait;
+        }
+        body { 
+          -webkit-print-color-adjust: exact !important; 
+          print-color-adjust: exact !important;
+          background-color: white !important;
+        }
         .no-print { display: none !important; }
         .print-only { display: block !important; }
         .print-serif { font-family: 'Noto Serif', serif; }
+        
+        /* Ensure images and logos are visible in PDF */
+        img {
+          max-width: 100% !important;
+          display: block;
+        }
+
+        /* Prevent breaking inside signature blocks or tables if possible */
+        .break-inside-avoid {
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
       }
       .font-serif-print { font-family: 'Noto Serif', serif; }
     </style>

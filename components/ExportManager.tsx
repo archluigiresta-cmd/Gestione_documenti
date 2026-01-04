@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
 import { DocumentPreview } from './DocumentPreview';
-import { Printer, FileCheck, FileDown, Search, FileText, Calendar, ChevronRight } from 'lucide-react';
+import { Printer, FileCheck, FileDown, Search, FileText, Calendar, ChevronRight, FileType } from 'lucide-react';
 
 interface ExportManagerProps {
   project: ProjectConstants;
@@ -211,14 +211,14 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
              
              <div className="flex items-center gap-4">
                  <div className="bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
-                     <span className="text-xs font-bold text-slate-500 uppercase mr-2">Verbale Selezionato:</span>
+                     <span className="text-xs font-bold text-slate-500 uppercase mr-2">Selezionato:</span>
                      <span className="text-sm font-bold text-slate-800">N. {currentDoc.visitNumber} del {new Date(currentDoc.date).toLocaleDateString()}</span>
                  </div>
 
                  <div className="h-8 w-px bg-slate-200 mx-2 hidden md:block"></div>
 
                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Genera Documento</label>
+                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo Documento</label>
                     <select 
                       className="p-2 border border-blue-300 bg-blue-50 rounded font-bold text-blue-900 text-sm w-64 focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
                       value={docType}
@@ -240,15 +240,21 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
              <div className="flex gap-2">
                   <button
                      onClick={handleDownloadWord}
-                     className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg shadow-sm flex items-center gap-2 font-bold transition-all text-sm"
+                     className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg shadow-sm flex items-center gap-2 font-bold transition-all text-sm group"
                   >
-                     <FileDown className="w-4 h-4 text-blue-600" /> Word
+                     <FileDown className="w-4 h-4 text-blue-600 group-hover:scale-110 transition-transform" /> Word
                   </button>
                   <button
                      onClick={handlePrint}
-                     className="bg-slate-900 hover:bg-black text-white px-4 py-2 rounded-lg shadow-md flex items-center gap-2 font-bold transition-all text-sm"
+                     className="bg-white border border-slate-200 hover:bg-slate-50 text-red-700 px-4 py-2 rounded-lg shadow-sm flex items-center gap-2 font-bold transition-all text-sm group"
                   >
-                     <Printer className="w-4 h-4" /> Stampa
+                     <FileType className="w-4 h-4 text-red-600 group-hover:scale-110 transition-transform" /> PDF
+                  </button>
+                  <button
+                     onClick={handlePrint}
+                     className="bg-slate-900 hover:bg-black text-white px-4 py-2 rounded-lg shadow-md flex items-center gap-2 font-bold transition-all text-sm group"
+                  >
+                     <Printer className="w-4 h-4 group-hover:rotate-12 transition-transform" /> Stampa
                   </button>
              </div>
           </div>
