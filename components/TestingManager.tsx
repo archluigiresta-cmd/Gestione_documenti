@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { DocumentVariables, ProjectConstants, TesterVisitSummary, DesignerProfile } from '../types';
-import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext, RefreshCw, MessageSquare, Bell, FileCheck2, X, TextQuote, Wand2 } from 'lucide-react';
+import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext, RefreshCw, MessageSquare, Bell, FileCheck2, X, TextQuote, Wand2, FileSignature, FileText } from 'lucide-react';
 
 interface TestingManagerProps {
   project: ProjectConstants;
@@ -11,7 +11,7 @@ interface TestingManagerProps {
   onUpdateDocument: (d: DocumentVariables) => void;
   onNewDocument: () => void;
   onDeleteDocument: (id: string) => void;
-  onUpdateProject?: (p: ProjectConstants) => void; // New prop for saving summaries
+  onUpdateProject?: (p: ProjectConstants) => void; 
   readOnly?: boolean; 
 }
 
@@ -50,18 +50,15 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   readOnly = false
 }) => {
   const currentDoc = documents.find(d => d.id === currentDocId) || documents[0];
-  const [step, setStep] = useState<'info' | 'convocation' | 'works' | 'requests' | 'invitations' | 'common' | 'eval'>('info');
+  const [step, setStep] = useState<'info' | 'convocation' | 'works' | 'requests' | 'invitations' | 'common' | 'eval' | 'admin-acts'>('info');
 
-  // State for Inputs
   const [summaryManualInput, setSummaryManualInput] = useState('');
   const [inProgressInput, setInProgressInput] = useState('');
   const [upcomingInput, setUpcomingInput] = useState('');
 
-  // State for Custom Dropdown Inputs
   const [activeCustomField, setActiveCustomField] = useState<'testerRequests' | 'testerInvitations' | 'commonParts' | null>(null);
   const [customText, setCustomText] = useState('');
   
-  // Refs for selects to reset them
   const requestsSelectRef = useRef<HTMLSelectElement>(null);
   const invitationsSelectRef = useRef<HTMLSelectElement>(null);
   const commonSelectRef = useRef<HTMLSelectElement>(null);
@@ -70,7 +67,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
       if (!readOnly) onUpdateDocument(updatedDoc);
   };
 
-  // Logic to generate the standard intro text
   const generateIntroText = () => {
         if(readOnly) return;
         
@@ -96,7 +92,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
         handleUpdate({...currentDoc, worksIntroText: defaultText});
   };
 
-  // AUTO-POPULATE INTRO TEXT ON LOAD OR IF EMPTY
   useEffect(() => {
     if (!currentDoc || readOnly) return;
     if (!currentDoc.worksIntroText || currentDoc.worksIntroText.trim() === '') {
@@ -104,7 +99,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
     }
   }, [currentDoc?.id]);
 
-  if (!currentDoc) return <div className="p-8 text-center">Nessun verbale attivo. Crea un nuovo verbale dalla dashboard.</div>;
+  if (!currentDoc) return <div className="p-8 text-center">Nessun verbale attivo.</div>;
 
   const handlePresetInsert = (field: 'testerRequests' | 'testerInvitations' | 'commonParts', text: string) => {
       if (readOnly) return;
@@ -118,8 +113,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
           handlePresetInsert(activeCustomField, customText.trim());
           setCustomText('');
           setActiveCustomField(null);
-          
-          // Reset Selects
           if (activeCustomField === 'testerRequests' && requestsSelectRef.current) requestsSelectRef.current.value = "";
           if (activeCustomField === 'testerInvitations' && invitationsSelectRef.current) invitationsSelectRef.current.value = "";
           if (activeCustomField === 'commonParts' && commonSelectRef.current) commonSelectRef.current.value = "";
@@ -129,13 +122,11 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   const handleCustomCancel = () => {
       setCustomText('');
       setActiveCustomField(null);
-       // Reset Selects
        if (activeCustomField === 'testerRequests' && requestsSelectRef.current) requestsSelectRef.current.value = "";
        if (activeCustomField === 'testerInvitations' && invitationsSelectRef.current) invitationsSelectRef.current.value = "";
        if (activeCustomField === 'commonParts' && commonSelectRef.current) commonSelectRef.current.value = "";
   };
 
-  // Helper to safely update execution phase
   const updateExec = (field: string, value: any) => {
     if (readOnly || !onUpdateProject) return;
     onUpdateProject({
@@ -147,11 +138,9 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
     });
   };
 
-  // --- Logic for Lists stored in Document (In Progress & Upcoming) ---
   const addToListInDoc = (field: 'worksInProgress' | 'upcomingWorks', inputVal: string, setInputVal: (s: string) => void) => {
       if (readOnly || !inputVal.trim()) return;
       const currentText = currentDoc[field] || '';
-      // Split by newline, filter empty, add new, join
       const items = currentText.split('\n').filter(i => i.trim());
       items.push(inputVal.trim());
       handleUpdate({ ...currentDoc, [field]: items.join('\n') });
@@ -174,62 +163,31 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
       handleUpdate({ ...currentDoc, [field]: items.join('\n') });
   };
 
-  // --- Logic for Smart Attendees Selection ---
-  // Robust name getter handling both Individuals and Entities
   const getSubjectName = (profile: any) => {
       if (!profile || !profile.contact || !profile.contact.name) return '';
-      
-      // Handle Legal Entities (Società/RTP)
       if (profile.isLegalEntity) {
-          // 1. Try Operating Designers (Technicians)
           if (profile.operatingDesigners && profile.operatingDesigners.length > 0) {
-              // Just use the first one for the summary line, or join them
               const names = profile.operatingDesigners.map((op: any) => {
                   const title = op.title ? `${op.title} ` : '';
                   return `${title}${op.name}`;
               }).join('; ');
               return `${names} (per ${profile.contact.name})`;
           }
-          // 2. Fallback to Legal Rep
           if (profile.contact.repName) {
               const repTitle = profile.contact.repTitle ? `${profile.contact.repTitle} ` : '';
               return `${repTitle}${profile.contact.repName} (Leg. Rep. ${profile.contact.name})`;
           }
-          // 3. Fallback to Company Name
           return profile.contact.name; 
       }
-      
-      // Handle Individuals
       const title = profile.contact.title ? `${profile.contact.title} ` : '';
       return `${title}${profile.contact.name}`;
   };
 
   const potentialAttendees = [
-      { 
-          id: 'rup', 
-          label: 'RUP', 
-          fullText: project.subjects.rup.contact.name 
-            ? `Responsabile Unico del Progetto: ${getSubjectName(project.subjects.rup)}`
-            : ''
-      },
-      { 
-          id: 'dl', 
-          label: 'DL', 
-          fullText: project.subjects.dl.contact.name 
-            ? `Direttore dei Lavori: ${getSubjectName(project.subjects.dl)}`
-            : ''
-      },
-      { 
-          id: 'cse', 
-          label: 'CSE', 
-          fullText: project.subjects.cse.contact.name 
-            ? `Coord. Sicurezza Esecuzione: ${getSubjectName(project.subjects.cse)}`
-            : ''
-      },
-      { 
-          id: 'contractor', 
-          label: 'Impresa', 
-          fullText: (() => {
+      { id: 'rup', label: 'RUP', fullText: project.subjects.rup.contact.name ? `Responsabile Unico del Progetto: ${getSubjectName(project.subjects.rup)}` : '' },
+      { id: 'dl', label: 'DL', fullText: project.subjects.dl.contact.name ? `Direttore dei Lavori: ${getSubjectName(project.subjects.dl)}` : '' },
+      { id: 'cse', label: 'CSE', fullText: project.subjects.cse.contact.name ? `Coord. Sicurezza Esecuzione: ${getSubjectName(project.subjects.cse)}` : '' },
+      { id: 'contractor', label: 'Impresa', fullText: (() => {
               const c = project.contractor.mainCompany;
               if (!c || !c.name) return '';
               const role = c.role || 'Legale Rappresentante';
@@ -243,7 +201,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   const toggleAttendee = (fullText: string) => {
       if (readOnly) return;
       const currentText = currentDoc.attendees || '';
-      
       if (currentText.includes(fullText)) {
           const newText = currentText.replace(fullText, '').replace('\n\n', '\n').trim();
           handleUpdate({...currentDoc, attendees: newText});
@@ -255,27 +212,19 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
 
   const regenerateAttendees = () => {
       if(readOnly) return;
-      if(confirm("Attenzione: Il testo attuale dei presenti verrà sostituito con i dati aggiornati dall'anagrafica (RUP, DL, CSE, Impresa). Continuare?")) {
+      if(confirm("Attenzione: Il testo attuale dei presenti verrà sostituito con i dati aggiornati dall'anagrafica. Continuare?")) {
           const lines = potentialAttendees.map(p => p.fullText);
           handleUpdate({ ...currentDoc, attendees: lines.join('\n') });
       }
   };
 
-  // --- Logic for Tester Visit Summaries (Project Level) ---
   const execPhase = project.executionPhase || {};
   const summaryIndex = (currentDoc.visitNumber > 0 ? currentDoc.visitNumber : 1) - 1;
   const currentSummary = execPhase.testerVisitSummaries?.[summaryIndex];
 
   const initSummaryForCurrentVisit = () => {
       if (readOnly || !onUpdateProject) return;
-      const newSummary: TesterVisitSummary = {
-          id: crypto.randomUUID(),
-          startDate: '',
-          endDate: '',
-          works: [],
-          notes: ''
-      };
-      
+      const newSummary: TesterVisitSummary = { id: crypto.randomUUID(), startDate: '', endDate: '', works: [], notes: '' };
       const newSummaries = [...(execPhase.testerVisitSummaries || [])];
       newSummaries[summaryIndex] = newSummary;
       updateExec('testerVisitSummaries', newSummaries);
@@ -296,15 +245,13 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
       }
       const relevantDocs = documents.filter(d => d.date >= currentSummary.startDate && d.date <= currentSummary.endDate);
       const worksFound = relevantDocs.flatMap(d => d.worksExecuted);
-      
       if (worksFound.length === 0) {
-          alert("Nessuna lavorazione trovata nei verbali/giornale del periodo selezionato.");
+          alert("Nessuna lavorazione trovata.");
           return;
       }
       const currentWorks = new Set(currentSummary.works);
       worksFound.forEach(w => currentWorks.add(w));
       updateCurrentSummary('works', Array.from(currentWorks));
-      alert(`Importate ${worksFound.length} lavorazioni da ${relevantDocs.length} verbali del giornale lavori.`);
   };
 
   const addManualWorkSummary = () => {
@@ -338,7 +285,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
       }
   };
 
-  // Nav Item Helper
   const NavButton = ({ id, label, icon: Icon }: any) => (
       <button 
         onClick={() => setStep(id)} 
@@ -352,47 +298,44 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   return (
     <div className="max-w-5xl mx-auto pb-20 animate-in fade-in">
        
-       {/* Main Header */}
        <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-slate-800">Verbali di Collaudo</h2>
-            <p className="text-slate-500 text-sm mt-1">Gestione completa visite e riepiloghi lavorazioni.</p>
+            <h2 className="text-2xl font-bold text-slate-800">Verbali e Atti di Collaudo</h2>
+            <p className="text-slate-500 text-sm mt-1">Gestione visite, riepiloghi e atti amministrativi preliminari.</p>
           </div>
        </div>
 
-       {/* Selector */}
-       <div className="flex items-center gap-3 mb-8 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-            <span className="text-sm font-bold text-slate-500 uppercase">Seleziona Verbale:</span>
+       <div className="flex items-center gap-3 mb-8 bg-white p-4 rounded-xl border border-slate-200 shadow-sm overflow-x-auto">
+            <span className="text-sm font-bold text-slate-500 uppercase whitespace-nowrap">Seleziona Verbale / Atti:</span>
             <select 
-              className="flex-1 p-2.5 border border-slate-300 rounded-lg font-semibold text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500/20 outline-none cursor-pointer"
+              className="flex-1 p-2.5 border border-slate-300 rounded-lg font-semibold text-sm bg-slate-50 focus:ring-2 focus:ring-blue-500/20 outline-none cursor-pointer min-w-[250px]"
               value={currentDocId}
               onChange={(e) => onSelectDocument(e.target.value)}
             >
               {documents.map(d => (
                 <option key={d.id} value={d.id}>
-                    Verbale n. {d.visitNumber} del {new Date(d.date).toLocaleDateString()}
+                    Verbale N. {d.visitNumber} del {new Date(d.date).toLocaleDateString()}
                 </option>
               ))}
             </select>
             {!readOnly && (
-              <button onClick={onNewDocument} className="bg-slate-800 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-900 transition-colors">
+              <button onClick={onNewDocument} className="bg-slate-800 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-900 transition-colors whitespace-nowrap">
                   + Nuovo
               </button>
             )}
        </div>
 
-       {/* Step Navigation */}
        <div className="flex gap-2 overflow-x-auto pb-4 mb-4">
-          <NavButton id="info" label="Dati" icon={Calendar} />
+          <NavButton id="info" label="Dati Visita" icon={Calendar} />
+          <NavButton id="admin-acts" label="Atti e Lettere" icon={FileSignature} />
           <NavButton id="convocation" label="Presenti" icon={Users} />
           <NavButton id="works" label="Lavori" icon={ListChecks} />
           <NavButton id="requests" label="Richieste" icon={MessageSquare} />
           <NavButton id="invitations" label="Inviti" icon={Bell} />
-          <NavButton id="common" label="Parti Comuni" icon={FileCheck2} />
+          <NavButton id="common" label="Chiusura" icon={FileCheck2} />
           <NavButton id="eval" label="Valutazioni" icon={ClipboardCheck} />
        </div>
 
-       {/* Content Area */}
        <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 min-h-[400px]">
           
           {step === 'info' && (
@@ -414,11 +357,53 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                           <div className="flex items-center gap-4">
                             <input disabled={readOnly} type="number" className="w-32 p-3 border border-slate-300 rounded-lg bg-slate-50 font-mono text-center text-lg disabled:text-slate-400"
                                 value={currentDoc.visitNumber} onChange={e => handleUpdate({...currentDoc, visitNumber: parseInt(e.target.value)})} />
-                            <p className="text-xs text-slate-500 flex-1">
-                                Il sistema associa automaticamente il riepilogo lavori N.{currentDoc.visitNumber} a questo verbale. <br/>
-                                Modifica questo numero solo se necessario riordinare la sequenza.
-                            </p>
+                            <p className="text-xs text-slate-500 flex-1">Il sistema associa automaticamente il riepilogo lavori N.{currentDoc.visitNumber} a questo verbale.</p>
                           </div>
+                      </div>
+                  </div>
+              </div>
+          )}
+
+          {step === 'admin-acts' && (
+              <div className="animate-in fade-in slide-in-from-right-4">
+                  <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4 flex items-center gap-2"><FileSignature className="w-5 h-5"/> Atti Amministrativi e Lettere</h3>
+                  <p className="text-sm text-slate-500 mb-6">In questa sezione puoi definire i dettagli per le lettere di richiesta autorizzazione, nulla osta e convocazione. Questi dati verranno usati nei rispettivi modelli di esportazione.</p>
+                  
+                  <div className="space-y-8">
+                      <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Oggetto della Lettera (Custom)</label>
+                          <textarea 
+                             disabled={readOnly}
+                             className="w-full p-3 border border-slate-300 rounded-lg h-20 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none"
+                             placeholder="Inserisci un oggetto specifico se diverso da quello standard del progetto..."
+                             value={currentDoc.actSubject || ''}
+                             onChange={e => handleUpdate({...currentDoc, actSubject: e.target.value})}
+                          />
+                      </div>
+
+                      <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Destinatario della Lettera (se diverso dall'Ente)</label>
+                          <input 
+                             disabled={readOnly}
+                             type="text"
+                             className="w-full p-3 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 outline-none"
+                             placeholder="Es: All'attenzione del Dirigente del Settore III..."
+                             value={currentDoc.actRecipient || ''}
+                             onChange={e => handleUpdate({...currentDoc, actRecipient: e.target.value})}
+                          />
+                      </div>
+
+                      <div className="p-6 bg-blue-50 rounded-xl border border-blue-100">
+                          <div className="flex items-center justify-between mb-4">
+                              <label className="block text-sm font-bold text-blue-900 flex items-center gap-2"><FileText className="w-4 h-4"/> Integrazioni Testo Atti (Opzionale)</label>
+                          </div>
+                          <textarea 
+                             disabled={readOnly}
+                             className="w-full p-4 border border-blue-200 rounded-lg h-40 text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none"
+                             placeholder="Inserisci qui eventuali parti variabili specifiche per le lettere (richieste documenti extra, note particolari per la convocazione ecc.). Questo testo verrà integrato nel modello base."
+                             value={currentDoc.actBodyOverride || ''}
+                             onChange={e => handleUpdate({...currentDoc, actBodyOverride: e.target.value})}
+                          />
                       </div>
                   </div>
               </div>
@@ -474,11 +459,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                                       key={p.id}
                                       onClick={() => toggleAttendee(p.fullText)}
                                       disabled={readOnly}
-                                      className={`text-xs px-3 py-1.5 rounded-full border flex items-center gap-1 transition-all ${
-                                          isSelected 
-                                          ? 'bg-blue-600 text-white border-blue-600' 
-                                          : 'bg-white text-slate-600 border-slate-300 hover:border-blue-400'
-                                      }`}
+                                      className={`text-xs px-3 py-1.5 rounded-full border flex items-center gap-1 transition-all ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-300 hover:border-blue-400'}`}
                                     >
                                         {isSelected ? <CheckSquare className="w-3 h-3"/> : <span className="w-3 h-3 block border rounded-sm border-slate-300"></span>}
                                         {p.label}
@@ -501,8 +482,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                       <div className="mb-8">
                          <div className="flex items-center justify-between mb-2">
                              <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                                <TextQuote className="w-4 h-4 text-slate-500"/>
-                                Frase Introduttiva (Editabile)
+                                <TextQuote className="w-4 h-4 text-slate-500"/> Frase Introduttiva (Editabile)
                              </h3>
                              {!readOnly && (
                                 <button onClick={generateIntroText} className="text-xs flex items-center gap-1 text-blue-600 hover:text-blue-800 bg-blue-50 px-2 py-1 rounded">
@@ -510,89 +490,48 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                                 </button>
                              )}
                          </div>
-                         <textarea 
-                            disabled={readOnly} 
-                            className="w-full p-4 border border-slate-300 rounded-xl h-24 text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none resize-none disabled:bg-slate-100 bg-slate-50"
-                            value={currentDoc.worksIntroText || ''} 
-                            onChange={e => handleUpdate({...currentDoc, worksIntroText: e.target.value})} 
-                            placeholder="Frase introduttiva del riepilogo lavori..."
-                         />
-                         <p className="text-xs text-slate-500 mt-1">Questa frase viene generata automaticamente ma puoi modificarla liberamente.</p>
+                         <textarea disabled={readOnly} className="w-full p-4 border border-slate-300 rounded-xl h-24 text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none resize-none disabled:bg-slate-100 bg-slate-50"
+                            value={currentDoc.worksIntroText || ''} onChange={e => handleUpdate({...currentDoc, worksIntroText: e.target.value})} placeholder="Frase introduttiva..."/>
                       </div>
 
                       <div className="flex items-center justify-between border-b pb-2 mb-4">
                           <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                              <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
-                              Riepilogo Lavori Periodo
+                              <span className="bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span> Riepilogo Lavori Periodo
                           </h3>
                           {currentSummary && !readOnly && (
-                             <button onClick={deleteCurrentSummary} className="text-slate-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition-colors" title="Elimina Riepilogo">
-                                 <Trash2 className="w-4 h-4"/>
-                             </button>
+                             <button onClick={deleteCurrentSummary} className="text-slate-400 hover:text-red-600 p-2 rounded hover:bg-red-50 transition-colors"><Trash2 className="w-4 h-4"/></button>
                           )}
                       </div>
                       
                       {!currentSummary ? (
                           <div className="text-center py-8 bg-blue-50 rounded-xl border border-dashed border-blue-200">
-                              <p className="text-blue-800 font-medium mb-3">Nessun riepilogo per il periodo tra il verbale precedente e questo.</p>
+                              <p className="text-blue-800 font-medium mb-3">Nessun riepilogo inizializzato.</p>
                               {!readOnly && (
-                                  <button onClick={initSummaryForCurrentVisit} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold shadow-sm transition-transform hover:scale-105 inline-flex items-center gap-2">
-                                      <Plus className="w-4 h-4"/> Inizializza Riepilogo
-                                  </button>
+                                  <button onClick={initSummaryForCurrentVisit} className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg font-bold shadow-sm transition-transform hover:scale-105 inline-flex items-center gap-2"><Plus className="w-4 h-4"/> Inizializza</button>
                               )}
                           </div>
                       ) : (
                           <div className="bg-blue-50 p-6 rounded-xl border border-blue-100">
                               <div className="flex flex-wrap gap-4 items-center mb-6 border-b border-blue-200 pb-4">
-                                  <div className="flex items-center gap-2 text-blue-800 font-bold text-sm bg-white px-3 py-1.5 rounded border border-blue-200">
-                                      <CalendarRange className="w-4 h-4"/> Periodo
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                      <span className="text-slate-600 font-medium text-xs">Dal:</span>
-                                      <input disabled={readOnly} type="date" className="p-1.5 border border-slate-300 rounded bg-white text-xs" 
-                                          value={currentSummary.startDate} onChange={e => updateCurrentSummary('startDate', e.target.value)} />
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                      <span className="text-slate-600 font-medium text-xs">Al:</span>
-                                      <input disabled={readOnly} type="date" className="p-1.5 border border-slate-300 rounded bg-white text-xs" 
-                                          value={currentSummary.endDate} onChange={e => updateCurrentSummary('endDate', e.target.value)} />
-                                  </div>
+                                  <div className="flex items-center gap-2 text-blue-800 font-bold text-sm bg-white px-3 py-1.5 rounded border border-blue-200"><CalendarRange className="w-4 h-4"/> Periodo</div>
+                                  <input disabled={readOnly} type="date" className="p-1.5 border border-slate-300 rounded bg-white text-xs" value={currentSummary.startDate} onChange={e => updateCurrentSummary('startDate', e.target.value)} />
+                                  <input disabled={readOnly} type="date" className="p-1.5 border border-slate-300 rounded bg-white text-xs" value={currentSummary.endDate} onChange={e => updateCurrentSummary('endDate', e.target.value)} />
                                   <div className="flex-1 text-right">
-                                      {!readOnly && (
-                                         <button 
-                                            onClick={importWorksFromJournal}
-                                            className="inline-flex items-center gap-1 text-xs bg-white text-blue-700 px-3 py-1.5 rounded hover:bg-blue-100 font-medium border border-blue-200"
-                                         >
-                                             <ArrowDownToLine className="w-3 h-3"/> Importa da Giornale
-                                         </button>
-                                      )}
+                                      {!readOnly && <button onClick={importWorksFromJournal} className="inline-flex items-center gap-1 text-xs bg-white text-blue-700 px-3 py-1.5 rounded hover:bg-blue-100 font-medium border border-blue-200"><ArrowDownToLine className="w-3 h-3"/> Importa</button>}
                                   </div>
                               </div>
-
                               <div className="flex gap-2 mb-3">
-                                   <input disabled={readOnly} type="text" 
-                                      className="flex-1 p-2 border border-blue-200 rounded text-sm bg-white" placeholder="Es. Completamento massetto..."
-                                      value={summaryManualInput} onChange={(e) => setSummaryManualInput(e.target.value)}
-                                      onKeyDown={(e) => e.key === 'Enter' && addManualWorkSummary()}
-                                   />
+                                   <input disabled={readOnly} type="text" className="flex-1 p-2 border border-blue-200 rounded text-sm bg-white" placeholder="Es. Completamento massetto..." value={summaryManualInput} onChange={(e) => setSummaryManualInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addManualWorkSummary()}/>
                                    {!readOnly && <button onClick={addManualWorkSummary} className="bg-blue-600 text-white px-3 rounded hover:bg-blue-700"><Plus className="w-5 h-5" /></button>}
                                </div>
-                               
                                <ul className="space-y-1 bg-white p-3 rounded border border-blue-100 min-h-[100px]">
                                    {currentSummary.works.map((work, wIdx) => (
                                        <li key={wIdx} className="flex justify-between items-center text-sm p-1.5 hover:bg-slate-50 rounded group gap-2">
                                            <span className="text-slate-500 font-mono text-xs w-6">{wIdx + 1}.</span>
-                                           <input 
-                                             disabled={readOnly}
-                                             type="text"
-                                             className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-sm text-slate-700"
-                                             value={work}
-                                             onChange={(e) => updateWorkSummaryItem(wIdx, e.target.value)}
-                                           />
+                                           <input disabled={readOnly} type="text" className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-sm text-slate-700" value={work} onChange={(e) => updateWorkSummaryItem(wIdx, e.target.value)}/>
                                            {!readOnly && <button onClick={() => removeWorkSummary(wIdx)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4"/></button>}
                                        </li>
                                    ))}
-                                   {currentSummary.works.length === 0 && <p className="text-slate-400 italic text-xs text-center py-2">Nessuna lavorazione inserita.</p>}
                                </ul>
                           </div>
                       )}
@@ -600,74 +539,21 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
 
                   <section>
                       <div className="flex items-center justify-between border-b pb-2 mb-4">
-                          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                              <span className="bg-amber-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
-                              Opere in Corso di Esecuzione
-                          </h3>
+                          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2"><span className="bg-amber-500 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span> Opere in Corso</h3>
                       </div>
-                      
                       <div className="bg-amber-50 p-6 rounded-xl border border-amber-100">
                           <div className="flex gap-2 mb-3">
-                               <input disabled={readOnly} type="text" 
-                                  className="flex-1 p-2 border border-amber-200 rounded text-sm bg-white" placeholder="Es. Posa pavimentazione..."
-                                  value={inProgressInput} onChange={(e) => setInProgressInput(e.target.value)}
-                                  onKeyDown={(e) => e.key === 'Enter' && addToListInDoc('worksInProgress', inProgressInput, setInProgressInput)}
-                               />
+                               <input disabled={readOnly} type="text" className="flex-1 p-2 border border-amber-200 rounded text-sm bg-white" placeholder="Es. Posa pavimentazione..." value={inProgressInput} onChange={(e) => setInProgressInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addToListInDoc('worksInProgress', inProgressInput, setInProgressInput)}/>
                                {!readOnly && <button onClick={() => addToListInDoc('worksInProgress', inProgressInput, setInProgressInput)} className="bg-amber-500 text-white px-3 rounded hover:bg-amber-600"><Plus className="w-5 h-5" /></button>}
                            </div>
-                           
                            <ul className="space-y-1 bg-white p-3 rounded border border-amber-100 min-h-[100px]">
                                {(currentDoc.worksInProgress || '').split('\n').filter(i => i.trim()).map((work, idx) => (
                                    <li key={idx} className="flex justify-between items-center text-sm p-1.5 hover:bg-slate-50 rounded group gap-2">
                                        <Activity className="w-4 h-4 text-amber-500 mt-0.5 shrink-0"/>
-                                       <input 
-                                          disabled={readOnly}
-                                          type="text"
-                                          className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-sm text-slate-700"
-                                          value={work}
-                                          onChange={(e) => updateListInDoc('worksInProgress', idx, e.target.value)}
-                                       />
+                                       <input disabled={readOnly} type="text" className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-sm text-slate-700" value={work} onChange={(e) => updateListInDoc('worksInProgress', idx, e.target.value)}/>
                                        {!readOnly && <button onClick={() => removeFromListInDoc('worksInProgress', idx)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4"/></button>}
                                    </li>
                                ))}
-                               {!(currentDoc.worksInProgress || '').trim() && <p className="text-slate-400 italic text-xs text-center py-2">Nessuna opera in corso.</p>}
-                           </ul>
-                      </div>
-                  </section>
-
-                  <section>
-                      <div className="flex items-center justify-between border-b pb-2 mb-4">
-                          <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                              <span className="bg-emerald-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
-                              Prossime Attività Previste
-                          </h3>
-                      </div>
-                      
-                      <div className="bg-emerald-50 p-6 rounded-xl border border-emerald-100">
-                          <div className="flex gap-2 mb-3">
-                               <input disabled={readOnly} type="text" 
-                                  className="flex-1 p-2 border border-emerald-200 rounded text-sm bg-white" placeholder="Es. Montaggio infissi..."
-                                  value={upcomingInput} onChange={(e) => setUpcomingInput(e.target.value)}
-                                  onKeyDown={(e) => e.key === 'Enter' && addToListInDoc('upcomingWorks', upcomingInput, setUpcomingInput)}
-                               />
-                               {!readOnly && <button onClick={() => addToListInDoc('upcomingWorks', upcomingInput, setUpcomingInput)} className="bg-emerald-600 text-white px-3 rounded hover:bg-emerald-700"><Plus className="w-5 h-5" /></button>}
-                           </div>
-                           
-                           <ul className="space-y-1 bg-white p-3 rounded border border-emerald-100 min-h-[100px]">
-                               {(currentDoc.upcomingWorks || '').split('\n').filter(i => i.trim()).map((work, idx) => (
-                                   <li key={idx} className="flex justify-between items-center text-sm p-1.5 hover:bg-slate-50 rounded group gap-2">
-                                       <CalendarIconNext className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0"/>
-                                       <input 
-                                          disabled={readOnly}
-                                          type="text"
-                                          className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-sm text-slate-700"
-                                          value={work}
-                                          onChange={(e) => updateListInDoc('upcomingWorks', idx, e.target.value)}
-                                       />
-                                       {!readOnly && <button onClick={() => removeFromListInDoc('upcomingWorks', idx)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4"/></button>}
-                                   </li>
-                               ))}
-                               {!(currentDoc.upcomingWorks || '').trim() && <p className="text-slate-400 italic text-xs text-center py-2">Nessuna attività pianificata.</p>}
                            </ul>
                       </div>
                   </section>
@@ -677,187 +563,100 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
           {step === 'requests' && (
               <div className="animate-in fade-in slide-in-from-right-4">
                   <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4 flex items-center gap-2"><MessageSquare className="w-5 h-5"/> Richieste del Collaudatore</h3>
-                  
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                      <p className="text-xs font-bold text-blue-700 uppercase mb-2">Inserimento Rapido Richieste:</p>
-                      <select 
-                        ref={requestsSelectRef}
-                        disabled={readOnly}
-                        className="w-full p-2 border border-blue-300 rounded text-sm bg-white"
-                        onChange={(e) => {
-                            const val = e.target.value;
-                            if (!val) return;
-                            setActiveCustomField('testerRequests');
-                            setCustomText(val === 'OTHER' ? '' : val);
-                            e.target.value = ''; // Reset select
-                        }}
-                      >
+                      <select ref={requestsSelectRef} disabled={readOnly} className="w-full p-2 border border-blue-300 rounded text-sm bg-white" onChange={(e) => { const val = e.target.value; if (!val) return; setActiveCustomField('testerRequests'); setCustomText(val === 'OTHER' ? '' : val); e.target.value = ''; }}>
                           <option value="">Seleziona una richiesta standard...</option>
                           {REQUEST_OPTIONS.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
-                          <option value="OTHER" className="font-bold text-blue-800">Altro...</option>
+                          <option value="OTHER">Altro...</option>
                       </select>
-
                       {activeCustomField === 'testerRequests' && (
                           <div className="mt-3 flex flex-col gap-2 animate-in fade-in">
-                              <textarea 
-                                className="w-full p-2 border border-blue-300 rounded text-sm focus:ring-2 focus:ring-blue-500" 
-                                placeholder="Modifica o scrivi la richiesta personalizzata..."
-                                rows={3}
-                                value={customText}
-                                onChange={e => setCustomText(e.target.value)}
-                                autoFocus
-                              />
+                              <textarea className="w-full p-2 border border-blue-300 rounded text-sm" placeholder="Scrivi la richiesta..." rows={3} value={customText} onChange={e => setCustomText(e.target.value)} autoFocus />
                               <div className="flex justify-end gap-2">
-                                <button onClick={handleCustomCancel} className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded hover:bg-slate-300 text-xs font-bold"><X className="w-4 h-4 inline-block mr-1"/> Annulla</button>
-                                <button onClick={handleCustomConfirm} className="bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700 text-xs font-bold flex items-center gap-1"><Plus className="w-4 h-4"/> Aggiungi</button>
+                                <button onClick={handleCustomCancel} className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded text-xs font-bold">Annulla</button>
+                                <button onClick={handleCustomConfirm} className="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1">Aggiungi</button>
                               </div>
                           </div>
                       )}
                   </div>
-                  
-                  <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed font-serif focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
-                    value={currentDoc.testerRequests || ''} onChange={e => handleUpdate({...currentDoc, testerRequests: e.target.value})} 
-                    placeholder="Elenco delle richieste specifiche da parte del collaudatore..."/>
+                  <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed font-serif focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100" value={currentDoc.testerRequests || ''} onChange={e => handleUpdate({...currentDoc, testerRequests: e.target.value})} placeholder="Elenco delle richieste..."/>
               </div>
           )}
 
           {step === 'invitations' && (
               <div className="animate-in fade-in slide-in-from-right-4">
                   <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4 flex items-center gap-2"><Bell className="w-5 h-5"/> Inviti del Collaudatore</h3>
-                  
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-                      <p className="text-xs font-bold text-amber-700 uppercase mb-2">Inserimento Rapido Inviti:</p>
-                      <select 
-                        ref={invitationsSelectRef}
-                        disabled={readOnly}
-                        className="w-full p-2 border border-amber-300 rounded text-sm bg-white"
-                        onChange={(e) => {
-                            const val = e.target.value;
-                            if (!val) return;
-                            setActiveCustomField('testerInvitations');
-                            setCustomText(val === 'OTHER' ? '' : val);
-                            e.target.value = ''; 
-                        }}
-                      >
+                      <select ref={invitationsSelectRef} disabled={readOnly} className="w-full p-2 border border-amber-300 rounded text-sm bg-white" onChange={(e) => { const val = e.target.value; if (!val) return; setActiveCustomField('testerInvitations'); setCustomText(val === 'OTHER' ? '' : val); e.target.value = ''; }}>
                           <option value="">Seleziona un invito standard...</option>
                           {INVITATION_OPTIONS.map((opt, i) => <option key={i} value={opt}>{opt.substring(0, 100)}...</option>)}
-                          <option value="OTHER" className="font-bold text-amber-800">Altro...</option>
+                          <option value="OTHER">Altro...</option>
                       </select>
-
                       {activeCustomField === 'testerInvitations' && (
                           <div className="mt-3 flex flex-col gap-2 animate-in fade-in">
-                              <textarea
-                                className="w-full p-2 border border-amber-300 rounded text-sm focus:ring-2 focus:ring-amber-500" 
-                                placeholder="Modifica o scrivi l'invito personalizzato..."
-                                rows={3}
-                                value={customText}
-                                onChange={e => setCustomText(e.target.value)}
-                                autoFocus
-                              />
+                              <textarea className="w-full p-2 border border-amber-300 rounded text-sm" placeholder="Scrivi l'invito..." rows={3} value={customText} onChange={e => setCustomText(e.target.value)} autoFocus />
                               <div className="flex justify-end gap-2">
-                                <button onClick={handleCustomCancel} className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded hover:bg-slate-300 text-xs font-bold"><X className="w-4 h-4 inline-block mr-1"/> Annulla</button>
-                                <button onClick={handleCustomConfirm} className="bg-amber-600 text-white px-3 py-1.5 rounded hover:bg-amber-700 text-xs font-bold flex items-center gap-1"><Plus className="w-4 h-4"/> Aggiungi</button>
+                                <button onClick={handleCustomCancel} className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded text-xs font-bold">Annulla</button>
+                                <button onClick={handleCustomConfirm} className="bg-amber-600 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1">Aggiungi</button>
                               </div>
                           </div>
                       )}
                   </div>
-                  
-                  <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed font-serif focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
-                    value={currentDoc.testerInvitations || ''} onChange={e => handleUpdate({...currentDoc, testerInvitations: e.target.value})} 
-                    placeholder="Elenco degli inviti/prescrizioni da parte del collaudatore..."/>
+                  <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed font-serif focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100" value={currentDoc.testerInvitations || ''} onChange={e => handleUpdate({...currentDoc, testerInvitations: e.target.value})} placeholder="Elenco degli inviti..."/>
               </div>
           )}
 
           {step === 'common' && (
               <div className="animate-in fade-in slide-in-from-right-4">
-                  <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4 flex items-center gap-2"><FileCheck2 className="w-5 h-5"/> Parti Comuni & Chiusura</h3>
-                  
+                  <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4 flex items-center gap-2"><FileCheck2 className="w-5 h-5"/> Chiusura Verbale</h3>
                   <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
-                      <p className="text-xs font-bold text-slate-500 uppercase mb-2">Inserimento Rapido Frasi Standard:</p>
-                      <select 
-                        ref={commonSelectRef}
-                        disabled={readOnly}
-                        className="w-full p-2 border border-slate-300 rounded text-sm bg-white"
-                        onChange={(e) => {
-                            const val = e.target.value;
-                            if (!val) return;
-                            setActiveCustomField('commonParts');
-                            setCustomText(val === 'OTHER' ? '' : val);
-                            e.target.value = ''; 
-                        }}
-                      >
+                      <select ref={commonSelectRef} disabled={readOnly} className="w-full p-2 border border-slate-300 rounded text-sm bg-white" onChange={(e) => { const val = e.target.value; if (!val) return; setActiveCustomField('commonParts'); setCustomText(val === 'OTHER' ? '' : val); e.target.value = ''; }}>
                           <option value="">Seleziona una frase standard...</option>
                           {COMMON_PART_OPTIONS.map((opt, i) => <option key={i} value={opt}>{opt.substring(0, 100)}...</option>)}
-                          <option value="OTHER" className="font-bold text-slate-800">Altro...</option>
+                          <option value="OTHER">Altro...</option>
                       </select>
-
                       {activeCustomField === 'commonParts' && (
                           <div className="mt-3 flex flex-col gap-2 animate-in fade-in">
-                              <textarea
-                                className="w-full p-2 border border-slate-300 rounded text-sm focus:ring-2 focus:ring-slate-500" 
-                                placeholder="Modifica o scrivi la frase personalizzata..."
-                                rows={3}
-                                value={customText}
-                                onChange={e => setCustomText(e.target.value)}
-                                autoFocus
-                              />
+                              <textarea className="w-full p-2 border border-slate-300 rounded text-sm" placeholder="Scrivi la frase..." rows={3} value={customText} onChange={e => setCustomText(e.target.value)} autoFocus />
                               <div className="flex justify-end gap-2">
-                                <button onClick={handleCustomCancel} className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded hover:bg-slate-300 text-xs font-bold"><X className="w-4 h-4 inline-block mr-1"/> Annulla</button>
-                                <button onClick={handleCustomConfirm} className="bg-slate-800 text-white px-3 py-1.5 rounded hover:bg-slate-900 text-xs font-bold flex items-center gap-1"><Plus className="w-4 h-4"/> Aggiungi</button>
+                                <button onClick={handleCustomCancel} className="bg-slate-200 text-slate-600 px-3 py-1.5 rounded text-xs font-bold">Annulla</button>
+                                <button onClick={handleCustomConfirm} className="bg-slate-800 text-white px-3 py-1.5 rounded text-xs font-bold flex items-center gap-1">Aggiungi</button>
                               </div>
                           </div>
                       )}
                   </div>
-                  
-                  <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed font-serif focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
-                    value={currentDoc.commonParts || ''} onChange={e => handleUpdate({...currentDoc, commonParts: e.target.value})} 
-                    placeholder="Frasi di rito, chiusura verbale, aggiornamenti..."/>
+                  <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed font-serif focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100" value={currentDoc.commonParts || ''} onChange={e => handleUpdate({...currentDoc, commonParts: e.target.value})} placeholder="Frasi di chiusura..."/>
               </div>
           )}
 
           {step === 'eval' && (
               <div className="animate-in fade-in slide-in-from-right-4">
                   <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4">Valutazioni Tecnico-Amministrative</h3>
-                  <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed font-serif focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
-                    value={currentDoc.observations} onChange={e => handleUpdate({...currentDoc, observations: e.target.value})} 
-                    placeholder="Si dà atto che... Il collaudatore verifica..."/>
+                  <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed font-serif focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100" value={currentDoc.observations} onChange={e => handleUpdate({...currentDoc, observations: e.target.value})} placeholder="Valutazioni del collaudatore..."/>
               </div>
           )}
-
        </div>
 
-       {/* Navigation Buttons */}
        <div className="flex justify-between mt-6">
-           <button 
-             onClick={() => {
+           <button onClick={() => {
                 if(step === 'eval') setStep('common');
                 else if(step === 'common') setStep('invitations');
                 else if(step === 'invitations') setStep('requests');
                 else if(step === 'requests') setStep('works');
                 else if(step === 'works') setStep('convocation');
-                else if(step === 'convocation') setStep('info');
-             }}
-             disabled={step === 'info'}
-             className="px-6 py-2 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent font-medium flex items-center gap-2"
-           >
-             <ArrowLeft className="w-4 h-4"/> Indietro
-           </button>
-           <button 
-             onClick={() => {
-                if(step === 'info') setStep('convocation');
+                else if(step === 'convocation') setStep('admin-acts');
+                else if(step === 'admin-acts') setStep('info');
+             }} disabled={step === 'info'} className="px-6 py-2 rounded-lg text-slate-600 hover:bg-slate-100 disabled:opacity-30 font-medium flex items-center gap-2"><ArrowLeft className="w-4 h-4"/> Indietro</button>
+           <button onClick={() => {
+                if(step === 'info') setStep('admin-acts');
+                else if(step === 'admin-acts') setStep('convocation');
                 else if(step === 'convocation') setStep('works');
                 else if(step === 'works') setStep('requests');
                 else if(step === 'requests') setStep('invitations');
                 else if(step === 'invitations') setStep('common');
                 else if(step === 'common') setStep('eval');
-             }}
-             disabled={step === 'eval'}
-             className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-30 disabled:bg-slate-300 font-medium shadow-lg disabled:shadow-none flex items-center gap-2"
-           >
-             Avanti <ArrowRight className="w-4 h-4"/>
-           </button>
+             }} disabled={step === 'eval'} className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-30 font-medium shadow-lg flex items-center gap-2">Avanti <ArrowRight className="w-4 h-4"/></button>
        </div>
-
     </div>
   );
 };

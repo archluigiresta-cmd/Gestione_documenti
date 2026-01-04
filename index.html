@@ -9,31 +9,43 @@
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap');
       
-      /* Print styles to ensure the preview looks like the Word doc */
       @media print {
         @page { 
-          margin: 2cm; 
+          margin: 1.5cm 2cm; 
           size: A4 portrait;
         }
-        body { 
-          -webkit-print-color-adjust: exact !important; 
-          print-color-adjust: exact !important;
+        
+        /* Forza il corpo e i contenitori a espandersi */
+        html, body, #root, [class*="min-h-screen"], main, .flex-1 {
+          height: auto !important;
+          min-height: 0 !important;
+          overflow: visible !important;
+          display: block !important;
+          position: static !important;
           background-color: white !important;
         }
+
         .no-print { display: none !important; }
         .print-only { display: block !important; }
         .print-serif { font-family: 'Noto Serif', serif; }
         
-        /* Ensure images and logos are visible in PDF */
+        /* Previene tagli brutali nelle tabelle o firme */
+        tr, .break-inside-avoid {
+          page-break-inside: avoid !important;
+          break-inside: avoid !important;
+        }
+        
+        /* Assicura che i loghi e le immagini siano stampati correttamente */
         img {
           max-width: 100% !important;
-          display: block;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
         }
 
-        /* Prevent breaking inside signature blocks or tables if possible */
-        .break-inside-avoid {
-          page-break-inside: avoid;
-          break-inside: avoid;
+        /* Rimuove ombre e decorazioni inutili per la stampa */
+        .shadow-lg, .shadow-sm, .border {
+          box-shadow: none !important;
+          border-color: #eee !important;
         }
       }
       .font-serif-print { font-family: 'Noto Serif', serif; }
