@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ProjectConstants, ContactInfo, SubjectProfile, AppointmentData, CompanyType, DesignerProfile } from '../types';
-import { Save, User, Users, Mail, ShieldCheck, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote, ChevronDown, ImagePlus, X, BriefcaseBusiness, Network, Hammer } from 'lucide-react';
+import { Save, User, Users, Mail, ShieldCheck, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote, ChevronDown, ImagePlus, X, BriefcaseBusiness, Network, Hammer, Euro } from 'lucide-react';
 
 // --- HELPER COMPONENTS (Moved outside to prevent re-render focus loss) ---
 
@@ -822,7 +822,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                        
                        <div className="border-t border-slate-100 pt-4 mt-4">
                            <h5 className="font-bold text-xs text-slate-500 uppercase mb-3">Convenzione / Contratto Specifico</h5>
-                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                <div>
                                    <label className="text-xs font-semibold text-slate-500 mb-1 block">Repertorio N.</label>
                                    <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded text-sm disabled:bg-slate-100" 
@@ -837,6 +837,13 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                                    <label className="text-xs font-semibold text-slate-500 mb-1 block">Protocollo N.</label>
                                    <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded text-sm disabled:bg-slate-100" 
                                           value={data.subjects.testerAppointment.contractProtocol || ''} onChange={e => handleChange('subjects.testerAppointment.contractProtocol', e.target.value)} />
+                               </div>
+                               <div>
+                                   <label className="text-xs font-bold text-blue-700 uppercase mb-1 flex items-center gap-1">
+                                      <Euro className="w-3 h-3"/> Importo Collaudo
+                                   </label>
+                                   <input disabled={readOnly} type="text" className="w-full p-2 border border-blue-200 bg-blue-50 rounded text-sm font-bold text-blue-800" placeholder="0,00"
+                                          value={data.subjects.testerAppointment.testerFee || ''} onChange={e => handleChange('subjects.testerAppointment.testerFee', e.target.value)} />
                                </div>
                            </div>
                        </div>

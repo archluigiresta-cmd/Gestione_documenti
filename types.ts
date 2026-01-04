@@ -153,6 +153,7 @@ export interface ProjectConstants {
         contractRepNumber: string; // NEW: Rep. Convenzione
         contractDate: string; // NEW
         contractProtocol: string; // NEW: Prot. n.
+        testerFee: string; // NEW: Importo incarico collaudo
         isStatic: boolean;
         isAdmin: boolean;
         isFunctional: boolean;

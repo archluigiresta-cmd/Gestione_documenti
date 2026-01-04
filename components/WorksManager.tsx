@@ -27,32 +27,31 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
   const [workInput, setWorkInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Helper to safely get API Key
-  const getApiKey = () => {
-    try {
-      if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-        return process.env.API_KEY;
-      }
-    } catch (e) {
-      console.warn("Process env not available");
-    }
-    return null;
-  };
-
+  // IA Polish Text Implementation
   const polishText = async (field: 'premis' | 'observations') => {
     if (readOnly) return;
-    const apiKey = getApiKey();
-    if (!apiKey) {
+    
+    // Always use process.env.API_KEY directly when initializing the @google/genai client instance
+    if (!process.env.API_KEY) {
       alert("API Key mancante. Impossibile usare l'IA.");
       return;
     }
     
     setIsGenerating(true);
     try {
-      const ai = new GoogleGenAI({ apiKey });
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const prompt = `Riscrivi in linguaggio tecnico/burocratico per verbale lavori pubblici: "${currentDoc[field]}"`;
-      const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
-      if (response.text) onUpdateDocument({ ...currentDoc, [field]: response.text.trim() });
+      
+      // Use gemini-3-flash-preview for Basic Text Tasks like rewriting and proofreading
+      const response = await ai.models.generateContent({ 
+        model: 'gemini-3-flash-preview', 
+        contents: prompt 
+      });
+      
+      // The GenerateContentResponse object features a .text property (not a method)
+      if (response.text) {
+        onUpdateDocument({ ...currentDoc, [field]: response.text.trim() });
+      }
     } catch (error) {
       console.error(error);
       alert("Errore durante la generazione del testo.");

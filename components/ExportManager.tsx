@@ -185,6 +185,9 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
                       onChange={(e) => setDocType(e.target.value as DocumentType)}
                     >
                       <option value="VERBALE_COLLAUDO">Verbale Visita di Collaudo</option>
+                      <option value="RICHIESTA_AUTORIZZAZIONE">Lettera Richiesta Autorizzazione</option>
+                      <option value="NULLA_OSTA_ENTE">Nulla Osta Incarico</option>
+                      <option value="LETTERA_CONVOCAZIONE">Lettera di Convocazione</option>
                       <option value="VERBALE_CONSEGNA">Verbale di Consegna</option>
                       <option value="SOSPENSIONE_LAVORI">Verbale Sospensione</option>
                       <option value="RIPRESA_LAVORI">Verbale Ripresa</option>

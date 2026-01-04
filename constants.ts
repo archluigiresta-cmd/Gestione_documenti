@@ -82,6 +82,8 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
         contractRepNumber: '', // NEW: Rep. Convenzione
         contractDate: '', // NEW
         contractProtocol: '', // NEW: Prot. n.
+        // Fix: Added missing required property testerFee
+        testerFee: '',
         isStatic: true,
         isAdmin: true,
         isFunctional: false

@@ -122,6 +122,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       return formatNameWithTitle(profile.contact);
   };
 
+  // --- LOGICA SPECIFICA LETTERE ---
   const getLetterSubject = () => {
       if (doc.actSubject) return doc.actSubject;
       return `Lavori di "${project.projectName}" - CUP: ${project.cup}. Incarico di Collaudo ${assignmentStringClean}.`;
@@ -130,76 +131,25 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   const renderLetterContent = () => {
       const tester = project.subjects.tester.contact;
       const t = project.subjects.testerAppointment;
-      
       let baseText = "";
       if (type === 'RICHIESTA_AUTORIZZAZIONE') {
-          baseText = `Il sottoscritto ${formatProfessionalDetails(tester)}, in riferimento all’incarico di collaudo ${assignmentStringClean} in oggetto, conferito con ${t.nominationType} n. ${t.nominationNumber} del ${formatShortDate(t.nominationDate)}, richiede formale autorizzazione all'espletamento delle attività di collaudo in corso d'opera.`;
+          baseText = `Il sottoscritto ${formatProfessionalDetails(tester)}, in riferimento all’incarico di collaudo ${assignmentStringClean} in oggetto, conferito con ${t.nominationType} n. ${t.nominationNumber} del ${formatShortDate(t.nominationDate)} per un importo di ${formatCurrency(t.testerFee || 0)}, richiede formale autorizzazione all'espletamento delle attività di collaudo in corso d'opera ai fini dell'acquisizione del Nulla Osta del proprio Ordine Professionale/Ente di appartenenza, ove necessario.`;
       } else if (type === 'NULLA_OSTA_ENTE') {
-          baseText = `Si trasmette il presente Nulla Osta relativo all'incarico di collaudo ${assignmentStringClean} per i lavori in oggetto, a seguito della verifica della documentazione prodotta e della regolarità della nomina.`;
+          baseText = `Si trasmette il presente Nulla Osta relativo all'incarico di collaudo ${assignmentStringClean} per i lavori in oggetto, a seguito della verifica della documentazione prodotta, della regolarità della nomina e della compatibilità dell'incarico con le vigenti normative.`;
       } else if (type === 'LETTERA_CONVOCAZIONE') {
-          baseText = `Con la presente si comunica che il giorno ${formatShortDate(doc.date)} alle ore ${doc.time} si terrà presso il cantiere dei lavori in oggetto la ${doc.visitNumber}ª visita di collaudo. Sono invitati a partecipare il RUP, la Direzione Lavori e il Rappresentante dell'Impresa.`;
+          baseText = `Con la presente si comunica alle SS.LL. che lo scrivente Collaudatore, in data ${formatShortDate(doc.date)} alle ore ${doc.time}, terrà presso il cantiere dei lavori in oggetto la ${doc.visitNumber}ª visita di collaudo in corso d'opera. Si pregano le SS.LL. di voler partecipare muniti di tutta la documentazione tecnica e contabile necessaria al corretto espletamento del sopralluogo.`;
       }
-
       return (
           <div className="text-justify space-y-4">
-              <p className="font-bold">OGGETTO: {getLetterSubject()}</p>
+              <p className="font-bold">OGGETTO: <span className="uppercase">{getLetterSubject()}</span></p>
               <p className="mt-8">{baseText}</p>
-              {doc.actBodyOverride && (
-                  <div className="mt-6 border-l-2 border-slate-200 pl-4 italic">
-                      {doc.actBodyOverride}
-                  </div>
-              )}
+              {doc.actBodyOverride && <div className="mt-6 whitespace-pre-wrap italic">{doc.actBodyOverride}</div>}
               <p className="mt-8">Restando in attesa di cortese riscontro, si porgono distinti saluti.</p>
           </div>
       );
   };
 
-  if (isLetter) {
-      return (
-          <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
-              <div className="bg-white shadow-lg p-[2.5cm] min-h-[29.7cm] print-page relative flex flex-col">
-                  {/* MITTENTE (Collaudatore) */}
-                  <div className="mb-12 text-sm">
-                      <p className="font-bold uppercase">{formatNameWithTitle(project.subjects.tester.contact)}</p>
-                      {project.subjects.tester.contact.address && <p>{project.subjects.tester.contact.address}</p>}
-                      {project.subjects.tester.contact.pec && <p>PEC: {project.subjects.tester.contact.pec}</p>}
-                      {project.subjects.tester.contact.email && <p>Email: {project.subjects.tester.contact.email}</p>}
-                  </div>
-
-                  {/* DESTINATARIO */}
-                  <div className="mb-16 ml-auto w-2/3 text-sm">
-                      <p className="font-bold uppercase">Spett.le</p>
-                      <p className="font-bold uppercase">{project.entity}</p>
-                      {doc.actRecipient ? (
-                          <p className="italic">{doc.actRecipient}</p>
-                      ) : (
-                          <p>All'attenzione del RUP</p>
-                      )}
-                      {project.location && <p>{project.location}</p>}
-                  </div>
-
-                  {/* LUOGO E DATA */}
-                  <div className="mb-8 text-right text-sm">
-                      <p>{project.entityProvince || '...'}, lì {formatShortDate(doc.date)}</p>
-                  </div>
-
-                  {/* CORPO LETTERA */}
-                  <div className="flex-1 text-sm">
-                      {renderLetterContent()}
-                  </div>
-
-                  {/* FIRMA */}
-                  <div className="mt-20 ml-auto w-1/2 text-center text-sm">
-                      <p>Il Collaudatore</p>
-                      <p className="mt-2 font-bold">{formatNameWithTitle(project.subjects.tester.contact)}</p>
-                      <div className="mt-8 border-b border-black w-full"></div>
-                  </div>
-              </div>
-          </div>
-      );
-  }
-
-  // Rest of the existing Verbale/Certificato logic...
+  // --- LOGICA SPECIFICA VERBALE ---
   const generateCollaudoPreamblePoint1 = () => {
       const t = project.subjects.testerAppointment;
       const tester = project.subjects.tester.contact;
@@ -226,15 +176,15 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   const generateHistoricalPoints = () => {
       const prevDocs = getPreviousDocuments();
       if (prevDocs.length === 0) return null;
-      return prevDocs.map((prevDoc, index) => {
+      return prevDocs.map((prevDoc) => {
           const date = formatShortDate(prevDoc.date);
           const worksList = getWorksForVisit(prevDoc.visitNumber, prevDoc.worksExecuted);
           const worksText = worksList.map((w, i) => `${i + 1}. ${w}`).join(';\n');
           const worksInProgress = prevDoc.worksInProgress ? `Era in corso il ${prevDoc.worksInProgress}.` : '';
           return (
               <div key={prevDoc.id} className="mb-4 text-justify">
-                  <p>- in data {date}, con verbale di visita di collaudo n. {prevDoc.visitNumber}, lo scrivente Collaudatore ha preso atto delle lavorazioni:</p>
-                  <div className="pl-8 my-2 italic whitespace-pre-line">{worksText}</div>
+                  <p>- in data {date}, con verbale di visita di collaudo n. {prevDoc.visitNumber}, lo scrivente Collaudatore ha preso atto dell'andamento dei lavori eseguiti a detta data:</p>
+                  <div className="pl-8 my-2 italic whitespace-pre-line border-l border-slate-200">{worksText}</div>
                   <p className="pl-8">{worksInProgress}</p>
               </div>
           );
@@ -261,23 +211,56 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   };
 
   const renderContractorInfo = () => {
-      const { type, mainCompany, mandants, executors } = project.contractor;
+      const { type, mainCompany, mandants } = project.contractor;
       if (type === 'ati' && mandants?.length > 0) {
           return <span><strong>ATI</strong>: {mainCompany.name} (Mandataria) + {mandants.map(m => m.name).join(', ')}</span>;
       }
       return <span><strong>{mainCompany.name}</strong><br/>{mainCompany.address} - P.IVA {mainCompany.vat}</span>;
   };
 
+  // --- RENDER LOGIC ---
+
+  if (isLetter) {
+      return (
+          <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
+              <div className="bg-white shadow-lg p-[2.5cm] min-h-[29.7cm] print-page relative flex flex-col">
+                  <div className="mb-12 text-sm border-l-2 border-slate-100 pl-4">
+                      <p className="font-bold uppercase tracking-wider">{formatNameWithTitle(project.subjects.tester.contact)}</p>
+                      <p className="text-xs uppercase text-slate-500 mb-2">Collaudatore</p>
+                      {project.subjects.tester.contact.address && <p>{project.subjects.tester.contact.address}</p>}
+                      {project.subjects.tester.contact.pec && <p><span className="font-bold">PEC:</span> {project.subjects.tester.contact.pec}</p>}
+                  </div>
+                  <div className="mb-16 ml-auto w-[65%] text-sm">
+                      <p className="font-bold uppercase tracking-wide">Spett.le</p>
+                      <p className="font-bold uppercase">{project.entity}</p>
+                      {doc.actRecipient ? <div className="mt-1 whitespace-pre-line">{doc.actRecipient}</div> : <p className="mt-1">All'attenzione del Responsabile Unico del Progetto</p>}
+                  </div>
+                  <div className="mb-12 text-right text-sm italic">
+                      <p>{project.entityProvince || project.location || '...'}, lì {formatShortDate(doc.date)}</p>
+                  </div>
+                  <div className="flex-1 text-sm md:text-base">{renderLetterContent()}</div>
+                  <div className="mt-24 ml-auto w-[50%] text-center text-sm md:text-base">
+                      <p className="mb-4">Il Collaudatore</p>
+                      <p className="font-bold uppercase tracking-widest">{formatNameWithTitle(project.subjects.tester.contact)}</p>
+                      <div className="mt-2 border-b border-black w-full opacity-50"></div>
+                  </div>
+              </div>
+          </div>
+      );
+  }
+
+  // --- RENDERING VERBALE TECNICO COMPLETO ---
   return (
     <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
-      <div className="bg-white shadow-lg p-[2cm] min-h-[29.7cm] print-page mb-8 relative flex flex-col justify-between">
+      <div className="bg-white shadow-lg p-[1.5cm] md:p-[2cm] min-h-[29.7cm] print-page mb-8 relative flex flex-col justify-between">
         <div>
-            <div id="h1">
-                <table style={{ width: '100%', marginBottom: '10pt' }}>
+            {/* Header Ente */}
+            <div id="h1" className="mb-8">
+                <table style={{ width: '100%' }}>
                     <tbody>
                         <tr>
-                            <td align="center" style={{ textAlign: 'center', borderBottom: '1px solid #000', paddingBottom: '10px' }}>
-                                {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2.5cm', marginBottom: '5px' }} alt="Logo" />}
+                            <td align="center" style={{ textAlign: 'center', borderBottom: '1px solid #000', paddingBottom: '15px' }}>
+                                {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2.5cm', marginBottom: '8px' }} alt="Logo" />}
                                 <p className="uppercase font-bold text-base tracking-widest">{project.entity}</p>
                                 {project.entityProvince && <p className="text-sm">(Provincia di {project.entityProvince})</p>}
                             </td>
@@ -286,47 +269,143 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                 </table>
             </div>
 
+            {/* Titolo e Oggetto */}
             <div className="mb-8 text-center">
-                <p className="text-sm font-bold uppercase">lavori di: "{project.projectName}"</p>
-                <p className="text-sm font-bold uppercase">CUP {project.cup} {project.cig && `- CIG ${project.cig}`}</p>
-                <div className="mt-4 border-b-2 border-black inline-block px-4 pb-1">
+                <p className="text-sm font-bold uppercase mb-2">lavori di: "{project.projectName}"</p>
+                <p className="text-sm font-bold uppercase mb-4">CUP {project.cup} {project.cig && `- CIG ${project.cig}`}</p>
+                <div className="mt-2 border-b-2 border-black inline-block px-8 pb-1">
                     <h2 className="font-bold text-lg uppercase">{getDocumentTitle()}</h2>
                 </div>
             </div>
 
-            <table className="w-full text-xs mb-8">
+            {/* Tabella Anagrafica Progetto */}
+            <table className="w-full text-xs mb-8 border-collapse">
                 <tbody>
-                    <tr><td className="font-bold w-48">Impresa:</td><td>{renderContractorInfo()}</td></tr>
-                    <tr><td className="font-bold">RUP:</td><td>{formatProfessionalDetails(project.subjects.rup.contact)}</td></tr>
-                    <tr><td className="font-bold">DL:</td><td>{renderSubjectString(project.subjects.dl)}</td></tr>
+                    <tr className="border-b border-slate-100"><td className="py-1 font-bold w-48 uppercase text-slate-500">Impresa Appaltatrice:</td><td className="py-1">{renderContractorInfo()}</td></tr>
+                    <tr className="border-b border-slate-100"><td className="py-1 font-bold uppercase text-slate-500">Responsabile Procedimento:</td><td className="py-1">{formatProfessionalDetails(project.subjects.rup.contact)}</td></tr>
+                    <tr className="border-b border-slate-100"><td className="py-1 font-bold uppercase text-slate-500">Direzione Lavori:</td><td className="py-1">{renderSubjectString(project.subjects.dl)}</td></tr>
+                    <tr className="border-b border-slate-100"><td className="py-1 font-bold uppercase text-slate-500">Sicurezza (CSE):</td><td className="py-1">{renderSubjectString(project.subjects.cse)}</td></tr>
+                    {project.contract.totalAmount && (
+                        <tr><td className="py-1 font-bold uppercase text-slate-500">Importo Lavori:</td><td className="py-1">{formatCurrency(project.contract.totalAmount)}</td></tr>
+                    )}
                 </tbody>
             </table>
 
+            {/* Testo del Verbale */}
             <div className="text-sm text-justify space-y-4">
-                <p>Il giorno <strong>{verboseDate.day}</strong> del mese di <strong>{verboseDate.month}</strong> dell'anno <strong>{verboseDate.year}</strong>...</p>
-                <div className="italic pl-4 whitespace-pre-line">{doc.attendees || getDefaultAttendees()}</div>
-                <div>
-                    <p className="font-bold underline">Premesso che:</p>
-                    <div className="pl-2 mt-2">
-                        {isCollaudo ? (
-                            <>{generateCollaudoPreamblePoint1()}{generateHistoricalPoints()}</>
-                        ) : <p>{doc.premis}</p>}
+                <p>
+                    L'anno <strong>{verboseDate.year}</strong>, il giorno <strong>{verboseDate.day}</strong> del mese di <strong>{verboseDate.month}</strong>, 
+                    alle ore <strong>{doc.time}</strong>, presso il luogo dei lavori in <strong>{project.location}</strong>.
+                </p>
+
+                <p>Sono presenti, oltre allo scrivente Collaudatore {formatNameWithTitle(project.subjects.tester.contact)}:</p>
+                <div className="italic pl-6 whitespace-pre-line border-l-2 border-slate-100 py-1">{doc.attendees || getDefaultAttendees()}</div>
+
+                <div className="mt-6">
+                    <p className="font-bold underline mb-2 uppercase tracking-tighter">Premesso che:</p>
+                    <div className="space-y-4">
+                        <p>{generateCollaudoPreamblePoint1()}</p>
+                        {generateHistoricalPoints()}
+                        {doc.premis && <div className="mt-2 pt-2 border-t border-dotted border-slate-300">{doc.premis}</div>}
                     </div>
+                </div>
+
+                <div className="mt-6">
+                    <p className="font-bold underline mb-2 uppercase tracking-tighter">Sopralluogo e Lavorazioni:</p>
+                    <p className="mb-2">{doc.worksIntroText || `Durante il presente sopralluogo si prende atto che, nel periodo intercorrente tra ${getPreviousVisitDateDescription()} e la data odierna, sono state effettuate le seguenti lavorazioni:`}</p>
+                    
+                    {getWorksForVisit(doc.visitNumber, doc.worksExecuted).length > 0 ? (
+                        <ul className="list-disc pl-8 space-y-1 mb-4 italic">
+                            {getWorksForVisit(doc.visitNumber, doc.worksExecuted).map((w, i) => <li key={i}>{w}</li>)}
+                        </ul>
+                    ) : <p className="italic pl-8 mb-4">Nessuna lavorazione specifica registrata per il periodo.</p>}
+
+                    {doc.worksInProgress && (
+                        <div className="mb-4">
+                            <p className="font-semibold mb-1">Opere attualmente in corso di esecuzione:</p>
+                            <div className="pl-8 italic whitespace-pre-line">{doc.worksInProgress}</div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Richieste e Inviti */}
+                {(doc.testerRequests || doc.testerInvitations) && (
+                    <div className="mt-8 space-y-4 bg-slate-50 p-4 rounded print:bg-transparent print:p-0">
+                        {doc.testerRequests && (
+                            <div>
+                                <p className="font-bold uppercase text-xs text-blue-800 mb-1">Richieste del Collaudatore:</p>
+                                <div className="pl-4 whitespace-pre-line text-slate-700 italic border-l border-blue-200">{doc.testerRequests}</div>
+                            </div>
+                        )}
+                        {doc.testerInvitations && (
+                            <div>
+                                <p className="font-bold uppercase text-xs text-amber-800 mb-1">Inviti e Prescrizioni:</p>
+                                <div className="pl-4 whitespace-pre-line text-slate-700 italic border-l border-amber-200">{doc.testerInvitations}</div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Chiusura e Valutazioni */}
+                <div className="mt-8">
+                    {doc.observations && (
+                        <div className="mb-4">
+                            <p className="font-bold underline mb-1">Valutazioni Tecnico-Amministrative:</p>
+                            <p className="italic">{doc.observations}</p>
+                        </div>
+                    )}
+                    <p className="mt-4">{doc.commonParts || `Di quanto sopra si è redatto il presente verbale che, previa lettura e conferma, viene sottoscritto dai presenti.`}</p>
                 </div>
             </div>
         </div>
 
+        {/* Blocco Firme */}
         <div className="mt-20 text-sm">
             <table className="w-full">
                 <tbody>
                     <tr>
-                        <td>Il Collaudatore:<br/>{formatNameWithTitle(project.subjects.tester.contact)}</td>
-                        <td className="text-right">Il RUP:<br/>{formatNameWithTitle(project.subjects.rup.contact)}</td>
+                        <td className="pb-12 w-1/2">
+                            <p className="mb-1">Il Collaudatore:</p>
+                            <p className="font-bold uppercase">{formatNameWithTitle(project.subjects.tester.contact)}</p>
+                            <div className="mt-4 border-b border-black w-48 opacity-30"></div>
+                        </td>
+                        <td className="pb-12 w-1/2 text-right">
+                            <p className="mb-1">Il RUP:</p>
+                            <p className="font-bold uppercase">{formatNameWithTitle(project.subjects.rup.contact)}</p>
+                            <div className="mt-4 border-b border-black w-48 ml-auto opacity-30"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td className="w-1/2">
+                            <p className="mb-1">Il Direttore dei Lavori:</p>
+                            <p className="font-bold uppercase">{renderSignatureString(project.subjects.dl)}</p>
+                            <div className="mt-4 border-b border-black w-48 opacity-30"></div>
+                        </td>
+                        <td className="w-1/2 text-right">
+                            <p className="mb-1">L'Impresa:</p>
+                            <p className="font-bold uppercase">{project.contractor.mainCompany.name}</p>
+                            <div className="mt-4 border-b border-black w-48 ml-auto opacity-30"></div>
+                        </td>
                     </tr>
                 </tbody>
             </table>
         </div>
       </div>
+
+      {/* Foto Allegati (se presenti) */}
+      {doc.photos && doc.photos.length > 0 && (
+          <div className="break-before-page p-[2cm] bg-white shadow-lg min-h-[29.7cm]">
+              <h3 className="font-bold text-center uppercase border-b-2 border-black pb-2 mb-8">Documentazione Fotografica Allegata</h3>
+              <div className="grid grid-cols-2 gap-8">
+                  {doc.photos.map((p, i) => (
+                      <div key={i} className="break-inside-avoid">
+                          <img src={p.url} className="w-full h-48 object-cover border border-slate-200" alt="Allegato" />
+                          <p className="text-xs mt-2 italic text-center text-slate-600">{p.description || `Foto ${i+1}`}</p>
+                      </div>
+                  ))}
+              </div>
+          </div>
+      )}
     </div>
   );
 };
