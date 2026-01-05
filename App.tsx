@@ -30,7 +30,8 @@ const App: React.FC = () => {
         await db.ensureAdminExists();
         const savedUserStr = localStorage.getItem('loggedUser');
         if (savedUserStr) {
-          setCurrentUser(JSON.parse(savedUserStr));
+          const u = JSON.parse(savedUserStr);
+          setCurrentUser(u);
         }
       } catch (e) {
         console.error("Errore inizializzazione", e);
@@ -49,8 +50,12 @@ const App: React.FC = () => {
 
   const loadProjects = async () => {
     if (!currentUser) return;
-    const list = await db.getProjectsForUser(currentUser.id, currentUser.email);
-    setProjects(list.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)));
+    try {
+      const list = await db.getProjectsForUser(currentUser.id, currentUser.email);
+      setProjects(list.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)));
+    } catch (e) {
+      console.error("Errore caricamento progetti", e);
+    }
   };
 
   const handleSelectProject = async (project: ProjectConstants) => {
@@ -233,7 +238,60 @@ const App: React.FC = () => {
             </div>
           </div>
         )}
+        {activeTab === 'design' && (
+          <div className="max-w-4xl mx-auto space-y-8">
+             <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+                <h3 className="text-xl font-bold mb-6">Progettazione Esecutiva</h3>
+                <div className="grid grid-cols-2 gap-6">
+                   <div>
+                      <label className="text-xs font-bold text-slate-500 uppercase">Approvazione (Tipo)</label>
+                      <input disabled={readOnly} className="w-full p-2 border rounded mt-1" value={currentProject.designPhase.executive.approvalType} onChange={e => handleUpdateProjectField('designPhase.executive.approvalType', e.target.value)} />
+                   </div>
+                   <div>
+                      <label className="text-xs font-bold text-slate-500 uppercase">Data Approvazione</label>
+                      <input disabled={readOnly} type="date" className="w-full p-2 border rounded mt-1" value={currentProject.designPhase.executive.approvalDate} onChange={e => handleUpdateProjectField('designPhase.executive.approvalDate', e.target.value)} />
+                   </div>
+                </div>
+             </div>
+          </div>
+        )}
         {activeTab === 'subjects' && <ProjectForm data={currentProject} readOnly={readOnly} handleChange={handleUpdateProjectField} subTab="tester" />}
+        {activeTab === 'tender' && (
+          <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+             <h3 className="text-xl font-bold mb-6">Fase di Gara</h3>
+             <div className="grid grid-cols-2 gap-6">
+                 <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase">Data Verbale Verifica</label>
+                    <input disabled={readOnly} type="date" className="w-full p-2 border rounded mt-1" value={currentProject.tenderPhase.verificationMinutesDate} onChange={e => handleUpdateProjectField('tenderPhase.verificationMinutesDate', e.target.value)} />
+                 </div>
+                 <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase">Data Verbale Validazione</label>
+                    <input disabled={readOnly} type="date" className="w-full p-2 border rounded mt-1" value={currentProject.tenderPhase.validationMinutesDate} onChange={e => handleUpdateProjectField('tenderPhase.validationMinutesDate', e.target.value)} />
+                 </div>
+             </div>
+          </div>
+        )}
+        {activeTab === 'contractor' && (
+           <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
+              <h3 className="text-xl font-bold mb-6">Impresa Appaltatrice</h3>
+              <div className="space-y-6">
+                  <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase">Ragione Sociale</label>
+                    <input disabled={readOnly} className="w-full p-2 border rounded mt-1 font-bold" value={currentProject.contractor.mainCompany.name} onChange={e => handleUpdateProjectField('contractor.mainCompany.name', e.target.value)} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-6">
+                      <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase">Legale Rappresentante</label>
+                        <input disabled={readOnly} className="w-full p-2 border rounded mt-1" value={currentProject.contractor.mainCompany.repName} onChange={e => handleUpdateProjectField('contractor.mainCompany.repName', e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-500 uppercase">Sede Legale</label>
+                        <input disabled={readOnly} className="w-full p-2 border rounded mt-1" value={currentProject.contractor.mainCompany.address} onChange={e => handleUpdateProjectField('contractor.mainCompany.address', e.target.value)} />
+                      </div>
+                  </div>
+              </div>
+           </div>
+        )}
         {activeTab === 'execution' && <ExecutionManager project={currentProject} onUpdateProject={handleSaveProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={() => createNewDocument('VERBALE_COLLAUDO')} onDeleteDocument={handleDeleteDocument} readOnly={readOnly} />}
         {activeTab === 'testing' && <TestingManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={createNewDocument} onDeleteDocument={handleDeleteDocument} onUpdateProject={handleSaveProject} readOnly={readOnly} />}
         {activeTab === 'export' && <ExportManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onDeleteDocument={readOnly ? undefined : handleDeleteDocument} />}
