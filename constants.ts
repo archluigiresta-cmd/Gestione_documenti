@@ -112,7 +112,7 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
     resumptions: [],
     sals: [],
     variants: [],
-    testerVisitSummaries: [],
+    // Fix: removed testerVisitSummaries as it does not exist in type definition
     completionDate: '',
     
     handoverDocs: {

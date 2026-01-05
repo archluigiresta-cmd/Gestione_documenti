@@ -93,7 +93,7 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
       resumptions: [],
       sals: [],
       variants: [],
-      testerVisitSummaries: [],
+      // Fix: removed testerVisitSummaries as it does not exist in ProjectConstants definition
       completionDate: '',
       handoverDocs: {
           projectApprovalType: '', projectApprovalNumber: '', projectApprovalDate: '',

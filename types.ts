@@ -96,14 +96,6 @@ export interface SALData {
     notes: string;
 }
 
-export interface TesterVisitSummary {
-    id: string;
-    startDate: string;
-    endDate: string;
-    works: string[]; 
-    notes: string;
-}
-
 export interface ProjectConstants {
   id: string; 
   ownerId: string; 
@@ -176,7 +168,6 @@ export interface ProjectConstants {
     resumptions: { id: string; date: string; minutesNumber?: string }[];
     sals: SALData[]; 
     variants: { id: string; date: string; approvalAct: string }[]; 
-    testerVisitSummaries: TesterVisitSummary[]; 
     completionDate: string; 
     handoverDocs: {
         projectApprovalType: string;
@@ -205,7 +196,6 @@ export interface PhotoAttachment {
   description: string;
 }
 
-// Fixed missing types for NULLA_OSTA_ENTE, RICHIESTA_AUTORIZZAZIONE, and LETTERA_CONVOCAZIONE
 export type DocumentType = 
   | 'VERBALE_COLLAUDO'
   | 'VERBALE_CONSEGNA' 
@@ -215,10 +205,7 @@ export type DocumentType =
   | 'RELAZIONE_FINALE' 
   | 'RELAZIONE_COLLAUDO'
   | 'CERTIFICATO_ULTIMAZIONE'
-  | 'CERTIFICATO_REGOLARE_ESECUZIONE'
-  | 'NULLA_OSTA_ENTE'
-  | 'RICHIESTA_AUTORIZZAZIONE'
-  | 'LETTERA_CONVOCAZIONE';
+  | 'CERTIFICATO_REGOLARE_ESECUZIONE';
 
 export interface DocumentVariables {
   id: string;
