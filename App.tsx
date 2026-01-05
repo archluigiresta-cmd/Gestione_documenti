@@ -11,7 +11,6 @@ import { ExecutionManager } from './components/ExecutionManager';
 import { TestingManager } from './components/TestingManager';
 import { ExportManager } from './components/ExportManager';
 import { AdminPanel } from './components/AdminPanel';
-import { ProjectSharing } from './components/ProjectSharing';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -21,52 +20,31 @@ const App: React.FC = () => {
   const [currentDocId, setCurrentDocId] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'general' | 'design' | 'subjects' | 'tender' | 'contractor' | 'execution' | 'testing' | 'export'>('general');
   const [showAdmin, setShowAdmin] = useState(false);
-  const [sharingProjectId, setSharingProjectId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const initApp = async () => {
-      try {
-        await db.ensureAdminExists();
-        const savedUserStr = localStorage.getItem('loggedUser');
-        if (savedUserStr) {
-          const u = JSON.parse(savedUserStr);
-          setCurrentUser(u);
-        }
-      } catch (e) {
-        console.error("Errore inizializzazione", e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    initApp();
+    db.ensureAdminExists().then(() => {
+      const saved = localStorage.getItem('loggedUser');
+      if (saved) setCurrentUser(JSON.parse(saved));
+      setLoading(false);
+    });
   }, []);
 
   useEffect(() => {
-    if (currentUser) {
-      loadProjects();
-    }
+    if (currentUser) loadProjects();
   }, [currentUser]);
 
   const loadProjects = async () => {
     if (!currentUser) return;
-    try {
-      const list = await db.getProjectsForUser(currentUser.id, currentUser.email);
-      setProjects(list.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)));
-    } catch (e) {
-      console.error("Errore caricamento progetti", e);
-    }
+    const list = await db.getProjectsForUser(currentUser.id, currentUser.email);
+    setProjects(list.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)));
   };
 
-  const handleSelectProject = async (project: ProjectConstants) => {
-    setCurrentProject(project);
-    const docs = await db.getDocumentsByProject(project.id);
+  const handleSelectProject = async (p: ProjectConstants) => {
+    setCurrentProject(p);
+    const docs = await db.getDocumentsByProject(p.id);
     setDocuments(docs);
-    if (docs.length > 0) {
-      setCurrentDocId(docs[0].id);
-    } else {
-      setCurrentDocId('');
-    }
+    if (docs.length > 0) setCurrentDocId(docs[0].id);
     setActiveTab('general');
   };
 
@@ -79,12 +57,6 @@ const App: React.FC = () => {
     handleSelectProject(newP);
   };
 
-  const handleSaveProject = async (updated: ProjectConstants) => {
-    setCurrentProject(updated);
-    await db.saveProject(updated);
-    setProjects(prev => prev.map(p => p.id === updated.id ? updated : p));
-  };
-
   const handleUpdateProjectField = (path: string, value: any) => {
     if (!currentProject) return;
     const updated = { ...currentProject };
@@ -95,208 +67,97 @@ const App: React.FC = () => {
       current = current[keys[i]];
     }
     current[keys[keys.length - 1]] = value;
-    handleSaveProject(updated);
+    setCurrentProject(updated);
+    db.saveProject(updated);
   };
 
   const createNewDocument = async (type: DocumentType) => {
     if (!currentProject) return;
-    
-    let nextNum = 1;
-    let lastPremis = '';
-    
-    const verbaliExist = documents.filter(d => d.type === type);
-    if (verbaliExist.length > 0) {
-        const maxNum = Math.max(...verbaliExist.map(v => v.visitNumber || 0));
-        nextNum = maxNum + 1;
-        const lastDoc = verbaliExist.find(v => v.visitNumber === maxNum);
-        if (lastDoc) {
-            lastPremis = lastDoc.premis || '';
-        }
-    }
-
-    const newDoc: DocumentVariables = {
-      ...createInitialDocument(currentProject.id),
-      type: type,
-      visitNumber: nextNum,
-      premis: lastPremis.trim(),
-    };
-
-    const updatedDocs = [...documents, newDoc];
-    setDocuments(updatedDocs);
+    const nextNum = documents.filter(d => d.type === type).length + 1;
+    const newDoc = { ...createInitialDocument(currentProject.id), type, visitNumber: nextNum };
+    const updated = [...documents, newDoc];
+    setDocuments(updated);
     setCurrentDocId(newDoc.id);
     await db.saveDocument(newDoc);
   };
 
   const handleUpdateDocument = async (doc: DocumentVariables) => {
-    const updated = documents.map(d => d.id === doc.id ? doc : d);
-    setDocuments(updated);
+    setDocuments(prev => prev.map(d => d.id === doc.id ? doc : d));
     await db.saveDocument(doc);
   };
 
-  const handleDeleteDocument = async (id: string) => {
-    if (!confirm("Eliminare definitivamente questo documento?")) return;
-    await db.deleteDocument(id);
-    const updated = documents.filter(d => d.id !== id);
-    setDocuments(updated);
-    if (currentDocId === id) {
-      setCurrentDocId(updated.length > 0 ? updated[0].id : '');
-    }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('loggedUser');
-    setCurrentUser(null);
-    setCurrentProject(null);
-    setShowAdmin(false);
-  };
-
-  if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-white">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-    </div>
-  );
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Inizializzazione...</div>;
 
   if (!currentUser) return <AuthScreen onLogin={(u) => { setCurrentUser(u); localStorage.setItem('loggedUser', JSON.stringify(u)); }} />;
 
-  if (showAdmin && currentUser.isSystemAdmin) return <AdminPanel onBack={() => setShowAdmin(false)} currentUser={currentUser} />;
+  if (showAdmin) return <AdminPanel onBack={() => setShowAdmin(false)} currentUser={currentUser} />;
 
-  if (!currentProject) {
-    return (
-      <Dashboard 
-        projects={projects}
-        onSelectProject={handleSelectProject}
-        onNewProject={handleNewProject}
-        onDeleteProject={async (id) => { await db.deleteProject(id); loadProjects(); }}
-        onShareProject={setSharingProjectId}
-        onOpenAdmin={() => setShowAdmin(true)}
-        onUpdateOrder={async (id, ord) => {
-          const p = projects.find(x => x.id === id);
-          if (p) await handleSaveProject({ ...p, displayOrder: ord });
-        }}
-        onMoveProject={async (id, dir) => {
-           const idx = projects.findIndex(p => p.id === id);
-           if (dir === 'up' && idx > 0) {
-              const p1 = projects[idx]; const p2 = projects[idx-1];
-              const o1 = p1.displayOrder; p1.displayOrder = p2.displayOrder; p2.displayOrder = o1;
-              await db.saveProject(p1); await db.saveProject(p2); loadProjects();
-           } else if (dir === 'down' && idx < projects.length - 1) {
-              const p1 = projects[idx]; const p2 = projects[idx+1];
-              const o1 = p1.displayOrder; p1.displayOrder = p2.displayOrder; p2.displayOrder = o1;
-              await db.saveProject(p1); await db.saveProject(p2); loadProjects();
-           }
-        }}
-        onExportData={async () => {
-            const data = await db.getDatabaseBackup();
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `edilapp_backup.json`;
-            a.click();
-        }}
-        currentUser={currentUser}
-      />
-    );
-  }
-
-  const isOwner = currentProject.ownerId === currentUser.id;
-  const readOnly = !isOwner && !currentUser.isSystemAdmin;
+  if (!currentProject) return (
+    <Dashboard 
+      projects={projects}
+      onSelectProject={handleSelectProject}
+      onNewProject={handleNewProject}
+      onDeleteProject={async (id) => { await db.deleteProject(id); loadProjects(); }}
+      onOpenAdmin={() => setShowAdmin(true)}
+      onUpdateOrder={async (id, ord) => {
+        const p = projects.find(x => x.id === id);
+        if (p) { p.displayOrder = ord; await db.saveProject(p); loadProjects(); }
+      }}
+      onMoveProject={async (id, dir) => {
+        const idx = projects.findIndex(p => p.id === id);
+        if (dir === 'up' && idx > 0) {
+          const p1 = projects[idx], p2 = projects[idx-1];
+          const tmp = p1.displayOrder; p1.displayOrder = p2.displayOrder; p2.displayOrder = tmp;
+          await db.saveProject(p1); await db.saveProject(p2); loadProjects();
+        } else if (dir === 'down' && idx < projects.length - 1) {
+          const p1 = projects[idx], p2 = projects[idx+1];
+          const tmp = p1.displayOrder; p1.displayOrder = p2.displayOrder; p2.displayOrder = tmp;
+          await db.saveProject(p1); await db.saveProject(p2); loadProjects();
+        }
+      }}
+      onExportData={async () => {
+        const data = await db.getDatabaseBackup();
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'backup_edilapp.json'; a.click();
+      }}
+      currentUser={currentUser}
+    />
+  );
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar 
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        activeTab={activeTab} setActiveTab={setActiveTab}
         onBackToDashboard={() => setCurrentProject(null)}
         projectName={currentProject.projectName}
         user={currentUser}
-        onLogout={handleLogout}
+        onLogout={() => { localStorage.removeItem('loggedUser'); setCurrentUser(null); setCurrentProject(null); }}
       />
       <main className="flex-1 ml-64 p-8 overflow-y-auto">
         {activeTab === 'general' && (
           <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
-            <h2 className="text-2xl font-bold mb-6">Dati Generali Appalto</h2>
+            <h2 className="text-2xl font-bold mb-6">Dati Generali</h2>
             <div className="space-y-6">
-                <div>
-                   <label className="text-xs font-bold text-slate-500 uppercase">Committente</label>
-                   <input disabled={readOnly} type="text" className="w-full p-3 border rounded-lg mt-1" value={currentProject.entity || ''} onChange={e => handleUpdateProjectField('entity', e.target.value)} />
-                </div>
-                <div>
-                   <label className="text-xs font-bold text-slate-500 uppercase">Oggetto dell'Intervento</label>
-                   <textarea disabled={readOnly} className="w-full p-3 border rounded-lg mt-1 h-24" value={currentProject.projectName || ''} onChange={e => handleUpdateProjectField('projectName', e.target.value)} />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase">CUP</label>
-                        <input disabled={readOnly} type="text" className="w-full p-3 border rounded-lg mt-1 font-mono" value={currentProject.cup || ''} onChange={e => handleUpdateProjectField('cup', e.target.value)} />
-                    </div>
-                    <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase">CIG</label>
-                        <input disabled={readOnly} type="text" className="w-full p-3 border rounded-lg mt-1 font-mono" value={currentProject.cig || ''} onChange={e => handleUpdateProjectField('cig', e.target.value)} />
-                    </div>
-                </div>
+              <div><label className="text-xs font-bold text-slate-500 uppercase">Committente</label><input type="text" className="w-full p-3 border rounded mt-1" value={currentProject.entity} onChange={e => handleUpdateProjectField('entity', e.target.value)} /></div>
+              <div><label className="text-xs font-bold text-slate-500 uppercase">Oggetto (Usa INVIO per le righe)</label><textarea className="w-full p-3 border rounded mt-1 h-32" value={currentProject.projectName} onChange={e => handleUpdateProjectField('projectName', e.target.value)} /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="text-xs font-bold text-slate-500 uppercase">CUP</label><input type="text" className="w-full p-3 border rounded mt-1" value={currentProject.cup} onChange={e => handleUpdateProjectField('cup', e.target.value)} /></div>
+                <div><label className="text-xs font-bold text-slate-500 uppercase">CIG</label><input type="text" className="w-full p-3 border rounded mt-1" value={currentProject.cig} onChange={e => handleUpdateProjectField('cig', e.target.value)} /></div>
+              </div>
+              <div className="pt-4 border-t"><label className="text-xs font-bold text-slate-500 uppercase">Note Generali</label><textarea className="w-full p-3 border rounded mt-1 h-32" value={currentProject.generalNotes} onChange={e => handleUpdateProjectField('generalNotes', e.target.value)} /></div>
             </div>
           </div>
         )}
-        {activeTab === 'design' && (
-          <div className="max-w-4xl mx-auto space-y-8">
-             <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
-                <h3 className="text-xl font-bold mb-6">Progettazione Esecutiva</h3>
-                <div className="grid grid-cols-2 gap-6">
-                   <div>
-                      <label className="text-xs font-bold text-slate-500 uppercase">Approvazione (Tipo)</label>
-                      <input disabled={readOnly} className="w-full p-2 border rounded mt-1" value={currentProject.designPhase.executive.approvalType} onChange={e => handleUpdateProjectField('designPhase.executive.approvalType', e.target.value)} />
-                   </div>
-                   <div>
-                      <label className="text-xs font-bold text-slate-500 uppercase">Data Approvazione</label>
-                      <input disabled={readOnly} type="date" className="w-full p-2 border rounded mt-1" value={currentProject.designPhase.executive.approvalDate} onChange={e => handleUpdateProjectField('designPhase.executive.approvalDate', e.target.value)} />
-                   </div>
-                </div>
-             </div>
-          </div>
-        )}
-        {activeTab === 'subjects' && <ProjectForm data={currentProject} readOnly={readOnly} handleChange={handleUpdateProjectField} subTab="tester" />}
-        {activeTab === 'tender' && (
-          <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
-             <h3 className="text-xl font-bold mb-6">Fase di Gara</h3>
-             <div className="grid grid-cols-2 gap-6">
-                 <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase">Data Verbale Verifica</label>
-                    <input disabled={readOnly} type="date" className="w-full p-2 border rounded mt-1" value={currentProject.tenderPhase.verificationMinutesDate} onChange={e => handleUpdateProjectField('tenderPhase.verificationMinutesDate', e.target.value)} />
-                 </div>
-                 <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase">Data Verbale Validazione</label>
-                    <input disabled={readOnly} type="date" className="w-full p-2 border rounded mt-1" value={currentProject.tenderPhase.validationMinutesDate} onChange={e => handleUpdateProjectField('tenderPhase.validationMinutesDate', e.target.value)} />
-                 </div>
-             </div>
-          </div>
-        )}
-        {activeTab === 'contractor' && (
-           <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
-              <h3 className="text-xl font-bold mb-6">Impresa Appaltatrice</h3>
-              <div className="space-y-6">
-                  <div>
-                    <label className="text-xs font-bold text-slate-500 uppercase">Ragione Sociale</label>
-                    <input disabled={readOnly} className="w-full p-2 border rounded mt-1 font-bold" value={currentProject.contractor.mainCompany.name} onChange={e => handleUpdateProjectField('contractor.mainCompany.name', e.target.value)} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase">Legale Rappresentante</label>
-                        <input disabled={readOnly} className="w-full p-2 border rounded mt-1" value={currentProject.contractor.mainCompany.repName} onChange={e => handleUpdateProjectField('contractor.mainCompany.repName', e.target.value)} />
-                      </div>
-                      <div>
-                        <label className="text-xs font-bold text-slate-500 uppercase">Sede Legale</label>
-                        <input disabled={readOnly} className="w-full p-2 border rounded mt-1" value={currentProject.contractor.mainCompany.address} onChange={e => handleUpdateProjectField('contractor.mainCompany.address', e.target.value)} />
-                      </div>
-                  </div>
-              </div>
-           </div>
-        )}
-        {activeTab === 'execution' && <ExecutionManager project={currentProject} onUpdateProject={handleSaveProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={() => createNewDocument('VERBALE_COLLAUDO')} onDeleteDocument={handleDeleteDocument} readOnly={readOnly} />}
-        {activeTab === 'testing' && <TestingManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={createNewDocument} onDeleteDocument={handleDeleteDocument} onUpdateProject={handleSaveProject} readOnly={readOnly} />}
-        {activeTab === 'export' && <ExportManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onDeleteDocument={readOnly ? undefined : handleDeleteDocument} />}
+        {activeTab === 'design' && <ProjectForm data={currentProject} readOnly={false} handleChange={handleUpdateProjectField} subTab="design" />}
+        {activeTab === 'subjects' && <ProjectForm data={currentProject} readOnly={false} handleChange={handleUpdateProjectField} subTab="tester" />}
+        {activeTab === 'tender' && <ProjectForm data={currentProject} readOnly={false} handleChange={handleUpdateProjectField} subTab="tender" />}
+        {activeTab === 'contractor' && <ProjectForm data={currentProject} readOnly={false} handleChange={handleUpdateProjectField} subTab="contractor" />}
+        {activeTab === 'execution' && <ExecutionManager project={currentProject} onUpdateProject={setCurrentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={() => createNewDocument('VERBALE_COLLAUDO')} onDeleteDocument={async id => { await db.deleteDocument(id); setDocuments(prev => prev.filter(d => d.id !== id)); }} />}
+        {activeTab === 'testing' && <TestingManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={createNewDocument} onDeleteDocument={async id => { await db.deleteDocument(id); setDocuments(prev => prev.filter(d => d.id !== id)); }} onUpdateProject={setCurrentProject} />}
+        {activeTab === 'export' && <ExportManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} />}
       </main>
-      {sharingProjectId && <ProjectSharing projectId={sharingProjectId} onClose={() => setSharingProjectId(null)} />}
     </div>
   );
 };

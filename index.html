@@ -14,54 +14,33 @@
           margin: 1.5cm 2cm; 
           size: A4 portrait;
         }
-        
-        /* Forza il corpo e i contenitori a espandersi */
-        html, body, #root, [class*="min-h-screen"], main, .flex-1 {
-          height: auto !important;
-          min-height: 0 !important;
-          overflow: visible !important;
-          display: block !important;
-          position: static !important;
+        html, body, #root {
           background-color: white !important;
         }
-
         .no-print { display: none !important; }
-        .print-only { display: block !important; }
-        .print-serif { font-family: 'Noto Serif', serif; }
-        
-        /* Previene tagli brutali nelle tabelle o firme */
-        tr, .break-inside-avoid {
-          page-break-inside: avoid !important;
-          break-inside: avoid !important;
-        }
-        
-        /* Assicura che i loghi e le immagini siano stampati correttamente */
-        img {
-          max-width: 100% !important;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
-        }
-
-        /* Rimuove ombre e decorazioni inutili per la stampa */
-        .shadow-lg, .shadow-sm, .border {
+        .print-page {
           box-shadow: none !important;
-          border-color: #eee !important;
+          border: none !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          width: 100% !important;
         }
       }
       .font-serif-print { font-family: 'Noto Serif', serif; }
+      .no-break { page-break-inside: avoid; break-inside: avoid; }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-    "react/": "https://aistudiocdn.com/react@^19.2.0/",
-    "react": "https://aistudiocdn.com/react@^19.2.0",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
-  }
-}
-</script>
-</head>
+    <script type="importmap">
+    {
+      "imports": {
+        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+        "react/": "https://aistudiocdn.com/react@^19.2.0/",
+        "react": "https://aistudiocdn.com/react@^19.2.0",
+        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0",
+        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
+      }
+    }
+    </script>
+  </head>
   <body class="bg-slate-50 text-slate-900 font-sans">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>

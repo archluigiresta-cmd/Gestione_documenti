@@ -9,107 +9,148 @@ interface DocumentPreviewProps {
     allDocuments: DocumentVariables[];
 }
 
-const formatShortDate = (date?: string) => {
-    if (!date) return '...';
-    try {
-        const d = new Date(date);
-        if (isNaN(d.getTime())) return date;
-        return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
-    } catch {
-        return date;
-    }
+const formatDate = (d?: string) => {
+  if (!d) return '...';
+  return new Date(d).toLocaleDateString('it-IT');
+};
+
+const formatCurrency = (val: string) => {
+  const n = parseFloat(val.replace(/[^0-9.,]/g, '').replace(',', '.'));
+  if (isNaN(n)) return val;
+  return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(n);
 };
 
 export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }) => {
-  if (!project || !doc) {
-    return (
-      <div className="p-10 text-slate-400 italic bg-white rounded-lg border border-dashed text-center w-full max-w-[21cm]">
-        Dati insufficienti per generare l'anteprima professionale.
-      </div>
-    );
-  }
+  if (!project || !doc) return <div className="p-10 text-center text-slate-400">Dati insufficienti.</div>;
 
-  const tester = project.subjects?.tester?.contact || {};
-  const contractor = project.contractor?.mainCompany || {};
+  const tester = project.subjects.tester.contact;
+  const rup = project.subjects.rup.contact;
+  const dl = project.subjects.dl.contact;
+  const cse = project.subjects.cse.contact;
+  const contractor = project.contractor.mainCompany;
+
+  const renderFirma = (role: string, title?: string, name?: string) => (
+    <div className="no-break mb-8 text-left">
+      <p className="text-[10pt] uppercase tracking-tighter mb-12">Il {role}: {title} {name} ________________________________</p>
+    </div>
+  );
 
   return (
-    <div id="document-preview-container" className="font-serif-print text-black leading-snug w-full max-w-[21cm] animate-in fade-in">
-        <div className="bg-white shadow-xl p-[1.8cm] min-h-[29.7cm] print-page relative flex flex-col mx-auto border border-slate-200 print:shadow-none print:border-none">
-            
-            {/* Header Istituzionale */}
-            <div className="text-center mb-10 border-b-2 border-black pb-4">
-                {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2.5cm', margin: '0 auto 10px' }} alt="Logo Ente" />}
-                <h1 className="font-bold text-xl uppercase tracking-tight">{project.entity || 'STAZIONE APPALTANTE'}</h1>
-                {project.entityProvince && <p className="text-sm font-bold italic">Provincia di {project.entityProvince}</p>}
-            </div>
-
-            <div className="flex-1 space-y-8">
-                {/* Titolo Atto */}
-                <div className="text-center">
-                    <h2 className="text-2xl font-bold underline uppercase tracking-tight">VERBALE DI VISITA DI COLLAUDO N. {doc.visitNumber || '?'}</h2>
-                    <p className="text-[12pt] mt-2 font-bold italic">REDAZIONATO IN DATA {formatShortDate(doc.date)}</p>
-                </div>
-
-                {/* Box Identificativo */}
-                <div className="border-[1.5pt] border-black p-5 text-xs font-bold space-y-2 uppercase leading-tight bg-slate-50/20">
-                    <p className="text-[11pt]">INTERVENTO: <span className="font-normal">{project.projectName || '---'}</span></p>
-                    <p>COMMITTENTE: <span className="font-normal">{project.entity || '---'}</span></p>
-                    <div className="flex gap-12">
-                        <span>CUP: <span className="font-normal font-mono">{project.cup || '---'}</span></span>
-                        <span>CIG: <span className="font-normal font-mono">{project.cig || '---'}</span></span>
-                    </div>
-                </div>
-
-                {/* Contenuto Narrativo */}
-                <div className="space-y-6 text-[10.5pt] text-justify leading-relaxed font-serif">
-                    
-                    {doc.attendees && (
-                        <div>
-                            <h3 className="font-bold uppercase mb-1 border-b-[1pt] border-black text-xs">Soggetti Presenti</h3>
-                            <div className="whitespace-pre-wrap pl-2 pt-1 font-sans text-[10pt]">{doc.attendees}</div>
-                        </div>
-                    )}
-
-                    <div>
-                        <h3 className="font-bold uppercase mb-1 border-b-[1pt] border-black text-xs">Narrazione e Premesse Storiche</h3>
-                        <div className="whitespace-pre-wrap pt-2 pl-1 leading-snug">{doc.premis || "Testo non inserito."}</div>
-                    </div>
-
-                    {doc.worksExecuted && doc.worksExecuted.length > 0 && (
-                        <div>
-                            <h3 className="font-bold uppercase mb-1 border-b-[1pt] border-black text-xs">Accertamenti e Verifiche Effettuate</h3>
-                            <ul className="list-decimal pl-6 pt-2 space-y-1">
-                                {doc.worksExecuted.map((w, idx) => <li key={idx} className="pl-2">{w}</li>)}
-                            </ul>
-                        </div>
-                    )}
-
-                    {doc.observations && (
-                        <div className="bg-slate-50 p-4 border border-black/10">
-                            <h3 className="font-bold uppercase mb-1 text-xs border-b border-black/20 pb-1">Osservazioni e Disposizioni</h3>
-                            <div className="whitespace-pre-wrap pt-1 italic">{doc.observations}</div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Spazio Firme */}
-                <div className="mt-24 grid grid-cols-2 gap-24 no-break">
-                    <div className="text-center border-t border-black pt-3">
-                        <p className="text-[9pt] font-bold uppercase tracking-widest mb-10">L'Impresa Appaltatrice</p>
-                        <p className="text-[10pt] font-bold uppercase italic">{contractor.name || '---'}</p>
-                    </div>
-                    <div className="text-center border-t border-black pt-3">
-                        <p className="text-[9pt] font-bold uppercase tracking-widest mb-10">Il Collaudatore Incaricato</p>
-                        <p className="text-[11pt] font-bold uppercase">{tester.title} {tester.name || '---'}</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* Footer Tecnico */}
-            <div className="mt-12 pt-4 border-t border-slate-300 text-[8pt] text-slate-400 italic text-center no-print">
-                Documento tecnico generato professionalmente con EdilApp Protocollo
-            </div>
+    <div id="document-preview-container" className="font-serif-print text-black leading-snug w-full max-w-[21cm] mx-auto animate-in fade-in">
+      <div className="bg-white p-[1.8cm] min-h-[29.7cm] relative flex flex-col border shadow-xl print:shadow-none print:border-none">
+        
+        {/* INTESTAZIONE */}
+        <div className="text-center mb-10 border-b-2 border-black pb-4">
+          {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2.5cm', margin: '0 auto 10px' }} alt="Logo" />}
+          <h1 className="font-bold text-xl uppercase leading-tight whitespace-pre-wrap">{project.entity}</h1>
+          {project.entityProvince && <p className="text-sm font-bold italic">Provincia di {project.entityProvince}</p>}
+          <div className="mt-4 text-[10pt] font-bold text-justify uppercase border-t border-black pt-2">
+            LAVORI DI: {project.projectName}
+          </div>
+          <div className="flex justify-between text-[9pt] font-mono mt-1">
+            <span>CUP: {project.cup}</span>
+            <span>CIG: {project.cig}</span>
+          </div>
         </div>
+
+        <div className="flex-1 space-y-6">
+          <div className="text-center">
+            <h2 className="text-2xl font-bold underline uppercase tracking-tight">VERBALE DI VISITA DI COLLAUDO N. {doc.visitNumber}</h2>
+            <p className="text-[12pt] mt-2 font-bold italic">SVOLTO IN DATA {formatDate(doc.date)}</p>
+          </div>
+
+          {/* TABELLA DATI APPALTO */}
+          <div className="border-[1.5pt] border-black text-[9pt] overflow-hidden">
+            <table className="w-full border-collapse">
+              <tbody className="divide-y divide-black">
+                <tr><td className="p-2 border-r border-black font-bold w-1/3">IMPRESA:</td><td className="p-2 uppercase">{contractor.name}</td></tr>
+                <tr><td className="p-2 border-r border-black font-bold">CONTRATTO APPALTO:</td><td className="p-2">Rep. n. {project.contract.repNumber} del {formatDate(project.contract.date)}</td></tr>
+                <tr><td className="p-2 border-r border-black font-bold">IMPORTO CONTRATTUALE:</td><td className="p-2 font-bold">{formatCurrency(project.contract.totalAmount)} (di cui {formatCurrency(project.contract.securityCosts)} per sicurezza)</td></tr>
+                <tr><td className="p-2 border-r border-black font-bold">SCADENZA LAVORI:</td><td className="p-2 text-justify">Giorni {project.contract.durationDays} naturali e consecutivi, decorrenti dal {formatDate(project.executionPhase.deliveryDate)}, data verbale consegna lavori, con ultimazione entro il {formatDate(project.executionPhase.completionDate)}</td></tr>
+                <tr><td className="p-2 border-r border-black font-bold">R.U.P.:</td><td className="p-2 uppercase">{rup.title} {rup.name}</td></tr>
+                <tr><td className="p-2 border-r border-black font-bold">DIRETTORE LAVORI:</td><td className="p-2 uppercase">{dl.title} {dl.name}</td></tr>
+                <tr><td className="p-2 border-r border-black font-bold">C.S.E.:</td><td className="p-2 uppercase">{cse.title} {cse.name}</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="text-justify text-[11pt] leading-relaxed">
+            <p className="mb-4">
+              Il giorno {new Date(doc.date).getDate()} del mese di {new Date(doc.date).toLocaleString('it-IT', { month: 'long' })} dell'anno {new Date(doc.date).getFullYear()}, alle ore {doc.time}, presso il luogo dei lavori in {project.location || project.entity}, ha avvio la visita di collaudo n. {doc.visitNumber} convocata con nota {doc.convocationMethod} del {doc.convocationDetails || formatDate(doc.date)}.
+            </p>
+            <p className="font-bold mb-4">Sono presenti, oltre al sottoscritto Collaudatore {tester.title} {tester.name}:</p>
+            <div className="whitespace-pre-wrap pl-4 italic mb-6 text-[10.5pt]">{doc.attendees}</div>
+
+            <div className="space-y-6">
+              <div className="border-t border-black pt-4">
+                <h3 className="font-bold uppercase text-xs mb-2">PREMESSO CHE:</h3>
+                <div className="whitespace-pre-wrap">{doc.premis}</div>
+              </div>
+
+              <div>
+                <p className="mb-4 italic">{doc.worksIntroText}</p>
+                {doc.worksExecuted && doc.worksExecuted.length > 0 && (
+                  <ul className="list-disc pl-8 space-y-1 mb-4">
+                    {doc.worksExecuted.map((w, i) => <li key={i}>{w}</li>)}
+                  </ul>
+                )}
+                {doc.worksInProgress && (
+                  <div className="mb-4">
+                    <p className="font-bold">Al momento, sono in corso di esecuzione le opere relative a:</p>
+                    <p className="pl-4 italic">{doc.worksInProgress}</p>
+                  </div>
+                )}
+                {doc.upcomingWorks && (
+                  <div className="mb-4">
+                    <p className="font-bold">Prossime attività previste:</p>
+                    <p className="pl-4 italic">{doc.upcomingWorks}</p>
+                  </div>
+                )}
+              </div>
+
+              {doc.testerRequests && (
+                <div>
+                  <p className="font-bold mb-1">Dopo aver preso visione di tutte le aree di canti il Collaudatore:</p>
+                  <p className="font-bold underline text-xs">chiede ai presenti, ciascuno nell’ambito della propria competenza e responsabilità:</p>
+                  <p className="pl-4 italic">{doc.testerRequests}</p>
+                </div>
+              )}
+
+              {doc.testerInvitations && (
+                <div className="mt-4">
+                  <p className="font-bold underline text-xs">invita i presenti, ciascuno nell’ambito della propria competenza e responsabilità, a:</p>
+                  <p className="pl-4 italic">{doc.testerInvitations}</p>
+                </div>
+              )}
+
+              {doc.commonParts && <div className="mt-4 italic">{doc.commonParts}</div>}
+              {doc.observations && <div className="mt-4 border-l-2 border-black pl-4 py-2 bg-slate-50 italic">{doc.observations}</div>}
+            </div>
+          </div>
+
+          <div className="mt-20 space-y-4">
+            {renderFirma('Collaudatore', tester.title, tester.name)}
+            {renderFirma('Responsabile Unico del Progetto', rup.title, rup.name)}
+            {renderFirma('Direttore dei Lavori e CSE', dl.title, dl.name)}
+            <div className="no-break mb-8 text-left">
+              <p className="text-[10pt] uppercase tracking-tighter">Il rappresentante legale dell'impresa appaltatrice {contractor.name}:</p>
+              <p className="text-[10pt] uppercase tracking-tighter mt-12">Sig. {contractor.repName} ________________________________</p>
+            </div>
+          </div>
+        </div>
+
+        {/* FOOTER NATIVO PER WORD */}
+        <div id="f1" style={{ display: 'none' }} className="mso-footer">
+          <p className="text-[8pt] text-center italic" style={{ borderTop: '0.5pt solid black', paddingTop: '5pt' }}>
+            {tester.title} {tester.name} - {tester.address} - Email: {tester.email} - PEC: {tester.pec}
+          </p>
+        </div>
+        
+        {/* FOOTER VISIBILE WEB */}
+        <div className="mt-12 pt-4 border-t border-slate-200 text-[8pt] text-slate-400 italic text-center no-print">
+          {tester.title} {tester.name} | {tester.address} | Email: {tester.email} | PEC: {tester.pec}
+        </div>
+      </div>
     </div>
   );
 };
