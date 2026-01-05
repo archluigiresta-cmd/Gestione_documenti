@@ -24,15 +24,16 @@ const App: React.FC = () => {
   const [sharingProjectId, setSharingProjectId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Forza l'inizializzazione pulita senza recupero automatico della sessione
   useEffect(() => {
     const initApp = async () => {
       try {
         await db.ensureAdminExists();
-        // Rimosso esplicitamente ogni recupero da localStorage all'avvio
-        // per garantire che la prima pagina visualizzata sia sempre AuthScreen (Login)
+        const savedUserStr = localStorage.getItem('loggedUser');
+        if (savedUserStr) {
+          setCurrentUser(JSON.parse(savedUserStr));
+        }
       } catch (e) {
-        console.error("Errore inizializzazione database", e);
+        console.error("Errore inizializzazione", e);
       } finally {
         setLoading(false);
       }
@@ -150,13 +151,7 @@ const App: React.FC = () => {
     </div>
   );
 
-  // Visualizzazione Login Obbligatoria
-  if (!currentUser) {
-    return <AuthScreen onLogin={(u) => { 
-      setCurrentUser(u); 
-      localStorage.setItem('loggedUser', JSON.stringify(u)); 
-    }} />;
-  }
+  if (!currentUser) return <AuthScreen onLogin={(u) => { setCurrentUser(u); localStorage.setItem('loggedUser', JSON.stringify(u)); }} />;
 
   if (showAdmin && currentUser.isSystemAdmin) return <AdminPanel onBack={() => setShowAdmin(false)} currentUser={currentUser} />;
 

@@ -20,202 +20,60 @@ const formatShortDate = (date?: string) => {
     }
 };
 
-const parseCurrency = (value?: string): number => {
-    if (!value) return 0;
-    const clean = value.replace(/[€\s]/g, '').replace(/\./g, '').replace(',', '.');
-    return parseFloat(clean) || 0;
-};
-
-const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(amount);
-};
-
-export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, type }) => {
-  // Protezione iniziale contro dati mancanti
-  if (!project || !doc || !type) {
+export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }) => {
+  if (!project || !doc) {
     return (
       <div className="p-10 text-slate-400 italic bg-white rounded-lg border border-dashed text-center w-full max-w-[21cm]">
-        <p className="font-bold text-red-400 mb-2">Errore Anteprima</p>
-        Dati insufficienti per generare il documento selezionato.
+        Dati insufficienti per generare l'anteprima.
       </div>
     );
   }
 
-  const isNullaOsta = type === 'NULLA_OSTA_ENTE';
-  const isConvocazione = type === 'LETTERA_CONVOCAZIONE';
-  const isVerbale = type === 'VERBALE_COLLAUDO';
-
-  // Accesso sicuro ai soggetti
-  const tester = project.subjects?.tester?.contact || {};
-  const t = project.subjects?.testerAppointment || {};
-
-  const renderHeader = () => {
-    if (isNullaOsta) {
-      return (
-        <div className="text-center mb-10">
-          {tester.colleagueEntityLogo && <img src={tester.colleagueEntityLogo} style={{ maxHeight: '2.5cm', margin: '0 auto 10px' }} alt="Logo Ente" />}
-          <h1 className="font-bold text-lg uppercase tracking-wider">{tester.colleagueEntityName || "ENTE DI APPARTENENZA"}</h1>
-          <p className="text-[10px] font-bold italic border-t border-slate-200 pt-2 uppercase">Rilascio Nulla Osta ai sensi dell'Art. 53 D.Lgs. 165/2001</p>
-        </div>
-      );
-    }
-
-    if (isConvocazione) {
-      return (
-        <div className="mb-14 border-b border-slate-900 pb-2">
-          <div className="flex justify-between items-baseline">
-            <h1 className="font-bold text-[18pt] leading-none tracking-tight uppercase text-black">
-              {tester.name || 'NOME NON DEFINITO'}
-            </h1>
-            <p className="text-[11pt] tracking-[0.3em] font-light uppercase text-black">
-              {tester.title || 'ARCHITETTO'}
-            </p>
-          </div>
-          <div className="mt-2 text-[8.5pt] text-right space-y-0.5 leading-tight text-slate-800 italic">
-             <p>{tester.address || ''}</p>
-             <p>{tester.phone ? `Tel/Fax: ${tester.phone}` : ''}</p>
-             <p className="font-semibold">{tester.pec || ''}</p>
-             <p className="font-semibold">{tester.email || ''}</p>
-          </div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="text-center mb-8 border-b-2 border-slate-900 pb-4">
-        {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2cm', margin: '0 auto 10px' }} alt="Logo Committente" />}
-        <h1 className="font-bold text-xl uppercase tracking-tighter">{project.entity || 'COMMITTENTE'}</h1>
-        {project.entityProvince && <p className="text-sm font-bold italic">Provincia di {project.entityProvince}</p>}
-      </div>
-    );
-  };
-
-  const renderFooter = () => {
-    if (isConvocazione) {
-        return (
-            <div className="mt-auto pt-4 border-t border-slate-400 text-[8pt] flex justify-between no-print-break text-slate-600 font-sans">
-                <div>
-                   <p className="font-bold uppercase text-slate-800">{tester.name || ''}</p>
-                   <p>{tester.address || ''}</p>
-                </div>
-                <div className="text-right">
-                   <p>{tester.pec ? `PEC: ${tester.pec}` : ''}</p>
-                   <p>{tester.registrationNumber ? `Iscr. Albo n. ${tester.registrationNumber}` : ''}</p>
-                </div>
-            </div>
-        );
-    }
-    return null;
-  };
-
-  const feeValue = parseCurrency(t.testerFee);
-
   return (
-    <div id="document-preview-container" className="font-serif-print text-black leading-snug w-full max-w-[21cm] animate-in fade-in duration-300">
+    <div id="document-preview-container" className="font-serif-print text-black leading-snug w-full max-w-[21cm] animate-in fade-in">
         <div className="bg-white shadow-xl p-[1.8cm] min-h-[29.7cm] print-page relative flex flex-col mx-auto border border-slate-200">
             
-            {renderHeader()}
-
-            <div className="flex-1">
-                {isConvocazione && (
-                    <div className="text-[11.5pt] space-y-8">
-                        <div className="flex justify-end mb-12">
-                            <div className="w-2/3 text-left space-y-4">
-                                <div className="whitespace-pre-wrap font-bold uppercase leading-tight text-[11pt]">
-                                    {doc.actRecipientsBlock || "DESTINATARI NON INSERITI"}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="font-bold space-y-2">
-                            <div className="flex gap-2">
-                                <span className="underline shrink-0">Oggetto:</span>
-                                <div className="flex-1">
-                                    {(project.projectName || '').toUpperCase()} {project.cup ? `- CUP: ${project.cup}` : ''} {project.cig ? `- CIG: ${project.cig}` : ''}
-                                </div>
-                            </div>
-                            <p className="pt-4 text-[13pt] underline uppercase tracking-tight">Convocazione {doc.visitNumber || 1} visita di Collaudo</p>
-                        </div>
-
-                        <div className="text-justify leading-relaxed whitespace-pre-wrap text-[11.5pt] space-y-4">
-                            {doc.actBodyOverride || 
-                            `Sentite le parti, si comunica che la ${doc.visitNumber || 1} visita di collaudo dei lavori di cui in oggetto è fissata per il giorno ${formatShortDate(doc.date)}, ore ${doc.time || '--.--'}, con incontro presso il luogo dei lavori.
-\nDurante le operazioni di collaudo, la Ditta dovrà assicurare la disponibilità di personale ed attrezzature per le verifiche, i saggi e le prove necessarie, oltre a copia del progetto completo in formato cartaceo al fine di agevolare le opportune valutazioni sul posto.
-\nDurante il suddetto incontro lo scrivente estrarrà copia, altresì, di quanto eventualmente necessario alla presa d’atto delle attività già svolte.
-\nSi invitano le parti ad astenersi dal porre in essere qualsivoglia opera di carattere strutturale in mancanza della verifica e del preventivo assenso da parte dello scrivente collaudatore. 
-\nSi rammenta, altresì, l’obbligo per la D.L. di presenziare alle operazioni suddette.
-\nDistinti saluti.`}
-                        </div>
-
-                        <div className="mt-24 flex justify-end">
-                            <div className="text-center min-w-[380px]">
-                                <p className="font-bold uppercase text-[9pt] leading-tight mb-5 border-b border-black/20 pb-1">
-                                    IL COLLAUDATORE STATICO, TECNICO-AMMINISTRATIVO<br/>E FUNZIONALE DEGLI IMPIANTI
-                                </p>
-                                <p className="font-bold text-[14pt] uppercase tracking-wide">{tester.title || ''} {tester.name || ''}</p>
-                                <div className="mt-6 h-10 flex items-center justify-center opacity-40">
-                                    <span className="text-[10pt] italic font-sans">(Firma Digitale)</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {isNullaOsta && (
-                    <div className="text-[11pt] text-justify space-y-6 leading-relaxed">
-                        <p className="italic text-center mb-10 font-bold border-b border-slate-100 pb-4">{doc.nullaOstaLegalRefs || "D.Lgs. 165/2001 e s.m.i."}</p>
-                        <div className="space-y-6">
-                            <p>{doc.nullaOstaRequestBlock || "Si comunica quanto segue..."}</p>
-                            <div className="font-bold border-y-2 border-slate-900 py-6 text-center bg-slate-50 uppercase tracking-widest">
-                                SI AUTORIZZA
-                            </div>
-                            <div className="whitespace-pre-wrap">{doc.nullaOstaObservationsBlock || ""}</div>
-                            
-                            {feeValue > 0 && (
-                                <div className="pt-10 border-t border-slate-100 text-sm italic text-slate-600">
-                                    Compenso previsto: {formatCurrency(feeValue)} <br/>
-                                    (Soggetto a riduzione del 50% ai sensi di legge: {formatCurrency(feeValue / 2)})
-                                </div>
-                            )}
-                        </div>
-                        <div className="mt-20 flex justify-between items-end">
-                            <p className="font-bold">Data, {formatShortDate(doc.date)}</p>
-                            <div className="text-center min-w-[200px]">
-                                <p className="font-bold uppercase text-xs">IL DIRIGENTE RESPONSABILE</p>
-                                <div className="h-14"></div>
-                                <p className="italic text-[9pt] text-slate-400">(Firma Digitale)</p>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {isVerbale && (
-                    <div className="text-sm space-y-6">
-                         <div className="text-center font-bold mb-6">
-                            <h2 className="text-xl underline uppercase tracking-tight">VERBALE DI VISITA DI COLLAUDO N. {doc.visitNumber || '?'}</h2>
-                            <p className="text-sm mt-1">SVOLTA IN DATA {formatShortDate(doc.date)}</p>
-                        </div>
-                        <div className="border-[1.5pt] border-black p-5 text-xs font-bold space-y-2 uppercase leading-tight">
-                            <p className="text-[11pt]">OPERA: {project.projectName || '---'}</p>
-                            <p>COMMITTENTE: {project.entity || '---'}</p>
-                            <div className="flex gap-10">
-                                <span>CUP: {project.cup || '---'}</span>
-                                <span>CIG: {project.cig || '---'}</span>
-                            </div>
-                        </div>
-                        <div className="text-justify leading-relaxed">
-                            <h3 className="font-bold text-xs uppercase mb-1 border-b-[1.5pt] border-black pb-0.5">Premesse Storiche</h3>
-                            <div className="whitespace-pre-wrap text-[10.5pt] leading-snug">{doc.premis || "Nessuna premessa archiviata."}</div>
-                        </div>
-                        <div className="mt-32 grid grid-cols-2 gap-24">
-                            <div className="text-center border-t border-black pt-3"><p className="text-[10px] font-bold uppercase tracking-widest">L'Impresa Appaltatrice</p></div>
-                            <div className="text-center border-t border-black pt-3"><p className="text-[10px] font-bold uppercase tracking-widest">Il Collaudatore</p></div>
-                        </div>
-                    </div>
-                )}
+            <div className="text-center mb-8 border-b-2 border-slate-900 pb-4">
+                {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2cm', margin: '0 auto 10px' }} alt="Logo" />}
+                <h1 className="font-bold text-xl uppercase tracking-tighter">{project.entity || 'COMMITTENTE'}</h1>
+                {project.entityProvince && <p className="text-sm font-bold italic">Provincia di {project.entityProvince}</p>}
             </div>
 
-            {renderFooter()}
+            <div className="flex-1">
+                <div className="text-sm space-y-6">
+                    <div className="text-center font-bold mb-6">
+                        <h2 className="text-xl underline uppercase tracking-tight">VERBALE DI VISITA DI COLLAUDO N. {doc.visitNumber || '?'}</h2>
+                        <p className="text-sm mt-1">SVOLTA IN DATA {formatShortDate(doc.date)}</p>
+                    </div>
+
+                    <div className="border-[1.5pt] border-black p-5 text-xs font-bold space-y-2 uppercase leading-tight">
+                        <p className="text-[11pt]">OPERA: {project.projectName || '---'}</p>
+                        <p>COMMITTENTE: {project.entity || '---'}</p>
+                        <div className="flex gap-10">
+                            <span>CUP: {project.cup || '---'}</span>
+                            <span>CIG: {project.cig || '---'}</span>
+                        </div>
+                    </div>
+
+                    <div className="text-justify leading-relaxed">
+                        <h3 className="font-bold text-xs uppercase mb-1 border-b-[1.5pt] border-black pb-0.5">Narrazione e Premesse</h3>
+                        <div className="whitespace-pre-wrap text-[10.5pt] leading-snug font-serif">{doc.premis || "Testo non inserito."}</div>
+                    </div>
+
+                    <div className="mt-32 grid grid-cols-2 gap-24">
+                        <div className="text-center border-t border-black pt-3">
+                            <p className="text-[10px] font-bold uppercase tracking-widest">L'Impresa Appaltatrice</p>
+                        </div>
+                        <div className="text-center border-t border-black pt-3">
+                            <p className="text-[10px] font-bold uppercase tracking-widest">Il Collaudatore</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="mt-auto pt-4 border-t border-slate-300 text-[8pt] text-slate-500 italic text-center">
+                Documento generato con EdilApp - Gestione Collaudi
+            </div>
         </div>
     </div>
   );

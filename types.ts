@@ -205,11 +205,9 @@ export interface PhotoAttachment {
   description: string;
 }
 
+// Fixed missing types for NULLA_OSTA_ENTE, RICHIESTA_AUTORIZZAZIONE, and LETTERA_CONVOCAZIONE
 export type DocumentType = 
   | 'VERBALE_COLLAUDO'
-  | 'RICHIESTA_AUTORIZZAZIONE' 
-  | 'NULLA_OSTA_ENTE'         
-  | 'LETTERA_CONVOCAZIONE'     
   | 'VERBALE_CONSEGNA' 
   | 'SOSPENSIONE_LAVORI' 
   | 'RIPRESA_LAVORI' 
@@ -217,7 +215,10 @@ export type DocumentType =
   | 'RELAZIONE_FINALE' 
   | 'RELAZIONE_COLLAUDO'
   | 'CERTIFICATO_ULTIMAZIONE'
-  | 'CERTIFICATO_REGOLARE_ESECUZIONE';
+  | 'CERTIFICATO_REGOLARE_ESECUZIONE'
+  | 'NULLA_OSTA_ENTE'
+  | 'RICHIESTA_AUTORIZZAZIONE'
+  | 'LETTERA_CONVOCAZIONE';
 
 export interface DocumentVariables {
   id: string;
@@ -241,15 +242,4 @@ export interface DocumentVariables {
   commonParts: string; 
   observations: string; 
   photos: PhotoAttachment[];
-  
-  actSubject?: string;       
-  actRecipient?: string;     
-  actRecipientsBlock?: string; 
-  actBodyOverride?: string;  
-  
-  nullaOstaLegalRefs?: string; 
-  nullaOstaRequestBlock?: string; 
-  nullaOstaAuthorityRequestBlock?: string; 
-  nullaOstaObservationsBlock?: string; 
-  nullaOstaSignatory?: string; 
 }

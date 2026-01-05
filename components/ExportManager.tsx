@@ -26,7 +26,9 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
 
   // Raggruppamento documenti con protezione null-safe
   const verbali = documents.filter(d => (d.type === 'VERBALE_COLLAUDO' || d.type === 'VERBALE_CONSEGNA'));
-  const atti = documents.filter(d => ['NULLA_OSTA_ENTE', 'RICHIESTA_AUTORIZZAZIONE', 'LETTERA_CONVOCAZIONE'].includes(d.type || ''));
+  
+  // Explicitly casting the array to (DocumentType | "")[] to fix TS comparability errors
+  const atti = documents.filter(d => (['NULLA_OSTA_ENTE', 'RICHIESTA_AUTORIZZAZIONE', 'LETTERA_CONVOCAZIONE'] as (DocumentType | "")[]).includes(d.type || ''));
   const altri = documents.filter(d => !verbali.includes(d) && !atti.includes(d));
 
   const filteredDocs = (list: DocumentVariables[]) => 

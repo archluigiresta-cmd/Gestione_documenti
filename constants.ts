@@ -156,7 +156,5 @@ export const createInitialDocument = (projectId: string): DocumentVariables => (
   testerInvitations: '', 
   commonParts: '', 
   observations: '',
-  photos: [],
-  actRecipientsBlock: '', // Inizializzato per evitare undefined
-  actBodyOverride: ''    // Inizializzato per evitare undefined
+  photos: []
 });
