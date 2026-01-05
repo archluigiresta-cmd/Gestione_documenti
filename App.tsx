@@ -23,11 +23,18 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    db.ensureAdminExists().then(() => {
-      const saved = localStorage.getItem('loggedUser');
-      if (saved) setCurrentUser(JSON.parse(saved));
-      setLoading(false);
-    });
+    const init = async () => {
+      try {
+        await db.ensureAdminExists();
+        const saved = localStorage.getItem('loggedUser');
+        if (saved) setCurrentUser(JSON.parse(saved));
+      } catch (err) {
+        console.error("Initialization failed:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    init();
   }, []);
 
   useEffect(() => {
@@ -36,15 +43,24 @@ const App: React.FC = () => {
 
   const loadProjects = async () => {
     if (!currentUser) return;
-    const list = await db.getProjectsForUser(currentUser.id, currentUser.email);
-    setProjects(list.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)));
+    try {
+      const list = await db.getProjectsForUser(currentUser.id, currentUser.email);
+      setProjects(list.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)));
+    } catch (e) {
+      console.error("Load projects failed:", e);
+    }
   };
 
   const handleSelectProject = async (p: ProjectConstants) => {
     setCurrentProject(p);
-    const docs = await db.getDocumentsByProject(p.id);
-    setDocuments(docs);
-    if (docs.length > 0) setCurrentDocId(docs[0].id);
+    try {
+      const docs = await db.getDocumentsByProject(p.id);
+      setDocuments(docs);
+      if (docs.length > 0) setCurrentDocId(docs[0].id);
+      else setCurrentDocId('');
+    } catch (e) {
+      console.error(e);
+    }
     setActiveTab('general');
   };
 
@@ -86,7 +102,12 @@ const App: React.FC = () => {
     await db.saveDocument(doc);
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center">Inizializzazione...</div>;
+  if (loading) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-slate-500 font-medium">Inizializzazione in corso...</p>
+    </div>
+  );
 
   if (!currentUser) return <AuthScreen onLogin={(u) => { setCurrentUser(u); localStorage.setItem('loggedUser', JSON.stringify(u)); }} />;
 
@@ -137,8 +158,8 @@ const App: React.FC = () => {
       />
       <main className="flex-1 ml-64 p-8 overflow-y-auto">
         {activeTab === 'general' && (
-          <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
-            <h2 className="text-2xl font-bold mb-6">Dati Generali</h2>
+          <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200 animate-in fade-in">
+            <h2 className="text-2xl font-bold mb-6">Dati Generali Appalto</h2>
             <div className="space-y-6">
               <div><label className="text-xs font-bold text-slate-500 uppercase">Committente</label><input type="text" className="w-full p-3 border rounded mt-1" value={currentProject.entity} onChange={e => handleUpdateProjectField('entity', e.target.value)} /></div>
               <div><label className="text-xs font-bold text-slate-500 uppercase">Oggetto (Usa INVIO per le righe)</label><textarea className="w-full p-3 border rounded mt-1 h-32" value={currentProject.projectName} onChange={e => handleUpdateProjectField('projectName', e.target.value)} /></div>
@@ -151,11 +172,11 @@ const App: React.FC = () => {
           </div>
         )}
         {activeTab === 'design' && <ProjectForm data={currentProject} readOnly={false} handleChange={handleUpdateProjectField} subTab="design" />}
-        {activeTab === 'subjects' && <ProjectForm data={currentProject} readOnly={false} handleChange={handleUpdateProjectField} subTab="tester" />}
+        {activeTab === 'subjects' && <ProjectForm data={currentProject} readOnly={false} handleChange={handleUpdateProjectField} subTab="subjects" />}
         {activeTab === 'tender' && <ProjectForm data={currentProject} readOnly={false} handleChange={handleUpdateProjectField} subTab="tender" />}
         {activeTab === 'contractor' && <ProjectForm data={currentProject} readOnly={false} handleChange={handleUpdateProjectField} subTab="contractor" />}
-        {activeTab === 'execution' && <ExecutionManager project={currentProject} onUpdateProject={setCurrentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={() => createNewDocument('VERBALE_COLLAUDO')} onDeleteDocument={async id => { await db.deleteDocument(id); setDocuments(prev => prev.filter(d => d.id !== id)); }} />}
-        {activeTab === 'testing' && <TestingManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={createNewDocument} onDeleteDocument={async id => { await db.deleteDocument(id); setDocuments(prev => prev.filter(d => d.id !== id)); }} onUpdateProject={setCurrentProject} />}
+        {activeTab === 'execution' && <ExecutionManager project={currentProject} onUpdateProject={setCurrentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={() => createNewDocument('VERBALE_COLLAUDO')} onDeleteDocument={async id => { if(confirm("Eliminare verbale?")) { await db.deleteDocument(id); setDocuments(prev => prev.filter(d => d.id !== id)); } }} />}
+        {activeTab === 'testing' && <TestingManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={createNewDocument} onDeleteDocument={async id => { if(confirm("Eliminare verbale collaudo?")) { await db.deleteDocument(id); setDocuments(prev => prev.filter(d => d.id !== id)); } }} onUpdateProject={setCurrentProject} />}
         {activeTab === 'export' && <ExportManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} />}
       </main>
     </div>

@@ -17,8 +17,8 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-// Added constructor to fix 'props' property access error in some TypeScript environments
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+// Fixed 'props' and 'state' property access by ensuring inheritance from React.Component
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
