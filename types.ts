@@ -1,23 +1,25 @@
 
 export interface ContactInfo {
-  name: string; // Nome e Cognome o Ragione Sociale
-  title?: string; // Arch., Ing., Geom.
-  role?: string; // Ruolo specifico o Categoria Lavori (per subappalti)
+  name: string; 
+  title?: string; 
+  role?: string; 
   address?: string;
   email?: string;
   pec?: string;
   phone?: string;
-  vat?: string; // P.IVA / C.F.
-  repName?: string; // Rappresentante Legale Name
-  repRole?: string; // Rappresentante Legale Role
-  repTitle?: string; // NEW: Titolo Rappresentante (es. Sig., Dott.)
-  professionalOrder?: string; // NEW: Albo/Ordine di appartenenza
-  registrationNumber?: string; // NEW: Numero iscrizione
+  vat?: string; 
+  repName?: string; 
+  repRole?: string; 
+  repTitle?: string; 
+  professionalOrder?: string; 
+  registrationNumber?: string; 
+  colleagueEntityName?: string; // Nome Ente di appartenenza
+  colleagueEntityLogo?: string; // Logo Ente di appartenenza (Base64)
 }
 
 export interface AppointmentData {
-  type: string; // Es. Determina, Delibera, Lettera incarico
-  number: string;
+  type: string; 
+  number: string; 
   date: string;
 }
 
@@ -27,30 +29,30 @@ export interface SubjectProfile {
 }
 
 export interface DesignerProfile extends SubjectProfile {
-  designLevels: string[]; // NEW: ['PFTE', 'Esecutivo', ...]
-  roles: string[]; // NEW: ['Architettonico', 'Strutturale', ...] (Multiselect)
-  isLegalEntity: boolean; // NEW: True if RTP or Engineering Society
-  operatingDesigners: ContactInfo[]; // NEW: List of actual people doing the work if Entity
+  designLevels: string[]; 
+  roles: string[]; 
+  isLegalEntity: boolean; 
+  operatingDesigners: ContactInfo[]; 
 }
 
 export type CompanyType = 'single' | 'ati' | 'consortium';
 
 export interface ContractorStructure {
   type: CompanyType;
-  mainCompany: ContactInfo; // Impresa Singola, Capogruppo ATI, o Consorzio
-  mandants: ContactInfo[]; // Solo per ATI: Imprese Mandanti
-  executors: ContactInfo[]; // Solo per Consorzi: Imprese Esecutrici
-  subcontractors: ContactInfo[]; // Subappaltatori con anagrafica completa
+  mainCompany: ContactInfo; 
+  mandants: ContactInfo[]; 
+  executors: ContactInfo[]; 
+  subcontractors: ContactInfo[]; 
 }
 
 export interface DesignPhaseData {
-  deliveryProtocol: string; // NEW: Protocollo Consegna
+  deliveryProtocol: string; 
   deliveryDate: string;
-  economicFramework: string; // Quadro Economico
-  approvalType: string; // Tipo atto approvazione
+  economicFramework: string; 
+  approvalType: string; 
   approvalNumber: string;
   approvalDate: string;
-  localFolderLink: string; // Path cartella locale (NEW)
+  localFolderLink: string; 
 }
 
 export type PermissionRole = 'viewer' | 'editor' | 'admin';
@@ -61,14 +63,14 @@ export interface User {
   email: string;
   password: string; 
   name: string;
-  isSystemAdmin?: boolean; // Super Admin flag
-  status: UserStatus; // Approval status
+  isSystemAdmin?: boolean; 
+  status: UserStatus; 
 }
 
 export interface ProjectPermission {
-  id: string; // unique key
+  id: string; 
   projectId: string;
-  userEmail: string; // using email to link even if user doesn't exist yet
+  userEmail: string; 
   role: PermissionRole;
 }
 
@@ -87,10 +89,10 @@ export interface SALData {
     date: string;
     periodFrom: string;
     periodTo: string;
-    netAmount: string; // Importo Lavori
+    netAmount: string; 
     paymentCertificateDate: string;
-    paymentCertificateAmount: string; // Importo Certificato Pagamento
-    localFolderLink: string; // Path cartella locale
+    paymentCertificateAmount: string; 
+    localFolderLink: string; 
     notes: string;
 }
 
@@ -98,23 +100,23 @@ export interface TesterVisitSummary {
     id: string;
     startDate: string;
     endDate: string;
-    works: string[]; // Elenco sintetico lavorazioni
+    works: string[]; 
     notes: string;
 }
 
 export interface ProjectConstants {
   id: string; 
-  ownerId: string; // ID dell'utente proprietario
+  ownerId: string; 
   lastModified: number; 
-  displayOrder: number; // NEW: Custom sort order
-  entity: string; // Ente Appaltante
-  entityProvince?: string; // Provincia dell'Ente
-  headerLogo?: string; // NEW: Logo Intestazione (Base64)
+  displayOrder: number; 
+  entity: string; 
+  entityProvince?: string; 
+  headerLogo?: string; 
   projectName: string;
   location: string;
   cup: string; 
   cig?: string; 
-  generalNotes: string; // Note generali progetto (NEW)
+  generalNotes: string; 
   
   contract: {
     repNumber: string;
@@ -126,34 +128,34 @@ export interface ProjectConstants {
     totalAmount: string;
     securityCosts: string;
     durationDays: number;
-    deadline: string; // Scadenza calcolata
+    deadline: string; 
   };
 
   designPhase: {
-    docfap: DesignPhaseData; // Documento fattibilità alternative
-    dip: DesignPhaseData;    // Documento indirizzo progettazione
-    pfte: DesignPhaseData;   // Progetto fattibilità tecnico economica
-    executive: DesignPhaseData; // Progetto Esecutivo
+    docfap: DesignPhaseData; 
+    dip: DesignPhaseData;    
+    pfte: DesignPhaseData;   
+    executive: DesignPhaseData; 
   };
 
   subjects: {
-    rup: SubjectProfile; // Resp. Unico Progetto
-    designers: DesignerProfile[]; // Progettisti multipli
-    csp: DesignerProfile; // Coord. Sicurezza Progettazione
-    verifier: DesignerProfile; // Verificatore
-    dl: DesignerProfile; // Direttore Lavori
-    dlOffice: SubjectProfile[]; // Ufficio Direzione Lavori
-    cse: DesignerProfile; // Coord. Sicurezza Esecuzione
-    tester: SubjectProfile; // Collaudatore
+    rup: SubjectProfile; 
+    designers: DesignerProfile[]; 
+    csp: DesignerProfile; 
+    verifier: DesignerProfile; 
+    dl: DesignerProfile; 
+    dlOffice: SubjectProfile[]; 
+    cse: DesignerProfile; 
+    tester: SubjectProfile; 
     testerAppointment: { 
         nominationType: string;
-        nominationAuthority: string; // NEW: Es. "Dirigente del Settore Tecnico"
+        nominationAuthority: string; 
         nominationNumber: string;
         nominationDate: string;
-        contractRepNumber: string; // NEW: Rep. Convenzione
-        contractDate: string; // NEW
-        contractProtocol: string; // NEW: Prot. n.
-        testerFee: string; // NEW: Importo incarico collaudo
+        contractRepNumber: string; 
+        contractDate: string; 
+        contractProtocol: string; 
+        testerFee: string; 
         isStatic: boolean;
         isAdmin: boolean;
         isFunctional: boolean;
@@ -161,21 +163,21 @@ export interface ProjectConstants {
   };
 
   tenderPhase: {
-    verificationMinutesDate: string; // Verbale Verifica Progetto
-    validationMinutesDate: string; // Verbale Validazione Progetto
+    verificationMinutesDate: string; 
+    validationMinutesDate: string; 
   };
 
   contractor: ContractorStructure;
 
   executionPhase: {
-    deliveryDate: string; // Consegna Lavori
+    deliveryDate: string; 
     deliveryType: 'ordinary' | 'anticipated';
     suspensions: { id: string; date: string; reason: string; minutesNumber?: string }[];
     resumptions: { id: string; date: string; minutesNumber?: string }[];
     sals: SALData[]; 
-    variants: { id: string; date: string; approvalAct: string }[]; // Varianti
-    testerVisitSummaries: TesterVisitSummary[]; // NEW: Riepilogo lavori per visite collaudo
-    completionDate: string; // Certificato Ultimazione
+    variants: { id: string; date: string; approvalAct: string }[]; 
+    testerVisitSummaries: TesterVisitSummary[]; 
+    completionDate: string; 
     handoverDocs: {
         projectApprovalType: string;
         projectApprovalNumber: string;
@@ -205,9 +207,9 @@ export interface PhotoAttachment {
 
 export type DocumentType = 
   | 'VERBALE_COLLAUDO'
-  | 'RICHIESTA_AUTORIZZAZIONE' // NEW: Richiesta Autorizzazione Ente
-  | 'NULLA_OSTA_ENTE'         // NEW: Nulla Osta Ente
-  | 'LETTERA_CONVOCAZIONE'     // NEW: Lettera Convocazione Visita
+  | 'RICHIESTA_AUTORIZZAZIONE' 
+  | 'NULLA_OSTA_ENTE'         
+  | 'LETTERA_CONVOCAZIONE'     
   | 'VERBALE_CONSEGNA' 
   | 'SOSPENSIONE_LAVORI' 
   | 'RIPRESA_LAVORI' 
@@ -220,41 +222,33 @@ export type DocumentType =
 export interface DocumentVariables {
   id: string;
   projectId: string; 
+  type: DocumentType; 
   createdAt: number; 
-  visitNumber: number; // Numero progressivo verbale
+  visitNumber: number; 
   date: string;
   time: string;
-  convocationMethod: string; // New: PEC, Email, ecc.
-  convocationDate: string;   // New: Data invio
-  convocationDetails: string; // Legacy/Fallback text
+  convocationMethod: string; 
+  convocationDate: string;   
+  convocationDetails: string; 
   attendees: string; 
-  premis: string; // Premesse
-  worksExecuted: string[]; // Lavori (Giornale Lavori)
-  worksInProgress: string; // Lavorazioni in corso al momento della visita
-  upcomingWorks: string; // NEW: Prossime attività previste
-  worksIntroText: string; // NEW: Frase introduttiva modificabile
-  testerRequests: string; // Richieste del Collaudatore
-  testerInvitations: string; // Inviti del Collaudatore
-  commonParts: string; // Parti Comuni (Chiusura)
-  observations: string; // Valutazioni collaudatore
+  premis: string; 
+  worksExecuted: string[]; 
+  worksInProgress: string; 
+  upcomingWorks: string; 
+  worksIntroText: string; 
+  testerRequests: string; 
+  testerInvitations: string; 
+  commonParts: string; 
+  observations: string; 
   photos: PhotoAttachment[];
   
-  // Specific fields for Letters/Acts
-  actSubject?: string;       // Oggetto specifico della lettera
-  actRecipient?: string;     // Destinatario specifico (se diverso dall'Ente)
-  actBodyOverride?: string;  // Testo custom per atti amministrativi
+  actSubject?: string;       
+  actRecipient?: string;     
+  actBodyOverride?: string;  
   
-  // New fields for specific "Nulla Osta" according to PDF template
-  nullaOstaLegalRefs?: string; // Regolamenti e Delibere
-  nullaOstaRequestBlock?: string; // "Vista la richiesta del Commissario..."
-  nullaOstaAuthorityRequestBlock?: string; // "Vista la richiesta del Dirigente..."
-  nullaOstaObservationsBlock?: string; // "Accertato che... Valutata altresì..."
-  nullaOstaSignatory?: string; // Nome e ruolo di chi firma (es. Il Segretario Generale)
-}
-
-export interface AppState {
-  user: User | null; 
-  project: ProjectConstants;
-  documents: DocumentVariables[];
-  currentDocumentId: string | null;
+  nullaOstaLegalRefs?: string; 
+  nullaOstaRequestBlock?: string; 
+  nullaOstaAuthorityRequestBlock?: string; 
+  nullaOstaObservationsBlock?: string; 
+  nullaOstaSignatory?: string; 
 }

@@ -137,9 +137,11 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
   }
 });
 
+// Fix: added missing required property 'type' to satisfy the DocumentVariables interface return type
 export const createInitialDocument = (projectId: string): DocumentVariables => ({
   id: crypto.randomUUID(),
   projectId,
+  type: 'VERBALE_COLLAUDO', // Default required type
   createdAt: Date.now(),
   visitNumber: 1,
   date: new Date().toISOString().split('T')[0],

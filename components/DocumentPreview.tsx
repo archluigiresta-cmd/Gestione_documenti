@@ -1,487 +1,200 @@
 
 import React from 'react';
-import { ProjectConstants, DocumentVariables, DocumentType, DesignerProfile } from '../types';
+import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
 
 interface DocumentPreviewProps {
-  project: ProjectConstants;
-  doc: DocumentVariables;
-  type: DocumentType;
-  allDocuments?: DocumentVariables[]; 
+    project: ProjectConstants;
+    doc: DocumentVariables;
+    type: DocumentType;
+    allDocuments: DocumentVariables[];
 }
 
-export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, type, allDocuments = [] }) => {
-  const formatShortDate = (dateStr: string) => {
-    if (!dateStr) return '...';
-    try {
-        return new Date(dateStr).toLocaleDateString('it-IT');
-    } catch { return dateStr; }
-  };
+const formatShortDate = (date: string) => {
+    if (!date) return '...';
+    return new Date(date).toLocaleDateString('it-IT');
+};
 
-  const formatCurrency = (val: string | number) => {
-      if (!val) return '€ 0,00';
-      const num = typeof val === 'string' ? parseFloat(val.replace(',', '.').replace(/\s/g, '')) : val;
-      if (isNaN(num)) return val.toString();
-      return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(num);
-  };
+const formatNameWithTitle = (contact: any) => {
+    return `${contact.title || ''} ${contact.name}`.trim();
+};
 
-  const verboseDate = (() => {
-      try {
-          const date = new Date(doc.date);
-          return {
-              day: date.getDate().toString().padStart(2, '0'),
-              month: date.toLocaleDateString('it-IT', { month: 'long' }),
-              year: date.getFullYear().toString()
-          };
-      } catch { return { day: '...', month: '...', year: '...' }; }
-  })();
-  
-  const assignmentTypes = [];
-  if (project.subjects.testerAppointment.isStatic) assignmentTypes.push("statico");
-  if (project.subjects.testerAppointment.isAdmin) assignmentTypes.push("tecnico-amministrativo");
-  if (project.subjects.testerAppointment.isFunctional) assignmentTypes.push("funzionale degli impianti");
-  const assignmentString = assignmentTypes.join(", ");
-  const assignmentStringClean = assignmentTypes.length > 1 
-    ? assignmentTypes.slice(0, -1).join(", ") + " e " + assignmentTypes.slice(-1) 
-    : assignmentString;
-  
-  const assignmentStringTitle = assignmentStringClean ? ` ${assignmentStringClean.toUpperCase()}` : "";
+const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(amount);
+};
 
-  const getDocumentTitle = () => {
-      switch(type) {
-          case 'VERBALE_COLLAUDO': return `VERBALE DI VISITA DI COLLAUDO${assignmentStringTitle} IN CORSO D'OPERA N. ${doc.visitNumber}`;
-          case 'RICHIESTA_AUTORIZZAZIONE': return 'RICHIESTA AUTORIZZAZIONE ALL’ESPLETAMENTO DELL’INCARICO DI COLLAUDO';
-          case 'NULLA_OSTA_ENTE': return 'CONFERIMENTO INCARICHI ESTERNI RETRIBUITI A PERSONALE DIPENDENTE';
-          case 'LETTERA_CONVOCAZIONE': return 'CONVOCAZIONE VISITA DI COLLAUDO';
-          case 'VERBALE_CONSEGNA': return 'VERBALE DI CONSEGNA DEI LAVORI';
-          case 'SOSPENSIONE_LAVORI': return 'VERBALE DI SOSPENSIONE LAVORI';
-          case 'RIPRESA_LAVORI': return 'VERBALE DI RIPRESA LAVORI';
-          case 'SAL': return `STATO DI AVANZAMENTO LAVORI N. ${doc.visitNumber}`;
-          case 'CERTIFICATO_REGOLARE_ESECUZIONE': return 'CERTIFICATO DI REGOLARE ESECUZIONE';
-          case 'RELAZIONE_FINALE': return 'RELAZIONE SUL CONTO FINALE';
-          case 'RELAZIONE_COLLAUDO': return 'RELAZIONE DI COLLAUDO';
-          case 'CERTIFICATO_ULTIMAZIONE': return 'CERTIFICATO DI ULTIMAZIONE LAVORI';
-          default: return (type as string).replace(/_/g, ' ');
-      }
-  };
-
-  const isCollaudo = type === 'VERBALE_COLLAUDO' || type === 'RELAZIONE_COLLAUDO';
-  const isLetter = type === 'RICHIESTA_AUTORIZZAZIONE' || type === 'LETTERA_CONVOCAZIONE';
+export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, type, allDocuments }) => {
   const isNullaOsta = type === 'NULLA_OSTA_ENTE';
+  const isConvocazione = type === 'LETTERA_CONVOCAZIONE';
+  const isVerbale = type === 'VERBALE_COLLAUDO';
 
-  const formatNameWithTitle = (contact: { title?: string, name: string }) => {
-      if (!contact || !contact.name) return '...';
-      const titlePrefix = contact.title ? `${contact.title} ` : '';
-      return `${titlePrefix}${contact.name}`;
-  };
+  const tester = project.subjects.tester.contact;
+  const t = project.subjects.testerAppointment;
 
-  const formatProfessionalDetails = (contact: any) => {
-      let text = formatNameWithTitle(contact);
-      if (contact.professionalOrder) {
-          text += `, iscritto all'Albo ${contact.professionalOrder}`;
-          if (contact.registrationNumber) {
-              text += ` al n. ${contact.registrationNumber}`;
-          }
-      }
-      return text;
-  };
-
-  const renderSubjectString = (profile: DesignerProfile | any) => {
-      if (!profile || !profile.contact) return '...';
-      if (profile.isLegalEntity) {
-          const companyName = profile.contact.name;
-          if (profile.operatingDesigners && profile.operatingDesigners.length > 0) {
-              return profile.operatingDesigners.map((op: any) => {
-                  return `${formatProfessionalDetails(op)} (per conto di ${companyName})`;
-              }).join('; ');
-          }
-          if (profile.contact.repName) {
-               const repTitle = profile.contact.repTitle ? `${profile.contact.repTitle} ` : '';
-               return `${repTitle}${profile.contact.repName} (Leg. Rep. di ${companyName})`;
-          }
-          let text = `${companyName}`;
-          if (profile.contact.vat) text += ` (P.IVA ${profile.contact.vat})`;
-          return text;
-      }
-      return formatProfessionalDetails(profile.contact);
-  };
-
-  const renderSignatureString = (profile: DesignerProfile | any) => {
-      if (!profile || !profile.contact) return '...';
-      if (profile.isLegalEntity) {
-          const companyName = profile.contact.name;
-          if (profile.operatingDesigners && profile.operatingDesigners.length > 0) {
-              return profile.operatingDesigners.map((op: any) => 
-                  `${formatNameWithTitle(op)} (per ${companyName})`
-              ).join(' / ');
-          }
-          if (profile.contact.repName) {
-               const repTitle = profile.contact.repTitle ? `${profile.contact.repTitle} ` : '';
-               return `${repTitle}${profile.contact.repName} (${companyName})`;
-          }
-          return companyName;
-      }
-      return formatNameWithTitle(profile.contact);
-  };
-
-  // --- RENDERING NULLA OSTA (TEMPLATE PDF) ---
-  if (isNullaOsta) {
-      const tester = project.subjects.tester.contact;
-      const t = project.subjects.testerAppointment;
-      const feeNum = parseFloat(t.testerFee?.replace(',', '.').replace(/\s/g, '') || '0');
-      const reducedFee = feeNum / 2;
-
-      const legalRefs = doc.nullaOstaLegalRefs || "Regolamento per lo svolgimento degli incarichi esterni al personale dipendente e dirigente approvato con Deliberazione della Giunta Comunale N. 210 del 04/06/2019";
-      
-      const requestBlock = doc.nullaOstaRequestBlock || `Vista la richiesta del Commissario straordinario per la realizzazione degli interventi necessari allo svolgimento dei XX Giochi del Mediterraneo di Taranto 2026, relativa all’“AFFIDAMENTO DELL'INCARICO DI COLLAUDO STATICO, TECNICO-AMMINISTRATIVO E FUNZIONALE DEGLI IMPIANTI DELL’OPERA DENOMINATA “${project.projectName}” - CUP: ${project.cup}.”, giusta nota del Commissario Straordinario del ${formatShortDate(t.nominationDate)}, previo rilascio del nulla osta allo svolgimento dell’incarico di collaborazione esterna, ai sensi dell’art. 53 del D.Lgs. 165/2011;`;
-
-      const authorityBlock = doc.nullaOstaAuthorityRequestBlock || `Vista la richiesta del ${project.subjects.tester.contact.role || 'Dipendente'} ${formatNameWithTitle(tester)}, di autorizzazione, ai sensi dell’art. 53 comma 7 del D.Lgs n. 165/2001, allo svolgimento dell’incarico sopra specificato, avente anche il carattere della straordinarietà, assicurando lo svolgimento di tutte le attività di istituto e senza che il richiamato incarico possa influire su tale attività;`;
-
-      const observationsBlock = doc.nullaOstaObservationsBlock || `Accertato che, in relazione alla suddetta richiesta, non sussistono cause di incompatibilità di diritto e di fatto o situazioni, anche potenziali, di conflitto di interesse con le attività di istituto svolte dalla citata dipendente;\nValutata, altresì, la non prevalenza della prestazione richiesta sull’impegno derivante dal rapporto di lavoro (Corte dei Conti, Sez. Giurisdizionale Lombardia, sentenza n. 54 depositata in data 16.04.2015 e da ultima, Corte dei Conti, Sez. Giurisdizionale per la Regione Veneto, sentenza 13 settembre 2017, n. 2017) e la materiale compatibilità dello specifico incarico con i carichi di lavoro del dipendente;\nInformato il Responsabile per la prevenzione della corruzione;\nSentito il Dirigente del Servizio Personale`;
-
+  // --- LOGICA INTESTAZIONE ---
+  const renderHeader = () => {
+    if (isNullaOsta) {
+      // Nulla Osta: Logo Ente di Appartenenza
       return (
-        <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
-            <div className="bg-white shadow-lg p-[2.5cm] min-h-[29.7cm] print-page relative flex flex-col">
-                
-                {/* INTESTAZIONE */}
-                <div className="text-center mb-10">
-                    {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2.2cm', margin: '0 auto 10px' }} alt="Logo" />}
-                    <h1 className="font-bold text-lg uppercase tracking-wider">{project.entity}</h1>
-                    {project.entityProvince && <p className="text-sm font-bold italic">Provincia di {project.entityProvince}</p>}
-                </div>
-
-                {/* TITOLO ATTO */}
-                <div className="text-center mb-6">
-                    <div className="inline-block bg-yellow-50 p-2 border border-dashed border-yellow-200 print:bg-transparent print:border-none">
-                        <h2 className="font-bold text-base underline uppercase">CONFERIMENTO INCARICHI ESTERNI RETRIBUITI A PERSONALE DIPENDENTE</h2>
-                        <p className="font-bold text-sm">(Art. 53 D.Lgs. 165/2001)</p>
-                    </div>
-                </div>
-
-                {/* CORPO NULLA OSTA */}
-                <div className="text-sm text-justify space-y-4 leading-relaxed">
-                    <p className="italic text-center mb-4">{legalRefs}</p>
-                    
-                    <p>{requestBlock}</p>
-                    <p>{authorityBlock}</p>
-
-                    <p>
-                        <span className="font-bold">Rilevato che</span> l’incarico ha carattere saltuario, con decorrenza dal {formatShortDate(t.nominationDate)} e fino al {formatShortDate(project.executionPhase.completionDate)}, per un compenso omnicomprensivo di <span className="font-bold">{formatCurrency(feeNum)}</span> (Il compenso spettante al dipendente pubblico è ridotto del 50%, quindi ad <span className="font-bold">{formatCurrency(reducedFee)}</span>, come previsto dall’art.61 c.9 del decreto legge 25/06/2008 n.112, convertito con modifiche dalla legge 6/08/2008 n.133).
-                    </p>
-
-                    <div className="whitespace-pre-wrap">{observationsBlock}</div>
-
-                    <div className="text-center py-6">
-                        <h3 className="font-bold text-lg tracking-[0.2em] border-y border-black inline-block px-10 py-1">SI AUTORIZZA</h3>
-                    </div>
-
-                    <p>
-                        Il {formatNameWithTitle(tester)}, allo svolgimento dell’incarico esterno, del Commissario straordinario per la realizzazione degli interventi necessari allo svolgimento dei XX Giochi del Mediterraneo di Taranto 2026, per l’individuazione di un collaudatore {assignmentStringClean} nell’ambito dell’intervento: <span className="font-bold">“{project.projectName}” - CUP: {project.cup}</span>, al di fuori del normale orario di servizio e, comunque, senza pregiudizio per le attività dell’Ente.
-                    </p>
-                    
-                    <p>
-                        Resta ferma l’osservanza da parte del soggetto che eroga i compensi previsti di darne comunicazione a questa Amministrazione secondo i termini e le modalità di cui all’art. 53, comma 11, del D.Lg. 30 marzo 2001, n. 165 e ss.mm.ii.
-                    </p>
-                </div>
-
-                {/* DATA E FIRMA */}
-                <div className="mt-16 flex justify-between items-end text-sm">
-                    <div>
-                        <p>Dalla Residenza Municipale, {formatShortDate(doc.date)}</p>
-                    </div>
-                    <div className="text-center w-64">
-                        <p className="font-bold uppercase mb-1">IL SEGRETARIO GENERALE</p>
-                        <p className="italic">{doc.nullaOstaSignatory || "Dott. Marco LESTO"}</p>
-                        <div className="mt-4 border-b border-black w-full opacity-30"></div>
-                    </div>
-                </div>
-
-            </div>
+        <div className="text-center mb-10">
+          {tester.colleagueEntityLogo && <img src={tester.colleagueEntityLogo} style={{ maxHeight: '2.5cm', margin: '0 auto 10px' }} alt="Logo Ente Appartenenza" />}
+          <h1 className="font-bold text-lg uppercase tracking-wider">{tester.colleagueEntityName || "ENTE DI APPARTENENZA"}</h1>
+          <p className="text-xs font-bold italic">Rilascio Nulla Osta ai sensi dell'Art. 53 D.Lgs. 165/2001</p>
         </div>
       );
-  }
+    }
 
-  // --- LOGICA SPECIFICA LETTERE (RICHIESTA E CONVOCAZIONE) ---
-  const getLetterSubject = () => {
-      if (doc.actSubject) return doc.actSubject;
-      return `Lavori di "${project.projectName}" - CUP: ${project.cup}. Incarico di Collaudo ${assignmentStringClean}.`;
-  };
-
-  const renderLetterContent = () => {
-      const tester = project.subjects.tester.contact;
-      const t = project.subjects.testerAppointment;
-      let baseText = "";
-      if (type === 'RICHIESTA_AUTORIZZAZIONE') {
-          baseText = `Il sottoscritto ${formatProfessionalDetails(tester)}, in riferimento all’incarico di collaudo ${assignmentStringClean} in oggetto, conferito con ${t.nominationType} n. ${t.nominationNumber} del ${formatShortDate(t.nominationDate)} per un importo di ${formatCurrency(t.testerFee || 0)}, richiede formale autorizzazione all'espletamento delle attività di collaudo in corso d'opera ai fini dell'acquisizione del Nulla Osta del proprio Ordine Professionale/Ente di appartenenza, ove necessario.`;
-      } else if (type === 'LETTERA_CONVOCAZIONE') {
-          baseText = `Con la presente si comunica alle SS.LL. che lo scrivente Collaudatore, in data ${formatShortDate(doc.date)} alle ore ${doc.time}, terrà presso il cantiere dei lavori in oggetto la ${doc.visitNumber}ª visita di collaudo in corso d'opera. Si pregano le SS.LL. di voler partecipare muniti di tutta la documentazione tecnica e contabile necessaria al corretto espletamento del sopralluogo.`;
-      }
+    if (isConvocazione) {
+      // Convocazione: Intestazione Professionale (Senza Logo Ente)
       return (
-          <div className="text-justify space-y-4">
-              <p className="font-bold">OGGETTO: <span className="uppercase">{getLetterSubject()}</span></p>
-              <p className="mt-8">{baseText}</p>
-              {doc.actBodyOverride && <div className="mt-6 whitespace-pre-wrap italic">{doc.actBodyOverride}</div>}
-              <p className="mt-8">Restando in attesa di cortese riscontro, si porgono distinti saluti.</p>
-          </div>
+        <div className="mb-10 border-b border-slate-200 pb-4">
+          <p className="font-bold text-lg uppercase tracking-tight">{tester.title || 'Arch.'} {tester.name}</p>
+          <p className="text-xs text-slate-500 uppercase font-medium">Incarico di Collaudo {t.isStatic ? 'Statico, ' : ''} Tecnico-Amministrativo e Funzionale</p>
+        </div>
       );
+    }
+
+    // Default (Verbali): Logo Committente
+    return (
+      <div className="text-center mb-8 border-b-2 border-slate-900 pb-4">
+        {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2cm', margin: '0 auto 10px' }} alt="Logo Committente" />}
+        <h1 className="font-bold text-xl uppercase tracking-tighter">{project.entity}</h1>
+        {project.entityProvince && <p className="text-sm font-bold italic">Provincia di {project.entityProvince}</p>}
+      </div>
+    );
   };
 
-  const isLetterCustom = isLetter;
-
-  if (isLetterCustom) {
-      return (
-          <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
-              <div className="bg-white shadow-lg p-[2.5cm] min-h-[29.7cm] print-page relative flex flex-col">
-                  <div className="mb-12 text-sm border-l-2 border-slate-100 pl-4">
-                      <p className="font-bold uppercase tracking-wider">{formatNameWithTitle(project.subjects.tester.contact)}</p>
-                      <p className="text-xs uppercase text-slate-500 mb-2">Collaudatore</p>
-                      {project.subjects.tester.contact.address && <p>{project.subjects.tester.contact.address}</p>}
-                      {project.subjects.tester.contact.pec && <p><span className="font-bold">PEC:</span> {project.subjects.tester.contact.pec}</p>}
-                  </div>
-                  <div className="mb-16 ml-auto w-[65%] text-sm">
-                      <p className="font-bold uppercase tracking-wide">Spett.le</p>
-                      <p className="font-bold uppercase">{project.entity}</p>
-                      {doc.actRecipient ? <div className="mt-1 whitespace-pre-line">{doc.actRecipient}</div> : <p className="mt-1">All'attenzione del Responsabile Unico del Progetto</p>}
-                  </div>
-                  <div className="mb-12 text-right text-sm italic">
-                      <p>{project.entityProvince || project.location || '...'}, lì {formatShortDate(doc.date)}</p>
-                  </div>
-                  <div className="flex-1 text-sm md:text-base">{renderLetterContent()}</div>
-                  <div className="mt-24 ml-auto w-[50%] text-center text-sm md:text-base">
-                      <p className="mb-4">Il Collaudatore</p>
-                      <p className="font-bold uppercase tracking-widest">{formatNameWithTitle(project.subjects.tester.contact)}</p>
-                      <div className="mt-2 border-b border-black w-full opacity-50"></div>
-                  </div>
-              </div>
-          </div>
-      );
-  }
-
-  // --- LOGICA SPECIFICA VERBALE ---
-  const generateCollaudoPreamblePoint1 = () => {
-      const t = project.subjects.testerAppointment;
-      const tester = project.subjects.tester.contact;
-      let text = `- con ${t.nominationType} `;
-      if (t.nominationAuthority) text += `del ${t.nominationAuthority} `;
-      text += `n. ${t.nominationNumber || '...'} del ${formatShortDate(t.nominationDate)}`;
-      if (t.contractRepNumber) text += ` e successivo contratto/convenzione, rep. n. ${t.contractRepNumber} del ${formatShortDate(t.contractDate)}`;
-      if (t.contractProtocol) text += `, prot. n. ${t.contractProtocol}`;
-      text += `, il ${project.entity || '...'} ha affidato, ai sensi dell’art. 116 del D. Lgs. 36/2023, allo scrivente ${tester.title || ''} ${tester.name} (C.F. ${tester.vat || '...'}), `;
-      if (tester.professionalOrder && tester.registrationNumber) text += `iscritto all’Albo ${tester.professionalOrder} al n. ${tester.registrationNumber}, `;
-      text += `l’incarico professionale di collaudo ${assignmentStringClean} relativo all’intervento di "${project.projectName}", CUP: ${project.cup}.`;
-      return text;
+  // --- LOGICA PIÈ DI PAGINA ---
+  const renderFooter = () => {
+    if (isConvocazione) {
+        return (
+            <div className="mt-auto pt-8 border-t border-slate-200 text-[10px] text-slate-500 grid grid-cols-2 gap-4 no-print-break">
+                <div>
+                    <p className="font-bold uppercase mb-1 text-slate-700">{tester.title || 'Arch.'} {tester.name}</p>
+                    <p>{tester.professionalOrder} - Iscr. n. {tester.registrationNumber}</p>
+                    <p>{tester.address || 'Indirizzo Studio non specificato'}</p>
+                </div>
+                <div className="text-right">
+                    <p>PEC: {tester.pec || '-'}</p>
+                    <p>Email: {tester.email || '-'}</p>
+                    <p>Tel/Cell: {tester.phone || '-'}</p>
+                </div>
+            </div>
+        );
+    }
+    return null;
   };
 
-  const getPreviousDocuments = () => allDocuments.filter(d => d.visitNumber < doc.visitNumber).sort((a, b) => a.visitNumber - b.visitNumber);
-
-  const getWorksForVisit = (visitNum: number, fallbackWorks: string[]) => {
-      const summaries = project.executionPhase.testerVisitSummaries || [];
-      const summary = summaries[visitNum - 1];
-      if (summary && summary.works && summary.works.length > 0) return summary.works;
-      return fallbackWorks;
-  };
-
-  const generateHistoricalPoints = () => {
-      const prevDocs = getPreviousDocuments();
-      if (prevDocs.length === 0) return null;
-      return prevDocs.map((prevDoc) => {
-          const date = formatShortDate(prevDoc.date);
-          const worksList = getWorksForVisit(prevDoc.visitNumber, prevDoc.worksExecuted);
-          const worksText = worksList.map((w, i) => `${i + 1}. ${w}`).join(';\n');
-          const worksInProgress = prevDoc.worksInProgress ? `Era in corso il ${prevDoc.worksInProgress}.` : '';
-          return (
-              <div key={prevDoc.id} className="mb-4 text-justify">
-                  <p>- in data {date}, con verbale di visita di collaudo n. {prevDoc.visitNumber}, lo scrivente Collaudatore ha preso atto dell'andamento dei lavori eseguiti a detta data:</p>
-                  <div className="pl-8 my-2 italic whitespace-pre-line border-l border-slate-200">{worksText}</div>
-                  <p className="pl-8">{worksInProgress}</p>
-              </div>
-          );
-      });
-  };
-
-  const getPreviousVisitDateDescription = () => {
-      const prevDocs = getPreviousDocuments();
-      if (prevDocs.length > 0) return `il ${formatShortDate(prevDocs[prevDocs.length - 1].date)}`;
-      return project.executionPhase.deliveryDate ? `il ${formatShortDate(project.executionPhase.deliveryDate)}` : 'la consegna dei lavori';
-  };
-
-  const getDefaultAttendees = () => {
-      const lines = [];
-      const { rup, dl, cse } = project.subjects;
-      if (rup.contact.name) lines.push(`Responsabile Unico del Progetto: ${formatProfessionalDetails(rup.contact)}`);
-      if (dl.contact.name) lines.push(`Direttore dei Lavori: ${renderSubjectString(dl)}`);
-      if (cse.contact.name) lines.push(`Coord. Sicurezza Esecuzione: ${renderSubjectString(cse)}`);
-      if (project.contractor.mainCompany.name) {
-          const c = project.contractor.mainCompany;
-          lines.push(`per l'Impresa ${c.name} (${c.role || 'L.R.'}): ${c.repTitle || 'Sig.'} ${c.repName || '...'}`);
-      }
-      return lines.join('\n');
-  };
-
-  const renderContractorInfo = () => {
-      const { type, mainCompany, mandants } = project.contractor;
-      if (type === 'ati' && mandants?.length > 0) {
-          return <span><strong>ATI</strong>: {mainCompany.name} (Mandataria) + {mandants.map(m => m.name).join(', ')}</span>;
-      }
-      return <span><strong>{mainCompany.name}</strong><br/>{mainCompany.address} - P.IVA {mainCompany.vat}</span>;
-  };
-
-  // --- RENDERING VERBALE TECNICO COMPLETO ---
   return (
     <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
-      <div className="bg-white shadow-lg p-[1.5cm] md:p-[2cm] min-h-[29.7cm] print-page mb-8 relative flex flex-col justify-between">
-        <div>
-            {/* Header Ente */}
-            <div id="h1" className="mb-8">
-                <table style={{ width: '100%' }}>
-                    <tbody>
-                        <tr>
-                            <td align="center" style={{ textAlign: 'center', borderBottom: '1px solid #000', paddingBottom: '15px' }}>
-                                {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2.5cm', marginBottom: '8px' }} alt="Logo" />}
-                                <p className="uppercase font-bold text-base tracking-widest">{project.entity}</p>
-                                {project.entityProvince && <p className="text-sm">(Provincia di {project.entityProvince})</p>}
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        <div className="bg-white shadow-lg p-[2.5cm] min-h-[29.7cm] print-page relative flex flex-col">
+            
+            {renderHeader()}
 
-            {/* Titolo e Oggetto */}
-            <div className="mb-8 text-center">
-                <p className="text-sm font-bold uppercase mb-2">lavori di: "{project.projectName}"</p>
-                <p className="text-sm font-bold uppercase mb-4">CUP {project.cup} {project.cig && `- CIG ${project.cig}`}</p>
-                <div className="mt-2 border-b-2 border-black inline-block px-8 pb-1">
-                    <h2 className="font-bold text-lg uppercase">{getDocumentTitle()}</h2>
-                </div>
-            </div>
-
-            {/* Tabella Anagrafica Progetto */}
-            <table className="w-full text-xs mb-8 border-collapse">
-                <tbody>
-                    <tr className="border-b border-slate-100"><td className="py-1 font-bold w-48 uppercase text-slate-500">Impresa Appaltatrice:</td><td className="py-1">{renderContractorInfo()}</td></tr>
-                    <tr className="border-b border-slate-100"><td className="py-1 font-bold uppercase text-slate-500">Responsabile Procedimento:</td><td className="py-1">{formatProfessionalDetails(project.subjects.rup.contact)}</td></tr>
-                    <tr className="border-b border-slate-100"><td className="py-1 font-bold uppercase text-slate-500">Direzione Lavori:</td><td className="py-1">{renderSubjectString(project.subjects.dl)}</td></tr>
-                    <tr className="border-b border-slate-100"><td className="py-1 font-bold uppercase text-slate-500">Sicurezza (CSE):</td><td className="py-1">{renderSubjectString(project.subjects.cse)}</td></tr>
-                    {project.contract.totalAmount && (
-                        <tr><td className="py-1 font-bold uppercase text-slate-500">Importo Lavori:</td><td className="py-1">{formatCurrency(project.contract.totalAmount)}</td></tr>
-                    )}
-                </tbody>
-            </table>
-
-            {/* Testo del Verbale */}
-            <div className="text-sm text-justify space-y-4">
-                <p>
-                    L'anno <strong>{verboseDate.year}</strong>, il giorno <strong>{verboseDate.day}</strong> del mese di <strong>{verboseDate.month}</strong>, 
-                    alle ore <strong>{doc.time}</strong>, presso il luogo dei lavori in <strong>{project.location}</strong>.
-                </p>
-
-                <p>Sono presenti, oltre allo scrivente Collaudatore {formatNameWithTitle(project.subjects.tester.contact)}:</p>
-                <div className="italic pl-6 whitespace-pre-line border-l-2 border-slate-100 py-1">{doc.attendees || getDefaultAttendees()}</div>
-
-                <div className="mt-6">
-                    <p className="font-bold underline mb-2 uppercase tracking-tighter">Premesso che:</p>
-                    <div className="space-y-4">
-                        <p>{generateCollaudoPreamblePoint1()}</p>
-                        {generateHistoricalPoints()}
-                        {doc.premis && <div className="mt-2 pt-2 border-t border-dotted border-slate-300">{doc.premis}</div>}
-                    </div>
-                </div>
-
-                <div className="mt-6">
-                    <p className="font-bold underline mb-2 uppercase tracking-tighter">Sopralluogo e Lavorazioni:</p>
-                    <p className="mb-2">{doc.worksIntroText || `Durante il presente sopralluogo si prende atto che, nel periodo intercorrente tra ${getPreviousVisitDateDescription()} e la data odierna, sono state effettuate le seguenti lavorazioni:`}</p>
-                    
-                    {getWorksForVisit(doc.visitNumber, doc.worksExecuted).length > 0 ? (
-                        <ul className="list-disc pl-8 space-y-1 mb-4 italic">
-                            {getWorksForVisit(doc.visitNumber, doc.worksExecuted).map((w, i) => <li key={i}>{w}</li>)}
-                        </ul>
-                    ) : <p className="italic pl-8 mb-4">Nessuna lavorazione specifica registrata per il periodo.</p>}
-
-                    {doc.worksInProgress && (
-                        <div className="mb-4">
-                            <p className="font-semibold mb-1">Opere attualmente in corso di esecuzione:</p>
-                            <div className="pl-8 italic whitespace-pre-line">{doc.worksInProgress}</div>
+            {/* CONTENUTO SPECIFICO PER TIPO */}
+            <div className="flex-1">
+                {isNullaOsta && (
+                    <div className="text-sm text-justify space-y-4 leading-relaxed animate-in fade-in">
+                        <p className="italic text-center mb-6">{doc.nullaOstaLegalRefs || "D.Lgs. 165/2001 e Regolamenti interni"}</p>
+                        <div className="space-y-4">
+                            <p>{doc.nullaOstaRequestBlock || "Vista la richiesta..."}</p>
+                            <p>{doc.nullaOstaAuthorityRequestBlock || "Vista l'istanza del dipendente..."}</p>
+                            <p className="font-bold border-y border-slate-100 py-4 text-center">
+                                Compenso previsto: {formatCurrency(parseFloat(t.testerFee || '0'))} <br/>
+                                <span className="text-xs font-normal">(Ridotto al 50% ai sensi di legge: {formatCurrency(parseFloat(t.testerFee || '0') / 2)})</span>
+                            </p>
+                            <div className="whitespace-pre-wrap">{doc.nullaOstaObservationsBlock || "Valutata l'insussistenza di conflitti..."}</div>
                         </div>
-                    )}
-                </div>
-
-                {/* Richieste e Inviti */}
-                {(doc.testerRequests || doc.testerInvitations) && (
-                    <div className="mt-8 space-y-4 bg-slate-50 p-4 rounded print:bg-transparent print:p-0">
-                        {doc.testerRequests && (
-                            <div>
-                                <p className="font-bold uppercase text-xs text-blue-800 mb-1">Richieste del Collaudatore:</p>
-                                <div className="pl-4 whitespace-pre-line text-slate-700 italic border-l border-blue-200">{doc.testerRequests}</div>
+                        <div className="text-center py-8"><h3 className="font-bold text-lg tracking-[0.3em] border-y-2 border-black inline-block px-12 py-2">SI AUTORIZZA</h3></div>
+                        <p className="text-center">Lo svolgimento dell'incarico esterno citato in premessa.</p>
+                        
+                        <div className="mt-20 flex justify-between items-end">
+                            <p>Data, {formatShortDate(doc.date)}</p>
+                            <div className="text-center min-w-[200px]">
+                                <p className="font-bold uppercase text-xs">IL SEGRETARIO GENERALE</p>
+                                <div className="h-12"></div>
+                                <p className="italic text-xs">{doc.nullaOstaSignatory || "Firma Digitale"}</p>
                             </div>
-                        )}
-                        {doc.testerInvitations && (
-                            <div>
-                                <p className="font-bold uppercase text-xs text-amber-800 mb-1">Inviti e Prescrizioni:</p>
-                                <div className="pl-4 whitespace-pre-line text-slate-700 italic border-l border-amber-200">{doc.testerInvitations}</div>
-                            </div>
-                        )}
+                        </div>
                     </div>
                 )}
 
-                {/* Chiusura e Valutazioni */}
-                <div className="mt-8">
-                    {doc.observations && (
-                        <div className="mb-4">
-                            <p className="font-bold underline mb-1">Valutazioni Tecnico-Amministrative:</p>
-                            <p className="italic">{doc.observations}</p>
+                {isConvocazione && (
+                    <div className="text-sm space-y-6 animate-in fade-in">
+                        <div className="flex justify-between mb-10">
+                            <div><p>Data, {formatShortDate(doc.date)}</p></div>
+                            <div className="text-right">
+                                <p className="font-bold">Spett.le</p>
+                                <p className="font-bold uppercase">{project.entity}</p>
+                                <p className="italic">All'attenzione del RUP</p>
+                            </div>
                         </div>
-                    )}
-                    <p className="mt-4">{doc.commonParts || `Di quanto sopra si è redatto il presente verbale che, previa lettura e conferma, viene sottoscritto dai presenti.`}</p>
-                </div>
+
+                        <div className="font-bold mb-8">
+                            <p>OGGETTO: {doc.actSubject || `Convocazione visita di collaudo - Lavori di: ${project.projectName}`}</p>
+                        </div>
+
+                        <div className="text-justify leading-relaxed whitespace-pre-wrap">
+                            {doc.actBodyOverride || `Il sottoscritto ${formatNameWithTitle(tester)}, in qualità di Collaudatore incaricato per l'opera in oggetto, 
+                            \nCONVOCA\n
+                            le parti in indirizzo per il giorno ${formatShortDate(doc.date)} alle ore ${doc.time || '--:--'} presso il cantiere, per lo svolgimento della visita di collaudo.`}
+                        </div>
+
+                        <div className="mt-20 flex justify-end">
+                            <div className="text-center min-w-[250px]">
+                                <p className="font-bold uppercase text-xs mb-8">Il Collaudatore Incaricato</p>
+                                <p className="italic font-bold">{formatNameWithTitle(tester)}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {isVerbale && (
+                    <div className="text-sm space-y-6 animate-in fade-in">
+                         <div className="text-center font-bold mb-6">
+                            <h2 className="text-lg underline uppercase">VERBALE DI VISITA DI COLLAUDO N. {doc.visitNumber}</h2>
+                            <p className="text-sm mt-1">SVOLTA IN DATA {formatShortDate(doc.date)}</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-1 border-y border-slate-200 py-3 bg-slate-50 px-4">
+                            <p className="font-bold text-xs uppercase text-slate-500">Opera:</p>
+                            <p className="font-bold text-sm uppercase">{project.projectName}</p>
+                            <div className="flex gap-10 mt-2">
+                                <p className="text-xs">CUP: <span className="font-bold">{project.cup}</span></p>
+                                <p className="text-xs">CIG: <span className="font-bold">{project.cig}</span></p>
+                            </div>
+                        </div>
+
+                        <div className="text-justify leading-relaxed">
+                            <h3 className="font-bold text-xs uppercase mb-2 border-b">Premesse</h3>
+                            <div className="whitespace-pre-wrap text-xs">{doc.premis}</div>
+                        </div>
+
+                        <div className="text-justify leading-relaxed">
+                            <h3 className="font-bold text-xs uppercase mb-2 border-b">Lavorazioni verificate in data odierna</h3>
+                            <ul className="list-disc pl-5 text-xs space-y-1">
+                                {doc.worksExecuted.map((w, i) => <li key={i}>{w}</li>)}
+                            </ul>
+                        </div>
+
+                        <div className="text-justify leading-relaxed">
+                            <h3 className="font-bold text-xs uppercase mb-2 border-b">Note e Disposizioni</h3>
+                            <div className="whitespace-pre-wrap text-xs italic">{doc.observations}</div>
+                        </div>
+
+                        <div className="mt-16 grid grid-cols-2 gap-20">
+                            <div className="text-center border-t border-black pt-2">
+                                <p className="text-[10px] font-bold uppercase">L'Impresa Appaltatrice</p>
+                            </div>
+                            <div className="text-center border-t border-black pt-2">
+                                <p className="text-[10px] font-bold uppercase">Il Collaudatore</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
-        </div>
 
-        {/* Blocco Firme */}
-        <div className="mt-20 text-sm">
-            <table className="w-full">
-                <tbody>
-                    <tr>
-                        <td className="pb-12 w-1/2">
-                            <p className="mb-1">Il Collaudatore:</p>
-                            <p className="font-bold uppercase">{formatNameWithTitle(project.subjects.tester.contact)}</p>
-                            <div className="mt-4 border-b border-black w-48 opacity-30"></div>
-                        </td>
-                        <td className="pb-12 w-1/2 text-right">
-                            <p className="mb-1">Il RUP:</p>
-                            <p className="font-bold uppercase">{formatNameWithTitle(project.subjects.rup.contact)}</p>
-                            <div className="mt-4 border-b border-black w-48 ml-auto opacity-30"></div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td className="w-1/2">
-                            <p className="mb-1">Il Direttore dei Lavori:</p>
-                            <p className="font-bold uppercase">{renderSignatureString(project.subjects.dl)}</p>
-                            <div className="mt-4 border-b border-black w-48 opacity-30"></div>
-                        </td>
-                        <td className="w-1/2 text-right">
-                            <p className="mb-1">L'Impresa:</p>
-                            <p className="font-bold uppercase">{project.contractor.mainCompany.name}</p>
-                            <div className="mt-4 border-b border-black w-48 ml-auto opacity-30"></div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+            {renderFooter()}
         </div>
-      </div>
-
-      {/* Foto Allegati (se presenti) */}
-      {doc.photos && doc.photos.length > 0 && (
-          <div className="break-before-page p-[2cm] bg-white shadow-lg min-h-[29.7cm]">
-              <h3 className="font-bold text-center uppercase border-b-2 border-black pb-2 mb-8">Documentazione Fotografica Allegata</h3>
-              <div className="grid grid-cols-2 gap-8">
-                  {doc.photos.map((p, i) => (
-                      <div key={i} className="break-inside-avoid">
-                          <img src={p.url} className="w-full h-48 object-cover border border-slate-200" alt="Allegato" />
-                          <p className="text-xs mt-2 italic text-center text-slate-600">{p.description || `Foto ${i+1}`}</p>
-                      </div>
-                  ))}
-              </div>
-          </div>
-      )}
     </div>
   );
 };
