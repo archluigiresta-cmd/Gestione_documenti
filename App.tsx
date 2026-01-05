@@ -27,15 +27,19 @@ const App: React.FC = () => {
   useEffect(() => {
     const initApp = async () => {
       try {
+        // Assicura che l'admin esista nel DB ma NON loggare automaticamente
         await db.ensureAdminExists();
+        
+        // Controlla se c'è una sessione salvata
         const savedUserStr = localStorage.getItem('loggedUser');
         if (savedUserStr) {
           const user = JSON.parse(savedUserStr);
           setCurrentUser(user);
         }
       } catch (e) {
-        console.error("Errore inizializzazione database", e);
+        console.error("Errore durante l'avvio", e);
       } finally {
+        // Rendi l'app visibile solo dopo aver controllato lo stato sessione
         setLoading(false);
       }
     };
@@ -155,6 +159,7 @@ const App: React.FC = () => {
     </div>
   );
 
+  // Forza la visualizzazione della pagina di Login se non c'è un utente
   if (!currentUser) return <AuthScreen onLogin={(u) => { setCurrentUser(u); localStorage.setItem('loggedUser', JSON.stringify(u)); }} />;
 
   if (showAdmin && currentUser.isSystemAdmin) return <AdminPanel onBack={() => setShowAdmin(false)} currentUser={currentUser} />;
@@ -220,7 +225,7 @@ const App: React.FC = () => {
             <h2 className="text-2xl font-bold mb-6">Dati Generali</h2>
             <div className="space-y-6">
                 <div>
-                   <label className="text-xs font-bold text-slate-500 uppercase">Committente (Ente Appaltante)</label>
+                   <label className="text-xs font-bold text-slate-500 uppercase">Committente</label>
                    <input disabled={readOnly} type="text" className="w-full p-3 border rounded-lg mt-1" value={currentProject.entity} onChange={e => handleUpdateProjectField('entity', e.target.value)} />
                 </div>
                 <div>
@@ -243,6 +248,7 @@ const App: React.FC = () => {
         {activeTab === 'subjects' && <ProjectForm data={currentProject} readOnly={readOnly} handleChange={handleUpdateProjectField} subTab="tester" />}
         {activeTab === 'execution' && <ExecutionManager project={currentProject} onUpdateProject={handleSaveProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={() => createNewDocument('VERBALE_COLLAUDO')} onDeleteDocument={handleDeleteDocument} readOnly={readOnly} />}
         {activeTab === 'testing' && <TestingManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={createNewDocument} onDeleteDocument={handleDeleteDocument} onUpdateProject={handleSaveProject} readOnly={readOnly} />}
+        {/* Fix: changed 'project' to 'currentProject' to fix undefined variable error */}
         {activeTab === 'export' && <ExportManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onDeleteDocument={readOnly ? undefined : handleDeleteDocument} />}
       </main>
     </div>
