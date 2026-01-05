@@ -1,5 +1,4 @@
 
-
 import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData, ContactInfo, DesignerProfile } from './types';
 
 const emptyContact: ContactInfo = { name: '', title: '', email: '', pec: '', phone: '', professionalOrder: '', registrationNumber: '' };
@@ -32,10 +31,10 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
   id: crypto.randomUUID(),
   ownerId: ownerId, 
   lastModified: Date.now(),
-  displayOrder: 0, // Initial order, will be overwritten by logic
+  displayOrder: 0,
   entity: 'PROVINCIA DI TARANTO', 
   entityProvince: '', 
-  headerLogo: '', // NEW
+  headerLogo: '',
   projectName: '',
   location: '',
   cup: '',
@@ -76,13 +75,12 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
     },
     testerAppointment: { 
         nominationType: 'Determina Dirigenziale',
-        nominationAuthority: '', // NEW
+        nominationAuthority: '',
         nominationNumber: '',
         nominationDate: '',
-        contractRepNumber: '', // NEW: Rep. Convenzione
-        contractDate: '', // NEW
-        contractProtocol: '', // NEW: Prot. n.
-        // Fix: Added missing required property testerFee
+        contractRepNumber: '', 
+        contractDate: '', 
+        contractProtocol: '', 
         testerFee: '',
         isStatic: true,
         isAdmin: true,
@@ -99,7 +97,7 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
     type: 'single',
     mainCompany: { 
         ...emptyContact, 
-        role: 'Legale Rappresentante', // Default role for rep
+        role: 'Legale Rappresentante',
         repTitle: 'Sig.'
     },
     mandants: [],
@@ -114,7 +112,7 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
     resumptions: [],
     sals: [],
     variants: [],
-    testerVisitSummaries: [], // NEW
+    testerVisitSummaries: [],
     completionDate: '',
     
     handoverDocs: {
@@ -137,11 +135,10 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
   }
 });
 
-// Fix: added missing required property 'type' to satisfy the DocumentVariables interface return type
 export const createInitialDocument = (projectId: string): DocumentVariables => ({
   id: crypto.randomUUID(),
   projectId,
-  type: 'VERBALE_COLLAUDO', // Default required type
+  type: 'VERBALE_COLLAUDO', 
   createdAt: Date.now(),
   visitNumber: 1,
   date: new Date().toISOString().split('T')[0],
@@ -153,13 +150,13 @@ export const createInitialDocument = (projectId: string): DocumentVariables => (
   premis: '',
   worksExecuted: [],
   worksInProgress: '', 
-  upcomingWorks: '', // NEW
-  
-  worksIntroText: '', // NEW
-  testerRequests: '', // NEW
-  testerInvitations: '', // NEW
-  commonParts: '', // NEW
-
+  upcomingWorks: '', 
+  worksIntroText: '', 
+  testerRequests: '', 
+  testerInvitations: '', 
+  commonParts: '', 
   observations: '',
-  photos: []
+  photos: [],
+  actRecipientsBlock: '', // Inizializzato per evitare undefined
+  actBodyOverride: ''    // Inizializzato per evitare undefined
 });

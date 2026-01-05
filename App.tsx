@@ -27,21 +27,11 @@ const App: React.FC = () => {
   useEffect(() => {
     const initApp = async () => {
       try {
-        // Inizializza il database e assicura l'esistenza dell'admin
         await db.ensureAdminExists();
-        
-        // NOTA: Abbiamo rimosso il caricamento automatico da localStorage 
-        // per forzare la visualizzazione della "Prima Pagina" (AuthScreen) all'avvio.
-        // Se desideri ripristinare l'auto-login, decommenta le righe sotto.
-        /*
-        const savedUserStr = localStorage.getItem('loggedUser');
-        if (savedUserStr) {
-          const user = JSON.parse(savedUserStr);
-          setCurrentUser(user);
-        }
-        */
+        // NON carichiamo automaticamente dal localStorage per forzare la pagina di Login all'avvio
+        // currentUser resta null -> viene mostrata AuthScreen
       } catch (e) {
-        console.error("Errore durante l'avvio", e);
+        console.error("Errore inizializzazione", e);
       } finally {
         setLoading(false);
       }
@@ -112,10 +102,6 @@ const App: React.FC = () => {
             const lastDoc = verbaliExist.find(v => v.visitNumber === maxNum);
             if (lastDoc) {
                 lastPremis = lastDoc.premis || '';
-                if (lastDoc.worksExecuted && lastDoc.worksExecuted.length > 0) {
-                    const lastDate = new Date(lastDoc.date).toLocaleDateString('it-IT');
-                    lastPremis += `\n\n- in data ${lastDate}, con verbale n. ${lastDoc.visitNumber}, si è preso atto delle lavorazioni: ${lastDoc.worksExecuted.join(', ')};\n`;
-                }
             }
         }
     }
@@ -162,53 +148,47 @@ const App: React.FC = () => {
     </div>
   );
 
-  // Forza la visualizzazione della "Prima Pagina" (Login) se non c'è un utente loggato nello stato
-  if (!currentUser) return <AuthScreen onLogin={(u) => { 
-    setCurrentUser(u); 
-    localStorage.setItem('loggedUser', JSON.stringify(u)); 
-  }} />;
+  // Forza AuthScreen se non c'è utente
+  if (!currentUser) return <AuthScreen onLogin={(u) => { setCurrentUser(u); localStorage.setItem('loggedUser', JSON.stringify(u)); }} />;
 
   if (showAdmin && currentUser.isSystemAdmin) return <AdminPanel onBack={() => setShowAdmin(false)} currentUser={currentUser} />;
 
   if (!currentProject) {
     return (
-      <div className="min-h-screen bg-slate-50">
-        <Dashboard 
-          projects={projects}
-          onSelectProject={handleSelectProject}
-          onNewProject={handleNewProject}
-          onDeleteProject={async (id) => { await db.deleteProject(id); loadProjects(); }}
-          onShareProject={setSharingProjectId}
-          onOpenAdmin={() => setShowAdmin(true)}
-          onUpdateOrder={async (id, ord) => {
-            const p = projects.find(x => x.id === id);
-            if (p) await handleSaveProject({ ...p, displayOrder: ord });
-          }}
-          onMoveProject={async (id, dir) => {
-             const idx = projects.findIndex(p => p.id === id);
-             if (dir === 'up' && idx > 0) {
-                const p1 = projects[idx]; const p2 = projects[idx-1];
-                const o1 = p1.displayOrder; p1.displayOrder = p2.displayOrder; p2.displayOrder = o1;
-                await db.saveProject(p1); await db.saveProject(p2); loadProjects();
-             } else if (dir === 'down' && idx < projects.length - 1) {
-                const p1 = projects[idx]; const p2 = projects[idx+1];
-                const o1 = p1.displayOrder; p1.displayOrder = p2.displayOrder; p2.displayOrder = o1;
-                await db.saveProject(p1); await db.saveProject(p2); loadProjects();
-             }
-          }}
-          onExportData={async () => {
-              const data = await db.getDatabaseBackup();
-              const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement('a');
-              a.href = url;
-              a.download = `edilapp_backup.json`;
-              a.click();
-          }}
-          currentUser={currentUser}
-        />
-        {sharingProjectId && <ProjectSharing projectId={sharingProjectId} onClose={() => setSharingProjectId(null)} />}
-      </div>
+      <Dashboard 
+        projects={projects}
+        onSelectProject={handleSelectProject}
+        onNewProject={handleNewProject}
+        onDeleteProject={async (id) => { await db.deleteProject(id); loadProjects(); }}
+        onShareProject={setSharingProjectId}
+        onOpenAdmin={() => setShowAdmin(true)}
+        onUpdateOrder={async (id, ord) => {
+          const p = projects.find(x => x.id === id);
+          if (p) await handleSaveProject({ ...p, displayOrder: ord });
+        }}
+        onMoveProject={async (id, dir) => {
+           const idx = projects.findIndex(p => p.id === id);
+           if (dir === 'up' && idx > 0) {
+              const p1 = projects[idx]; const p2 = projects[idx-1];
+              const o1 = p1.displayOrder; p1.displayOrder = p2.displayOrder; p2.displayOrder = o1;
+              await db.saveProject(p1); await db.saveProject(p2); loadProjects();
+           } else if (dir === 'down' && idx < projects.length - 1) {
+              const p1 = projects[idx]; const p2 = projects[idx+1];
+              const o1 = p1.displayOrder; p1.displayOrder = p2.displayOrder; p2.displayOrder = o1;
+              await db.saveProject(p1); await db.saveProject(p2); loadProjects();
+           }
+        }}
+        onExportData={async () => {
+            const data = await db.getDatabaseBackup();
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `edilapp_backup.json`;
+            a.click();
+        }}
+        currentUser={currentUser}
+      />
     );
   }
 
@@ -228,7 +208,7 @@ const App: React.FC = () => {
       <main className="flex-1 ml-64 p-8 overflow-y-auto">
         {activeTab === 'general' && (
           <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
-            <h2 className="text-2xl font-bold mb-6">Dati Generali</h2>
+            <h2 className="text-2xl font-bold mb-6">Dati Generali Appalto</h2>
             <div className="space-y-6">
                 <div>
                    <label className="text-xs font-bold text-slate-500 uppercase">Committente</label>
@@ -256,6 +236,7 @@ const App: React.FC = () => {
         {activeTab === 'testing' && <TestingManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={createNewDocument} onDeleteDocument={handleDeleteDocument} onUpdateProject={handleSaveProject} readOnly={readOnly} />}
         {activeTab === 'export' && <ExportManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onDeleteDocument={readOnly ? undefined : handleDeleteDocument} />}
       </main>
+      {sharingProjectId && <ProjectSharing projectId={sharingProjectId} onClose={() => setSharingProjectId(null)} />}
     </div>
   );
 };

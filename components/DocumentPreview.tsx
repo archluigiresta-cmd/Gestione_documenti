@@ -19,11 +19,6 @@ const formatShortDate = (date?: string) => {
     }
 };
 
-const formatNameWithTitle = (contact: any) => {
-    if (!contact) return '...';
-    return `${contact.title || ''} ${contact.name || ''}`.trim() || '...';
-};
-
 const parseCurrency = (value?: string): number => {
     if (!value) return 0;
     const clean = value.replace(/[€\s]/g, '').replace(/\./g, '').replace(',', '.');
@@ -35,7 +30,13 @@ const formatCurrency = (amount: number) => {
 };
 
 export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, type }) => {
-  if (!project || !doc) return <div className="p-10 text-slate-400 italic">Dati non disponibili.</div>;
+  if (!project || !doc) {
+    return (
+      <div className="p-10 text-slate-400 italic bg-white rounded-lg border border-dashed text-center">
+        Dati insufficienti per generare l'anteprima del documento.
+      </div>
+    );
+  }
 
   const isNullaOsta = type === 'NULLA_OSTA_ENTE';
   const isConvocazione = type === 'LETTERA_CONVOCAZIONE';
@@ -56,14 +57,18 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
     }
 
     if (isConvocazione) {
-      // Header Professionale Luigi Resta - Nome a sinistra, Titolo a destra
+      // Header Professionale Fedele al Fac-simile (Luigi Resta)
       return (
         <div className="mb-14 border-b border-slate-900 pb-2">
           <div className="flex justify-between items-baseline">
-            <h1 className="font-bold text-[18pt] leading-none tracking-tight uppercase">{tester.name || 'LUIGI RESTA'}</h1>
-            <p className="text-[11pt] tracking-[0.3em] font-light uppercase">{tester.title || 'ARCHITETTO'}</p>
+            <h1 className="font-bold text-[18pt] leading-none tracking-tight uppercase text-black">
+              {tester.name || 'LUIGI RESTA'}
+            </h1>
+            <p className="text-[11pt] tracking-[0.3em] font-light uppercase text-black">
+              {tester.title || 'ARCHITETTO'}
+            </p>
           </div>
-          <div className="mt-2 text-[9pt] text-right space-y-0.5 leading-tight text-slate-800 italic">
+          <div className="mt-2 text-[8.5pt] text-right space-y-0.5 leading-tight text-slate-800 italic">
              <p>{tester.address || 'Piazza Matteotti, 3 - 72023 Mesagne'}</p>
              <p>Tel/Fax: {tester.phone || '0831.777752'}</p>
              <p className="font-semibold">{tester.pec || 'arch.luigiresta@pec.it'}</p>
@@ -85,13 +90,13 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   const renderFooter = () => {
     if (isConvocazione) {
         return (
-            <div className="mt-auto pt-4 border-t border-slate-400 text-[8.5pt] flex justify-between no-print-break text-slate-700 font-sans">
+            <div className="mt-auto pt-4 border-t border-slate-400 text-[8pt] flex justify-between no-print-break text-slate-600 font-sans">
                 <div>
-                   <p className="font-bold uppercase">{tester.name}</p>
-                   <p>{tester.address}</p>
+                   <p className="font-bold uppercase text-slate-800">{tester.name || '...'}</p>
+                   <p>{tester.address || '...'}</p>
                 </div>
                 <div className="text-right">
-                   <p>PEC: {tester.pec}</p>
+                   <p>PEC: {tester.pec || '...'}</p>
                    <p>{tester.registrationNumber ? `Iscr. Albo n. ${tester.registrationNumber}` : ''}</p>
                 </div>
             </div>
@@ -103,14 +108,14 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   const feeValue = parseCurrency(t.testerFee);
 
   return (
-    <div id="document-preview-container" className="font-serif-print text-black leading-snug w-full max-w-[21cm]">
-        <div className="bg-white shadow-lg p-[1.8cm] min-h-[29.7cm] print-page relative flex flex-col mx-auto">
+    <div id="document-preview-container" className="font-serif-print text-black leading-snug w-full max-w-[21cm] animate-in fade-in duration-300">
+        <div className="bg-white shadow-xl p-[1.8cm] min-h-[29.7cm] print-page relative flex flex-col mx-auto">
             
             {renderHeader()}
 
             <div className="flex-1">
                 {isConvocazione && (
-                    <div className="text-[11.5pt] space-y-8 animate-in fade-in">
+                    <div className="text-[11.5pt] space-y-8">
                         {/* Destinatari Multipli a Destra */}
                         <div className="flex justify-end mb-12">
                             <div className="w-2/3 text-left space-y-4">
@@ -126,13 +131,13 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                             <div className="flex gap-2">
                                 <span className="underline shrink-0">Oggetto:</span>
                                 <div className="flex-1">
-                                    {project.projectName} - CUP: {project.cup} - CIG: {project.cig}
+                                    {(project.projectName || '').toUpperCase()} - CUP: {project.cup} - CIG: {project.cig}
                                 </div>
                             </div>
                             <p className="pt-4 text-[13pt] underline uppercase tracking-tight">Convocazione {doc.visitNumber === 1 ? 'I' : doc.visitNumber} visita di Collaudo</p>
                         </div>
 
-                        {/* Corpo del Testo Fedele al Modello */}
+                        {/* Corpo del Testo */}
                         <div className="text-justify leading-relaxed whitespace-pre-wrap text-[11.5pt] space-y-4">
                             {doc.actBodyOverride || 
                             `Sentite le parti, si comunica che la ${doc.visitNumber === 1 ? 'I' : doc.visitNumber} visita di collaudo dei lavori di cui in oggetto è fissata per il giorno ${formatShortDate(doc.date)}, ore ${doc.time || '--.--'}, con incontro presso il luogo dei lavori.
