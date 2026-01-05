@@ -244,6 +244,7 @@ export interface DocumentVariables {
   
   actSubject?: string;       
   actRecipient?: string;     
+  actRecipientsBlock?: string; // New: list of multiple recipients
   actBodyOverride?: string;  
   
   nullaOstaLegalRefs?: string; 
