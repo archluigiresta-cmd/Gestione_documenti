@@ -2,7 +2,6 @@
 export interface ContactInfo {
   name: string; 
   title?: string; 
-  role?: string; 
   address?: string;
   email?: string;
   pec?: string;
@@ -15,6 +14,16 @@ export interface ContactInfo {
   registrationNumber?: string; 
   colleagueEntityName?: string; 
   colleagueEntityLogo?: string; 
+  // Fix: Added missing role property used in constants.ts
+  role?: string; 
+}
+
+// Fix: Added missing PhotoAttachment interface used in various components
+export interface PhotoAttachment {
+  id: string;
+  url: string;
+  description: string;
+  file?: File;
 }
 
 export interface AppointmentData {
@@ -140,14 +149,15 @@ export interface ProjectConstants {
     cse: DesignerProfile; 
     tester: SubjectProfile; 
     testerAppointment: { 
-        nominationType: string;
+        // Fix: Added missing appointment fields used in constants.ts
+        nominationType?: string;
         nominationAuthority: string; 
-        nominationNumber: string;
-        nominationDate: string;
+        nominationNumber?: string;
+        nominationDate?: string;
         contractRepNumber: string; 
         contractDate: string; 
         contractProtocol: string; 
-        testerFee: string; 
+        testerFee?: string;
         isStatic: boolean;
         isAdmin: boolean;
         isFunctional: boolean;
@@ -164,15 +174,16 @@ export interface ProjectConstants {
   executionPhase: {
     deliveryDate: string; 
     deliveryType: 'ordinary' | 'anticipated';
-    suspensions: { id: string; date: string; reason: string; minutesNumber?: string }[];
-    resumptions: { id: string; date: string; minutesNumber?: string }[];
+    suspensions: { id: string; date: string; reason: string }[];
+    resumptions: { id: string; date: string }[];
     sals: SALData[]; 
     variants: { id: string; date: string; approvalAct: string }[]; 
     completionDate: string; 
     handoverDocs: {
-        projectApprovalType: string;
-        projectApprovalNumber: string;
-        projectApprovalDate: string;
+        // Fix: Added missing project approval fields used in constants.ts
+        projectApprovalType?: string;
+        projectApprovalNumber?: string;
+        projectApprovalDate?: string;
         ainopProtocol: string;
         ainopDate: string;
         municipalityProtocol: string;
@@ -187,13 +198,6 @@ export interface ProjectConstants {
         otherDocsDescription: string;
     };
   };
-}
-
-export interface PhotoAttachment {
-  id: string;
-  url: string; 
-  file?: File; 
-  description: string;
 }
 
 export type DocumentType = 
@@ -228,5 +232,6 @@ export interface DocumentVariables {
   testerInvitations: string; 
   commonParts: string; 
   observations: string; 
+  // Fix: Used the PhotoAttachment interface
   photos: PhotoAttachment[];
 }

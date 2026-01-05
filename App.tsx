@@ -29,7 +29,7 @@ const App: React.FC = () => {
         const saved = localStorage.getItem('loggedUser');
         if (saved) setCurrentUser(JSON.parse(saved));
       } catch (err) {
-        console.error("Initialization failed:", err);
+        console.error("Initialization error:", err);
       } finally {
         setLoading(false);
       }
@@ -43,24 +43,19 @@ const App: React.FC = () => {
 
   const loadProjects = async () => {
     if (!currentUser) return;
-    try {
-      const list = await db.getProjectsForUser(currentUser.id, currentUser.email);
-      setProjects(list.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)));
-    } catch (e) {
-      console.error("Load projects failed:", e);
-    }
+    const list = await db.getProjectsForUser(currentUser.id, currentUser.email);
+    setProjects(list.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)));
   };
 
   const handleSelectProject = async (p: ProjectConstants) => {
-    setCurrentProject(p);
-    try {
-      const docs = await db.getDocumentsByProject(p.id);
-      setDocuments(docs);
-      if (docs.length > 0) setCurrentDocId(docs[0].id);
-      else setCurrentDocId('');
-    } catch (e) {
-      console.error(e);
-    }
+    // Deep merge con template vuoto per evitare "undefined" su nuovi campi
+    const template = createEmptyProject(p.ownerId);
+    const merged = { ...template, ...p };
+    setCurrentProject(merged);
+    const docs = await db.getDocumentsByProject(p.id);
+    setDocuments(docs);
+    if (docs.length > 0) setCurrentDocId(docs[0].id);
+    else setCurrentDocId('');
     setActiveTab('general');
   };
 
@@ -91,6 +86,15 @@ const App: React.FC = () => {
     if (!currentProject) return;
     const nextNum = documents.filter(d => d.type === type).length + 1;
     const newDoc = { ...createInitialDocument(currentProject.id), type, visitNumber: nextNum };
+    
+    // Logica storica per premesse del collaudo
+    if (type === 'VERBALE_COLLAUDO' && documents.length > 0) {
+      const last = [...documents].filter(d => d.type === 'VERBALE_COLLAUDO').sort((a,b) => b.visitNumber - a.visitNumber)[0];
+      if (last) {
+        newDoc.premis = last.premis;
+      }
+    }
+
     const updated = [...documents, newDoc];
     setDocuments(updated);
     setCurrentDocId(newDoc.id);
@@ -109,7 +113,12 @@ const App: React.FC = () => {
     </div>
   );
 
-  if (!currentUser) return <AuthScreen onLogin={(u) => { setCurrentUser(u); localStorage.setItem('loggedUser', JSON.stringify(u)); }} />;
+  if (!currentUser) return (
+    <AuthScreen onLogin={(u) => { 
+      setCurrentUser(u); 
+      localStorage.setItem('loggedUser', JSON.stringify(u)); 
+    }} />
+  );
 
   if (showAdmin) return <AdminPanel onBack={() => setShowAdmin(false)} currentUser={currentUser} />;
 
@@ -119,6 +128,7 @@ const App: React.FC = () => {
       onSelectProject={handleSelectProject}
       onNewProject={handleNewProject}
       onDeleteProject={async (id) => { await db.deleteProject(id); loadProjects(); }}
+      onShareProject={(id) => {/* Implemented in sharing modal */}}
       onOpenAdmin={() => setShowAdmin(true)}
       onUpdateOrder={async (id, ord) => {
         const p = projects.find(x => x.id === id);
@@ -158,10 +168,11 @@ const App: React.FC = () => {
       />
       <main className="flex-1 ml-64 p-8 overflow-y-auto">
         {activeTab === 'general' && (
-          <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200 animate-in fade-in">
+          <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
             <h2 className="text-2xl font-bold mb-6">Dati Generali Appalto</h2>
             <div className="space-y-6">
               <div><label className="text-xs font-bold text-slate-500 uppercase">Committente</label><input type="text" className="w-full p-3 border rounded mt-1" value={currentProject.entity} onChange={e => handleUpdateProjectField('entity', e.target.value)} /></div>
+              <div><label className="text-xs font-bold text-slate-500 uppercase">Provincia</label><input type="text" className="w-full p-3 border rounded mt-1" value={currentProject.entityProvince} onChange={e => handleUpdateProjectField('entityProvince', e.target.value)} /></div>
               <div><label className="text-xs font-bold text-slate-500 uppercase">Oggetto (Usa INVIO per le righe)</label><textarea className="w-full p-3 border rounded mt-1 h-32" value={currentProject.projectName} onChange={e => handleUpdateProjectField('projectName', e.target.value)} /></div>
               <div className="grid grid-cols-2 gap-4">
                 <div><label className="text-xs font-bold text-slate-500 uppercase">CUP</label><input type="text" className="w-full p-3 border rounded mt-1" value={currentProject.cup} onChange={e => handleUpdateProjectField('cup', e.target.value)} /></div>
@@ -175,8 +186,8 @@ const App: React.FC = () => {
         {activeTab === 'subjects' && <ProjectForm data={currentProject} readOnly={false} handleChange={handleUpdateProjectField} subTab="subjects" />}
         {activeTab === 'tender' && <ProjectForm data={currentProject} readOnly={false} handleChange={handleUpdateProjectField} subTab="tender" />}
         {activeTab === 'contractor' && <ProjectForm data={currentProject} readOnly={false} handleChange={handleUpdateProjectField} subTab="contractor" />}
-        {activeTab === 'execution' && <ExecutionManager project={currentProject} onUpdateProject={setCurrentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={() => createNewDocument('VERBALE_COLLAUDO')} onDeleteDocument={async id => { if(confirm("Eliminare verbale?")) { await db.deleteDocument(id); setDocuments(prev => prev.filter(d => d.id !== id)); } }} />}
-        {activeTab === 'testing' && <TestingManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={createNewDocument} onDeleteDocument={async id => { if(confirm("Eliminare verbale collaudo?")) { await db.deleteDocument(id); setDocuments(prev => prev.filter(d => d.id !== id)); } }} onUpdateProject={setCurrentProject} />}
+        {activeTab === 'execution' && <ExecutionManager project={currentProject} onUpdateProject={setCurrentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={() => createNewDocument('VERBALE_COLLAUDO')} onDeleteDocument={async id => { if(confirm("Eliminare?")) { await db.deleteDocument(id); setDocuments(prev => prev.filter(d => d.id !== id)); } }} />}
+        {activeTab === 'testing' && <TestingManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={createNewDocument} onDeleteDocument={async id => { if(confirm("Eliminare?")) { await db.deleteDocument(id); setDocuments(prev => prev.filter(d => d.id !== id)); } }} onUpdateProject={setCurrentProject} />}
         {activeTab === 'export' && <ExportManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} />}
       </main>
     </div>
