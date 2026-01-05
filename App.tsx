@@ -27,19 +27,22 @@ const App: React.FC = () => {
   useEffect(() => {
     const initApp = async () => {
       try {
-        // Assicura che l'admin esista nel DB ma NON loggare automaticamente
+        // Inizializza il database e assicura l'esistenza dell'admin
         await db.ensureAdminExists();
         
-        // Controlla se c'è una sessione salvata
+        // NOTA: Abbiamo rimosso il caricamento automatico da localStorage 
+        // per forzare la visualizzazione della "Prima Pagina" (AuthScreen) all'avvio.
+        // Se desideri ripristinare l'auto-login, decommenta le righe sotto.
+        /*
         const savedUserStr = localStorage.getItem('loggedUser');
         if (savedUserStr) {
           const user = JSON.parse(savedUserStr);
           setCurrentUser(user);
         }
+        */
       } catch (e) {
         console.error("Errore durante l'avvio", e);
       } finally {
-        // Rendi l'app visibile solo dopo aver controllato lo stato sessione
         setLoading(false);
       }
     };
@@ -159,8 +162,11 @@ const App: React.FC = () => {
     </div>
   );
 
-  // Forza la visualizzazione della pagina di Login se non c'è un utente
-  if (!currentUser) return <AuthScreen onLogin={(u) => { setCurrentUser(u); localStorage.setItem('loggedUser', JSON.stringify(u)); }} />;
+  // Forza la visualizzazione della "Prima Pagina" (Login) se non c'è un utente loggato nello stato
+  if (!currentUser) return <AuthScreen onLogin={(u) => { 
+    setCurrentUser(u); 
+    localStorage.setItem('loggedUser', JSON.stringify(u)); 
+  }} />;
 
   if (showAdmin && currentUser.isSystemAdmin) return <AdminPanel onBack={() => setShowAdmin(false)} currentUser={currentUser} />;
 
@@ -248,7 +254,6 @@ const App: React.FC = () => {
         {activeTab === 'subjects' && <ProjectForm data={currentProject} readOnly={readOnly} handleChange={handleUpdateProjectField} subTab="tester" />}
         {activeTab === 'execution' && <ExecutionManager project={currentProject} onUpdateProject={handleSaveProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={() => createNewDocument('VERBALE_COLLAUDO')} onDeleteDocument={handleDeleteDocument} readOnly={readOnly} />}
         {activeTab === 'testing' && <TestingManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={createNewDocument} onDeleteDocument={handleDeleteDocument} onUpdateProject={handleSaveProject} readOnly={readOnly} />}
-        {/* Fix: changed 'project' to 'currentProject' to fix undefined variable error */}
         {activeTab === 'export' && <ExportManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onDeleteDocument={readOnly ? undefined : handleDeleteDocument} />}
       </main>
     </div>

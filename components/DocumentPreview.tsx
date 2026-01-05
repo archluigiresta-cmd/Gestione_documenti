@@ -56,17 +56,16 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
     }
 
     if (isConvocazione) {
-      // Intestazione Professionale Luigi Resta
+      // Header Professionale Luigi Resta - Nome a sinistra, Titolo a destra
       return (
-        <div className="mb-14 flex justify-between items-start">
-          <div className="uppercase">
-            <h1 className="font-bold text-[16pt] leading-none tracking-tight">{tester.name || 'LUIGI RESTA'}</h1>
-            <p className="text-[10pt] tracking-[0.3em] font-light mt-1 text-right">{tester.title || 'ARCHITETTO'}</p>
+        <div className="mb-14 border-b border-slate-900 pb-2">
+          <div className="flex justify-between items-baseline">
+            <h1 className="font-bold text-[18pt] leading-none tracking-tight uppercase">{tester.name || 'LUIGI RESTA'}</h1>
+            <p className="text-[11pt] tracking-[0.3em] font-light uppercase">{tester.title || 'ARCHITETTO'}</p>
           </div>
-          <div className="text-[9pt] text-right space-y-0.5 leading-tight text-slate-700">
-             {/* Fallback dati per demo o dati reali se presenti */}
+          <div className="mt-2 text-[9pt] text-right space-y-0.5 leading-tight text-slate-800 italic">
              <p>{tester.address || 'Piazza Matteotti, 3 - 72023 Mesagne'}</p>
-             <p>{tester.phone || '0831.777752'}</p>
+             <p>Tel/Fax: {tester.phone || '0831.777752'}</p>
              <p className="font-semibold">{tester.pec || 'arch.luigiresta@pec.it'}</p>
              <p className="font-semibold">{tester.email || 'arch.luigiresta@gmail.com'}</p>
           </div>
@@ -86,9 +85,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   const renderFooter = () => {
     if (isConvocazione) {
         return (
-            <div className="mt-auto pt-4 border-t border-slate-300 text-[8pt] flex justify-between no-print-break text-slate-500">
+            <div className="mt-auto pt-4 border-t border-slate-400 text-[8.5pt] flex justify-between no-print-break text-slate-700 font-sans">
                 <div>
-                   <p className="font-bold uppercase text-slate-800">{tester.name}</p>
+                   <p className="font-bold uppercase">{tester.name}</p>
                    <p>{tester.address}</p>
                 </div>
                 <div className="text-right">
@@ -105,7 +104,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
   return (
     <div id="document-preview-container" className="font-serif-print text-black leading-snug w-full max-w-[21cm]">
-        <div className="bg-white shadow-lg p-[1.8cm] min-h-[29.7cm] print-page relative flex flex-col mx-auto border border-slate-100">
+        <div className="bg-white shadow-lg p-[1.8cm] min-h-[29.7cm] print-page relative flex flex-col mx-auto">
             
             {renderHeader()}
 
@@ -146,13 +145,13 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
                         {/* Blocco Firma */}
                         <div className="mt-24 flex justify-end">
-                            <div className="text-center min-w-[350px]">
-                                <p className="font-bold uppercase text-[9pt] leading-tight mb-4 border-b border-black/10 pb-1">
+                            <div className="text-center min-w-[380px]">
+                                <p className="font-bold uppercase text-[9pt] leading-tight mb-5 border-b border-black/20 pb-1">
                                     IL COLLAUDATORE STATICO, TECNICO-AMMINISTRATIVO<br/>E FUNZIONALE DEGLI IMPIANTI
                                 </p>
-                                <p className="font-bold text-[14pt]">{tester.title} {tester.name}</p>
-                                <div className="mt-4 h-16 flex items-center justify-center">
-                                    <div className="w-48 h-px bg-slate-200"></div>
+                                <p className="font-bold text-[14pt] uppercase tracking-wide">{tester.title} {tester.name}</p>
+                                <div className="mt-6 h-20 flex items-center justify-center opacity-40">
+                                    <span className="text-[10pt] italic font-sans">(Firma Digitale)</span>
                                 </div>
                             </div>
                         </div>
