@@ -25,22 +25,21 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const init = async () => {
+    const initApp = async () => {
       try {
         await db.ensureAdminExists();
         const savedUserStr = localStorage.getItem('loggedUser');
         if (savedUserStr) {
-          const savedUser = JSON.parse(savedUserStr);
-          // Optional: verify user exists in DB
-          setCurrentUser(savedUser);
+          const user = JSON.parse(savedUserStr);
+          setCurrentUser(user);
         }
       } catch (e) {
-        console.error("Initialization error", e);
+        console.error("Errore inizializzazione database", e);
       } finally {
         setLoading(false);
       }
     };
-    init();
+    initApp();
   }, []);
 
   useEffect(() => {
@@ -156,13 +155,9 @@ const App: React.FC = () => {
     </div>
   );
 
-  if (!currentUser) {
-    return <AuthScreen onLogin={(u) => { setCurrentUser(u); localStorage.setItem('loggedUser', JSON.stringify(u)); }} />;
-  }
+  if (!currentUser) return <AuthScreen onLogin={(u) => { setCurrentUser(u); localStorage.setItem('loggedUser', JSON.stringify(u)); }} />;
 
-  if (showAdmin && currentUser.isSystemAdmin) {
-    return <AdminPanel onBack={() => setShowAdmin(false)} currentUser={currentUser} />;
-  }
+  if (showAdmin && currentUser.isSystemAdmin) return <AdminPanel onBack={() => setShowAdmin(false)} currentUser={currentUser} />;
 
   if (!currentProject) {
     return (
@@ -225,21 +220,21 @@ const App: React.FC = () => {
             <h2 className="text-2xl font-bold mb-6">Dati Generali</h2>
             <div className="space-y-6">
                 <div>
-                   <label className="text-xs font-bold text-slate-500 uppercase">Committente</label>
+                   <label className="text-xs font-bold text-slate-500 uppercase">Committente (Ente Appaltante)</label>
                    <input disabled={readOnly} type="text" className="w-full p-3 border rounded-lg mt-1" value={currentProject.entity} onChange={e => handleUpdateProjectField('entity', e.target.value)} />
                 </div>
                 <div>
-                   <label className="text-xs font-bold text-slate-500 uppercase">Oggetto</label>
+                   <label className="text-xs font-bold text-slate-500 uppercase">Oggetto dell'Intervento</label>
                    <textarea disabled={readOnly} className="w-full p-3 border rounded-lg mt-1 h-24" value={currentProject.projectName} onChange={e => handleUpdateProjectField('projectName', e.target.value)} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="text-xs font-bold text-slate-500 uppercase">CUP</label>
-                        <input disabled={readOnly} type="text" className="w-full p-3 border rounded-lg mt-1" value={currentProject.cup} onChange={e => handleUpdateProjectField('cup', e.target.value)} />
+                        <input disabled={readOnly} type="text" className="w-full p-3 border rounded-lg mt-1 font-mono" value={currentProject.cup} onChange={e => handleUpdateProjectField('cup', e.target.value)} />
                     </div>
                     <div>
                         <label className="text-xs font-bold text-slate-500 uppercase">CIG</label>
-                        <input disabled={readOnly} type="text" className="w-full p-3 border rounded-lg mt-1" value={currentProject.cig} onChange={e => handleUpdateProjectField('cig', e.target.value)} />
+                        <input disabled={readOnly} type="text" className="w-full p-3 border rounded-lg mt-1 font-mono" value={currentProject.cig} onChange={e => handleUpdateProjectField('cig', e.target.value)} />
                     </div>
                 </div>
             </div>

@@ -13,8 +13,8 @@ export interface ContactInfo {
   repTitle?: string; 
   professionalOrder?: string; 
   registrationNumber?: string; 
-  colleagueEntityName?: string; // Nome Ente di appartenenza
-  colleagueEntityLogo?: string; // Logo Ente di appartenenza (Base64)
+  colleagueEntityName?: string; 
+  colleagueEntityLogo?: string; 
 }
 
 export interface AppointmentData {
@@ -244,7 +244,7 @@ export interface DocumentVariables {
   
   actSubject?: string;       
   actRecipient?: string;     
-  actRecipientsBlock?: string; // New: list of multiple recipients
+  actRecipientsBlock?: string; 
   actBodyOverride?: string;  
   
   nullaOstaLegalRefs?: string; 
