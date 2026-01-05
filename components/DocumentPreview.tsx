@@ -13,6 +13,7 @@ const formatShortDate = (date?: string) => {
     if (!date) return '...';
     try {
         const d = new Date(date);
+        if (isNaN(d.getTime())) return date;
         return d.toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' });
     } catch {
         return date;
@@ -30,10 +31,12 @@ const formatCurrency = (amount: number) => {
 };
 
 export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, type }) => {
-  if (!project || !doc) {
+  // Protezione iniziale contro dati mancanti
+  if (!project || !doc || !type) {
     return (
-      <div className="p-10 text-slate-400 italic bg-white rounded-lg border border-dashed text-center">
-        Dati insufficienti per generare l'anteprima del documento.
+      <div className="p-10 text-slate-400 italic bg-white rounded-lg border border-dashed text-center w-full max-w-[21cm]">
+        <p className="font-bold text-red-400 mb-2">Errore Anteprima</p>
+        Dati insufficienti per generare il documento selezionato.
       </div>
     );
   }
@@ -42,6 +45,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   const isConvocazione = type === 'LETTERA_CONVOCAZIONE';
   const isVerbale = type === 'VERBALE_COLLAUDO';
 
+  // Accesso sicuro ai soggetti
   const tester = project.subjects?.tester?.contact || {};
   const t = project.subjects?.testerAppointment || {};
 
@@ -57,22 +61,21 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
     }
 
     if (isConvocazione) {
-      // Header Professionale Fedele al Fac-simile (Luigi Resta)
       return (
         <div className="mb-14 border-b border-slate-900 pb-2">
           <div className="flex justify-between items-baseline">
             <h1 className="font-bold text-[18pt] leading-none tracking-tight uppercase text-black">
-              {tester.name || 'LUIGI RESTA'}
+              {tester.name || 'NOME NON DEFINITO'}
             </h1>
             <p className="text-[11pt] tracking-[0.3em] font-light uppercase text-black">
               {tester.title || 'ARCHITETTO'}
             </p>
           </div>
           <div className="mt-2 text-[8.5pt] text-right space-y-0.5 leading-tight text-slate-800 italic">
-             <p>{tester.address || 'Piazza Matteotti, 3 - 72023 Mesagne'}</p>
-             <p>Tel/Fax: {tester.phone || '0831.777752'}</p>
-             <p className="font-semibold">{tester.pec || 'arch.luigiresta@pec.it'}</p>
-             <p className="font-semibold">{tester.email || 'arch.luigiresta@gmail.com'}</p>
+             <p>{tester.address || ''}</p>
+             <p>{tester.phone ? `Tel/Fax: ${tester.phone}` : ''}</p>
+             <p className="font-semibold">{tester.pec || ''}</p>
+             <p className="font-semibold">{tester.email || ''}</p>
           </div>
         </div>
       );
@@ -92,11 +95,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
         return (
             <div className="mt-auto pt-4 border-t border-slate-400 text-[8pt] flex justify-between no-print-break text-slate-600 font-sans">
                 <div>
-                   <p className="font-bold uppercase text-slate-800">{tester.name || '...'}</p>
-                   <p>{tester.address || '...'}</p>
+                   <p className="font-bold uppercase text-slate-800">{tester.name || ''}</p>
+                   <p>{tester.address || ''}</p>
                 </div>
                 <div className="text-right">
-                   <p>PEC: {tester.pec || '...'}</p>
+                   <p>{tester.pec ? `PEC: ${tester.pec}` : ''}</p>
                    <p>{tester.registrationNumber ? `Iscr. Albo n. ${tester.registrationNumber}` : ''}</p>
                 </div>
             </div>
@@ -109,38 +112,34 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
   return (
     <div id="document-preview-container" className="font-serif-print text-black leading-snug w-full max-w-[21cm] animate-in fade-in duration-300">
-        <div className="bg-white shadow-xl p-[1.8cm] min-h-[29.7cm] print-page relative flex flex-col mx-auto">
+        <div className="bg-white shadow-xl p-[1.8cm] min-h-[29.7cm] print-page relative flex flex-col mx-auto border border-slate-200">
             
             {renderHeader()}
 
             <div className="flex-1">
                 {isConvocazione && (
                     <div className="text-[11.5pt] space-y-8">
-                        {/* Destinatari Multipli a Destra */}
                         <div className="flex justify-end mb-12">
                             <div className="w-2/3 text-left space-y-4">
                                 <div className="whitespace-pre-wrap font-bold uppercase leading-tight text-[11pt]">
-                                    {doc.actRecipientsBlock || 
-                                    `SPETT.LE COMMISSARIO STRAORDINARIO\nGIOCHI MEDITERRANEO TARANTO 2026\nALLA C.A. DEL RUP ARCH. LAURA SPINELLI\nPEC: commissario.giochimediterraneo26@pec.governo.it\n\nSIDOTI ENGINEERING s.r.l.\nALLA C.A. DEL DL ARCH. VINCENZO SIDOTI\nPEC: sidotiengineering@legalmail.it`}
+                                    {doc.actRecipientsBlock || "DESTINATARI NON INSERITI"}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Oggetto e Titolo */}
                         <div className="font-bold space-y-2">
                             <div className="flex gap-2">
                                 <span className="underline shrink-0">Oggetto:</span>
                                 <div className="flex-1">
-                                    {(project.projectName || '').toUpperCase()} - CUP: {project.cup} - CIG: {project.cig}
+                                    {(project.projectName || '').toUpperCase()} {project.cup ? `- CUP: ${project.cup}` : ''} {project.cig ? `- CIG: ${project.cig}` : ''}
                                 </div>
                             </div>
-                            <p className="pt-4 text-[13pt] underline uppercase tracking-tight">Convocazione {doc.visitNumber === 1 ? 'I' : doc.visitNumber} visita di Collaudo</p>
+                            <p className="pt-4 text-[13pt] underline uppercase tracking-tight">Convocazione {doc.visitNumber || 1} visita di Collaudo</p>
                         </div>
 
-                        {/* Corpo del Testo */}
                         <div className="text-justify leading-relaxed whitespace-pre-wrap text-[11.5pt] space-y-4">
                             {doc.actBodyOverride || 
-                            `Sentite le parti, si comunica che la ${doc.visitNumber === 1 ? 'I' : doc.visitNumber} visita di collaudo dei lavori di cui in oggetto è fissata per il giorno ${formatShortDate(doc.date)}, ore ${doc.time || '--.--'}, con incontro presso il luogo dei lavori.
+                            `Sentite le parti, si comunica che la ${doc.visitNumber || 1} visita di collaudo dei lavori di cui in oggetto è fissata per il giorno ${formatShortDate(doc.date)}, ore ${doc.time || '--.--'}, con incontro presso il luogo dei lavori.
 \nDurante le operazioni di collaudo, la Ditta dovrà assicurare la disponibilità di personale ed attrezzature per le verifiche, i saggi e le prove necessarie, oltre a copia del progetto completo in formato cartaceo al fine di agevolare le opportune valutazioni sul posto.
 \nDurante il suddetto incontro lo scrivente estrarrà copia, altresì, di quanto eventualmente necessario alla presa d’atto delle attività già svolte.
 \nSi invitano le parti ad astenersi dal porre in essere qualsivoglia opera di carattere strutturale in mancanza della verifica e del preventivo assenso da parte dello scrivente collaudatore. 
@@ -148,14 +147,13 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 \nDistinti saluti.`}
                         </div>
 
-                        {/* Blocco Firma */}
                         <div className="mt-24 flex justify-end">
                             <div className="text-center min-w-[380px]">
                                 <p className="font-bold uppercase text-[9pt] leading-tight mb-5 border-b border-black/20 pb-1">
                                     IL COLLAUDATORE STATICO, TECNICO-AMMINISTRATIVO<br/>E FUNZIONALE DEGLI IMPIANTI
                                 </p>
-                                <p className="font-bold text-[14pt] uppercase tracking-wide">{tester.title} {tester.name}</p>
-                                <div className="mt-6 h-20 flex items-center justify-center opacity-40">
+                                <p className="font-bold text-[14pt] uppercase tracking-wide">{tester.title || ''} {tester.name || ''}</p>
+                                <div className="mt-6 h-10 flex items-center justify-center opacity-40">
                                     <span className="text-[10pt] italic font-sans">(Firma Digitale)</span>
                                 </div>
                             </div>
@@ -167,16 +165,18 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                     <div className="text-[11pt] text-justify space-y-6 leading-relaxed">
                         <p className="italic text-center mb-10 font-bold border-b border-slate-100 pb-4">{doc.nullaOstaLegalRefs || "D.Lgs. 165/2001 e s.m.i."}</p>
                         <div className="space-y-6">
-                            <p>{doc.nullaOstaRequestBlock || "Vista la richiesta dell'Ente..."}</p>
+                            <p>{doc.nullaOstaRequestBlock || "Si comunica quanto segue..."}</p>
                             <div className="font-bold border-y-2 border-slate-900 py-6 text-center bg-slate-50 uppercase tracking-widest">
                                 SI AUTORIZZA
                             </div>
-                            <div className="whitespace-pre-wrap">{doc.nullaOstaObservationsBlock || "Lo svolgimento dell'incarico..."}</div>
+                            <div className="whitespace-pre-wrap">{doc.nullaOstaObservationsBlock || ""}</div>
                             
-                            <div className="pt-10 border-t border-slate-100 text-sm italic text-slate-600">
-                                Compenso previsto: {formatCurrency(feeValue)} <br/>
-                                (Soggetto a riduzione del 50% ai sensi di legge: {formatCurrency(feeValue / 2)})
-                            </div>
+                            {feeValue > 0 && (
+                                <div className="pt-10 border-t border-slate-100 text-sm italic text-slate-600">
+                                    Compenso previsto: {formatCurrency(feeValue)} <br/>
+                                    (Soggetto a riduzione del 50% ai sensi di legge: {formatCurrency(feeValue / 2)})
+                                </div>
+                            )}
                         </div>
                         <div className="mt-20 flex justify-between items-end">
                             <p className="font-bold">Data, {formatShortDate(doc.date)}</p>
@@ -192,20 +192,20 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                 {isVerbale && (
                     <div className="text-sm space-y-6">
                          <div className="text-center font-bold mb-6">
-                            <h2 className="text-xl underline uppercase tracking-tight">VERBALE DI VISITA DI COLLAUDO N. {doc.visitNumber}</h2>
+                            <h2 className="text-xl underline uppercase tracking-tight">VERBALE DI VISITA DI COLLAUDO N. {doc.visitNumber || '?'}</h2>
                             <p className="text-sm mt-1">SVOLTA IN DATA {formatShortDate(doc.date)}</p>
                         </div>
                         <div className="border-[1.5pt] border-black p-5 text-xs font-bold space-y-2 uppercase leading-tight">
-                            <p className="text-[11pt]">OPERA: {project.projectName}</p>
-                            <p>COMMITTENTE: {project.entity}</p>
+                            <p className="text-[11pt]">OPERA: {project.projectName || '---'}</p>
+                            <p>COMMITTENTE: {project.entity || '---'}</p>
                             <div className="flex gap-10">
-                                <span>CUP: {project.cup}</span>
-                                <span>CIG: {project.cig}</span>
+                                <span>CUP: {project.cup || '---'}</span>
+                                <span>CIG: {project.cig || '---'}</span>
                             </div>
                         </div>
                         <div className="text-justify leading-relaxed">
                             <h3 className="font-bold text-xs uppercase mb-1 border-b-[1.5pt] border-black pb-0.5">Premesse Storiche</h3>
-                            <div className="whitespace-pre-wrap text-[10.5pt] leading-snug">{doc.premis || "Nessuna premessa."}</div>
+                            <div className="whitespace-pre-wrap text-[10.5pt] leading-snug">{doc.premis || "Nessuna premessa archiviata."}</div>
                         </div>
                         <div className="mt-32 grid grid-cols-2 gap-24">
                             <div className="text-center border-t border-black pt-3"><p className="text-[10px] font-bold uppercase tracking-widest">L'Impresa Appaltatrice</p></div>

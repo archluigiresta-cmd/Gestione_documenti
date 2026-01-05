@@ -24,14 +24,15 @@ const App: React.FC = () => {
   const [sharingProjectId, setSharingProjectId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Forza l'inizializzazione pulita senza recupero automatico della sessione
   useEffect(() => {
     const initApp = async () => {
       try {
         await db.ensureAdminExists();
-        // NON carichiamo automaticamente dal localStorage per forzare la pagina di Login all'avvio
-        // currentUser resta null -> viene mostrata AuthScreen
+        // Rimosso esplicitamente ogni recupero da localStorage all'avvio
+        // per garantire che la prima pagina visualizzata sia sempre AuthScreen (Login)
       } catch (e) {
-        console.error("Errore inizializzazione", e);
+        console.error("Errore inizializzazione database", e);
       } finally {
         setLoading(false);
       }
@@ -57,6 +58,8 @@ const App: React.FC = () => {
     setDocuments(docs);
     if (docs.length > 0) {
       setCurrentDocId(docs[0].id);
+    } else {
+      setCurrentDocId('');
     }
     setActiveTab('general');
   };
@@ -82,6 +85,7 @@ const App: React.FC = () => {
     const keys = path.split('.');
     let current: any = updated;
     for (let i = 0; i < keys.length - 1; i++) {
+      if (!current[keys[i]]) current[keys[i]] = {};
       current = current[keys[i]];
     }
     current[keys[keys.length - 1]] = value;
@@ -94,15 +98,13 @@ const App: React.FC = () => {
     let nextNum = 1;
     let lastPremis = '';
     
-    if (type === 'VERBALE_COLLAUDO') {
-        const verbaliExist = documents.filter(d => d.type === 'VERBALE_COLLAUDO');
-        if (verbaliExist.length > 0) {
-            const maxNum = Math.max(...verbaliExist.map(v => v.visitNumber));
-            nextNum = maxNum + 1;
-            const lastDoc = verbaliExist.find(v => v.visitNumber === maxNum);
-            if (lastDoc) {
-                lastPremis = lastDoc.premis || '';
-            }
+    const verbaliExist = documents.filter(d => d.type === type);
+    if (verbaliExist.length > 0) {
+        const maxNum = Math.max(...verbaliExist.map(v => v.visitNumber || 0));
+        nextNum = maxNum + 1;
+        const lastDoc = verbaliExist.find(v => v.visitNumber === maxNum);
+        if (lastDoc) {
+            lastPremis = lastDoc.premis || '';
         }
     }
 
@@ -143,13 +145,18 @@ const App: React.FC = () => {
   };
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
+    <div className="min-h-screen flex items-center justify-center bg-white">
       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
     </div>
   );
 
-  // Forza AuthScreen se non c'è utente
-  if (!currentUser) return <AuthScreen onLogin={(u) => { setCurrentUser(u); localStorage.setItem('loggedUser', JSON.stringify(u)); }} />;
+  // Visualizzazione Login Obbligatoria
+  if (!currentUser) {
+    return <AuthScreen onLogin={(u) => { 
+      setCurrentUser(u); 
+      localStorage.setItem('loggedUser', JSON.stringify(u)); 
+    }} />;
+  }
 
   if (showAdmin && currentUser.isSystemAdmin) return <AdminPanel onBack={() => setShowAdmin(false)} currentUser={currentUser} />;
 
@@ -212,20 +219,20 @@ const App: React.FC = () => {
             <div className="space-y-6">
                 <div>
                    <label className="text-xs font-bold text-slate-500 uppercase">Committente</label>
-                   <input disabled={readOnly} type="text" className="w-full p-3 border rounded-lg mt-1" value={currentProject.entity} onChange={e => handleUpdateProjectField('entity', e.target.value)} />
+                   <input disabled={readOnly} type="text" className="w-full p-3 border rounded-lg mt-1" value={currentProject.entity || ''} onChange={e => handleUpdateProjectField('entity', e.target.value)} />
                 </div>
                 <div>
                    <label className="text-xs font-bold text-slate-500 uppercase">Oggetto dell'Intervento</label>
-                   <textarea disabled={readOnly} className="w-full p-3 border rounded-lg mt-1 h-24" value={currentProject.projectName} onChange={e => handleUpdateProjectField('projectName', e.target.value)} />
+                   <textarea disabled={readOnly} className="w-full p-3 border rounded-lg mt-1 h-24" value={currentProject.projectName || ''} onChange={e => handleUpdateProjectField('projectName', e.target.value)} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="text-xs font-bold text-slate-500 uppercase">CUP</label>
-                        <input disabled={readOnly} type="text" className="w-full p-3 border rounded-lg mt-1 font-mono" value={currentProject.cup} onChange={e => handleUpdateProjectField('cup', e.target.value)} />
+                        <input disabled={readOnly} type="text" className="w-full p-3 border rounded-lg mt-1 font-mono" value={currentProject.cup || ''} onChange={e => handleUpdateProjectField('cup', e.target.value)} />
                     </div>
                     <div>
                         <label className="text-xs font-bold text-slate-500 uppercase">CIG</label>
-                        <input disabled={readOnly} type="text" className="w-full p-3 border rounded-lg mt-1 font-mono" value={currentProject.cig} onChange={e => handleUpdateProjectField('cig', e.target.value)} />
+                        <input disabled={readOnly} type="text" className="w-full p-3 border rounded-lg mt-1 font-mono" value={currentProject.cig || ''} onChange={e => handleUpdateProjectField('cig', e.target.value)} />
                     </div>
                 </div>
             </div>
