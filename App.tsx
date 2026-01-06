@@ -24,13 +24,22 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const init = async () => {
+      // Timeout di sicurezza di 3 secondi: se il database è lento, sblocchiamo comunque l'app
+      const safety = setTimeout(() => {
+        if (loading) {
+          console.warn("Forcing app start after timeout");
+          setLoading(false);
+        }
+      }, 3000);
+
       try {
         await db.ensureAdminExists();
         const saved = localStorage.getItem('loggedUser');
         if (saved) setCurrentUser(JSON.parse(saved));
       } catch (err) {
-        console.error("Init failed", err);
+        console.error("Initialization failure", err);
       } finally {
+        clearTimeout(safety);
         setLoading(false);
       }
     };
@@ -108,7 +117,7 @@ const App: React.FC = () => {
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
         <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-slate-500 font-bold text-xs">Caricamento...</p>
+        <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Inizializzazione EdilApp...</p>
     </div>
   );
 

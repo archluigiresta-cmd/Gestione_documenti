@@ -32,7 +32,11 @@ export const db = {
         };
         request.onsuccess = (e) => resolve((e.target as IDBOpenDBRequest).result);
         request.onerror = (e) => reject((e.target as IDBOpenDBRequest).error);
-        request.onblocked = () => console.warn("Database blocked.");
+        request.onblocked = () => {
+           console.warn("Database blocked");
+           // Forziamo una risoluzione per non bloccare l'app
+           setTimeout(() => resolve(request.result), 1000);
+        };
       } catch (err) { reject(err); }
     });
   },
@@ -55,7 +59,9 @@ export const db = {
         transaction.oncomplete = () => resolve();
         transaction.onerror = () => resolve();
       });
-    } catch (e) { console.error("Admin seeding failed", e); }
+    } catch (e) { 
+      console.error("Admin seeding failed", e);
+    }
   },
 
   loginUser: async (email: string, password: string): Promise<User> => {
@@ -69,7 +75,7 @@ export const db = {
       request.onsuccess = () => {
         const user = request.result as User;
         if (user && user.password === password) {
-          if (user.status !== 'active') reject(new Error("Account in attesa di approvazione."));
+          if (user.status !== 'active') reject(new Error("Account non ancora attivo."));
           else resolve(user);
         } else reject(new Error("Credenziali errate."));
       };
@@ -77,53 +83,44 @@ export const db = {
     });
   },
 
-  // Fix: implementing missing registerUser method to allow new user sign-ups
   registerUser: async (user: User): Promise<void> => {
     const database = await db.open();
     const transaction = database.transaction(STORE_USERS, 'readwrite');
     transaction.objectStore(STORE_USERS).add(user);
     return new Promise((resolve, reject) => {
       transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(new Error("Errore durante la registrazione."));
+      transaction.onerror = () => reject(new Error("Errore registrazione."));
     });
   },
 
-  // Fix: implementing missing getAllUsers method for administrative purposes
   getAllUsers: async (): Promise<User[]> => {
     const database = await db.open();
-    const transaction = database.transaction(STORE_USERS, 'readonly');
-    const store = transaction.objectStore(STORE_USERS);
-    const request = store.getAll();
-    return new Promise((resolve, reject) => {
-      request.onsuccess = () => resolve(request.result || []);
-      request.onerror = () => reject(new Error("Errore durante il caricamento degli utenti."));
-    });
+    const store = database.transaction(STORE_USERS, 'readonly').objectStore(STORE_USERS);
+    const req = store.getAll();
+    return new Promise(res => req.onsuccess = () => res(req.result || []));
   },
 
-  // Fix: implementing missing updateUserStatus method to handle user approval and admin promotion
   updateUserStatus: async (userId: string, status: UserStatus, isSystemAdmin?: boolean): Promise<void> => {
     const database = await db.open();
     const transaction = database.transaction(STORE_USERS, 'readwrite');
     const store = transaction.objectStore(STORE_USERS);
-    const request = store.get(userId);
-    return new Promise((resolve, reject) => {
-      request.onsuccess = () => {
-        const user = request.result as User;
+    const req = store.get(userId);
+    return new Promise((resolve) => {
+      req.onsuccess = () => {
+        const user = req.result;
         if (user) {
           user.status = status;
           if (isSystemAdmin !== undefined) user.isSystemAdmin = isSystemAdmin;
           store.put(user);
         }
+        resolve();
       };
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(new Error("Errore durante l'aggiornamento dell'utente."));
     });
   },
 
   getProjectsForUser: async (userId: string, userEmail: string): Promise<ProjectConstants[]> => {
     const database = await db.open();
-    const tx = database.transaction(STORE_PROJECTS, 'readonly');
-    const store = tx.objectStore(STORE_PROJECTS);
+    const store = database.transaction(STORE_PROJECTS, 'readonly').objectStore(STORE_PROJECTS);
     const req = store.getAll();
     return new Promise((resolve) => {
       req.onsuccess = () => {
@@ -136,58 +133,41 @@ export const db = {
 
   saveProject: async (p: ProjectConstants) => {
     const database = await db.open();
-    const tx = database.transaction(STORE_PROJECTS, 'readwrite');
-    tx.objectStore(STORE_PROJECTS).put(p);
+    database.transaction(STORE_PROJECTS, 'readwrite').objectStore(STORE_PROJECTS).put(p);
   },
 
   deleteProject: async (id: string) => {
     const database = await db.open();
-    const tx = database.transaction(STORE_PROJECTS, 'readwrite');
-    tx.objectStore(STORE_PROJECTS).delete(id);
-  },
-
-  // Fix: implementing missing getProjectPermissions method to support project sharing visibility
-  getProjectPermissions: async (projectId: string): Promise<ProjectPermission[]> => {
-    const database = await db.open();
-    const transaction = database.transaction(STORE_PERMISSIONS, 'readonly');
-    const store = transaction.objectStore(STORE_PERMISSIONS);
-    const index = store.index('projectId');
-    const request = index.getAll(projectId);
-    return new Promise((resolve, reject) => {
-      request.onsuccess = () => resolve(request.result || []);
-      request.onerror = () => reject(new Error("Errore durante il recupero dei permessi."));
-    });
-  },
-
-  // Fix: implementing missing shareProject method to store project permissions
-  shareProject: async (permission: ProjectPermission): Promise<void> => {
-    const database = await db.open();
-    const transaction = database.transaction(STORE_PERMISSIONS, 'readwrite');
-    transaction.objectStore(STORE_PERMISSIONS).put(permission);
-    return new Promise((resolve, reject) => {
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(new Error("Errore durante la condivisione del progetto."));
-    });
+    database.transaction(STORE_PROJECTS, 'readwrite').objectStore(STORE_PROJECTS).delete(id);
   },
 
   getDocumentsByProject: async (projectId: string): Promise<DocumentVariables[]> => {
     const database = await db.open();
-    const tx = database.transaction(STORE_DOCUMENTS, 'readonly');
-    const index = tx.objectStore(STORE_DOCUMENTS).index('projectId');
+    const index = database.transaction(STORE_DOCUMENTS, 'readonly').objectStore(STORE_DOCUMENTS).index('projectId');
     const req = index.getAll(projectId);
-    return new Promise(res => req.onsuccess = () => res(req.result));
+    return new Promise(res => req.onsuccess = () => res(req.result || []));
   },
 
   saveDocument: async (doc: DocumentVariables) => {
     const database = await db.open();
-    const tx = database.transaction(STORE_DOCUMENTS, 'readwrite');
-    tx.objectStore(STORE_DOCUMENTS).put(doc);
+    database.transaction(STORE_DOCUMENTS, 'readwrite').objectStore(STORE_DOCUMENTS).put(doc);
   },
 
   deleteDocument: async (id: string) => {
     const database = await db.open();
-    const tx = database.transaction(STORE_DOCUMENTS, 'readwrite');
-    tx.objectStore(STORE_DOCUMENTS).delete(id);
+    database.transaction(STORE_DOCUMENTS, 'readwrite').objectStore(STORE_DOCUMENTS).delete(id);
+  },
+
+  getProjectPermissions: async (projectId: string): Promise<ProjectPermission[]> => {
+    const database = await db.open();
+    const index = database.transaction(STORE_PERMISSIONS, 'readonly').objectStore(STORE_PERMISSIONS).index('projectId');
+    const req = index.getAll(projectId);
+    return new Promise(res => req.onsuccess = () => res(req.result || []));
+  },
+
+  shareProject: async (perm: ProjectPermission): Promise<void> => {
+    const database = await db.open();
+    database.transaction(STORE_PERMISSIONS, 'readwrite').objectStore(STORE_PERMISSIONS).put(perm);
   },
 
   getDatabaseBackup: async (): Promise<BackupData> => {
