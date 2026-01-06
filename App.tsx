@@ -29,13 +29,14 @@ const App: React.FC = () => {
         const saved = localStorage.getItem('loggedUser');
         if (saved) {
           try {
-            setCurrentUser(JSON.parse(saved));
+            const user = JSON.parse(saved);
+            setCurrentUser(user);
           } catch {
             localStorage.removeItem('loggedUser');
           }
         }
       } catch (err) {
-        console.error("Inizializzazione fallita", err);
+        console.error("Init error:", err);
       } finally {
         setLoading(false);
       }
@@ -92,7 +93,6 @@ const App: React.FC = () => {
     const nextNum = documents.filter(d => d.type === type).length + 1;
     const newDoc = { ...createInitialDocument(currentProject.id), type, visitNumber: nextNum };
     
-    // Logica di eredità per verbali di collaudo
     if (type === 'VERBALE_COLLAUDO' && documents.length > 0) {
       const last = [...documents].filter(d => d.type === 'VERBALE_COLLAUDO').sort((a,b) => b.visitNumber - a.visitNumber)[0];
       if (last) {
@@ -115,7 +115,7 @@ const App: React.FC = () => {
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
         <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Accesso in corso...</p>
+        <p className="text-slate-500 font-bold text-xs uppercase tracking-widest italic">EdilApp - Caricamento Sistema...</p>
     </div>
   );
 

@@ -21,7 +21,8 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   onSelectDocument,
   onUpdateDocument,
   onNewDocument,
-  onDeleteDocument
+  onDeleteDocument,
+  onUpdateProject
 }) => {
   const [subTab, setSubTab] = useState<'info' | 'convocation' | 'attendees' | 'works' | 'requests' | 'invites' | 'common' | 'evaluations'>('info');
   const [newItem, setNewItem] = useState('');
@@ -51,6 +52,24 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
     ]
   };
 
+  const getSubjectName = (role: 'rup' | 'dl' | 'cse') => {
+    const s = project.subjects[role];
+    if (!s) return '';
+    const title = s.contact.title ? s.contact.title + ' ' : '';
+    return title + s.contact.name;
+  };
+
+  const regenerateAttendees = () => {
+    if (!currentDoc) return;
+    const list = [
+        `Responsabile Unico del Progetto: ${getSubjectName('rup')}`,
+        `Direttore dei Lavori: ${getSubjectName('dl')}`,
+        `Coord. Sicurezza Esecuzione: ${getSubjectName('cse')}`,
+        `per l'Impresa ${project.contractor.mainCompany.name} (Legale Rappresentante): ${project.contractor.mainCompany.repTitle || 'Sig.'} ${project.contractor.mainCompany.repName}`
+    ].join('\n');
+    onUpdateDocument({...currentDoc, attendees: list});
+  };
+
   const addToField = (field: 'testerRequests' | 'testerInvitations' | 'commonParts') => {
     if (!currentDoc) return;
     const currentVal = (currentDoc as any)[field] || '';
@@ -68,28 +87,33 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
     <div className="flex flex-col items-center justify-center py-20 bg-white rounded-xl border-2 border-dashed">
       <Gavel className="w-12 h-12 text-slate-200 mb-4"/>
       <button onClick={() => onNewDocument('VERBALE_COLLAUDO')} className="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold shadow-lg">
-        + Crea Verbale di Collaudo
+        + Inizia Primo Verbale di Collaudo
       </button>
     </div>
   );
 
   return (
     <div className="max-w-6xl mx-auto pb-20 animate-in fade-in">
+      {/* Header */}
       <div className="flex bg-white p-4 rounded-xl shadow-sm border mb-8 justify-between items-center">
         <div className="flex items-center gap-4">
           <Gavel className="w-5 h-5 text-blue-600"/>
-          <select className="font-bold border-none bg-transparent text-lg focus:ring-0" value={currentDocId} onChange={e => onSelectDocument(e.target.value)}>
+          <select className="font-bold border-none bg-transparent text-lg focus:ring-0 cursor-pointer" value={currentDocId} onChange={e => onSelectDocument(e.target.value)}>
                 {documents.filter(d => d.type === 'VERBALE_COLLAUDO').map(d => (
-                <option key={d.id} value={d.id}>Verbale Collaudo n. {d.visitNumber} del {new Date(d.date).toLocaleDateString('it-IT')}</option>
+                <option key={d.id} value={d.id}>Verbale di Visita di Collaudo n. {d.visitNumber} del {new Date(d.date).toLocaleDateString('it-IT')}</option>
                 ))}
           </select>
         </div>
-        <button onClick={() => onNewDocument('VERBALE_COLLAUDO')} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-xs shadow">+ Nuovo</button>
+        <div className="flex gap-2">
+            <button onClick={() => onNewDocument('VERBALE_COLLAUDO')} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-xs shadow">+ Nuovo Verbale</button>
+            <button onClick={() => onDeleteDocument(currentDoc.id)} className="text-red-400 p-2 hover:bg-red-50 rounded-lg"><Trash2 className="w-5 h-5"/></button>
+        </div>
       </div>
 
+      {/* Navigation */}
       <div className="flex bg-white rounded-xl p-1 mb-8 shadow-sm border overflow-x-auto no-scrollbar">
           {[
-              { id: 'info', label: '1. Dati', icon: Calendar },
+              { id: 'info', label: '1. Dati & Tipologia', icon: Calendar },
               { id: 'convocation', label: '2. Convocazione', icon: Mail },
               { id: 'attendees', label: '3. Presenti', icon: Users },
               { id: 'works', label: '4. Lavori', icon: ListChecks },
@@ -105,80 +129,108 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
       </div>
 
       <div className="space-y-6">
+        {/* Tab 1: Info e Tipologia */}
         {subTab === 'info' && (
-          <div className="bg-white p-8 rounded-2xl shadow-sm border">
-            <h3 className="font-bold mb-6 text-xs uppercase text-slate-400 border-b pb-3">Dati Verbale</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div><label className="text-[10px] font-bold text-slate-500 uppercase">Data</label><input type="date" className="w-full p-3 border rounded-xl" value={currentDoc.date} onChange={e => onUpdateDocument({...currentDoc, date: e.target.value})} /></div>
-              <div><label className="text-[10px] font-bold text-slate-500 uppercase">Ora</label><input type="time" className="w-full p-3 border rounded-xl" value={currentDoc.time} onChange={e => onUpdateDocument({...currentDoc, time: e.target.value})} /></div>
-              <div><label className="text-[10px] font-bold text-slate-500 uppercase">N. Verbale</label><input type="number" className="w-full p-3 border rounded-xl font-bold" value={currentDoc.visitNumber} onChange={e => onUpdateDocument({...currentDoc, visitNumber: parseInt(e.target.value) || 1})} /></div>
+          <div className="space-y-6">
+            <div className="bg-white p-8 rounded-2xl shadow-sm border">
+                <h3 className="font-bold mb-6 text-xs uppercase text-slate-400 border-b pb-3">Dati Cronologici</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                  <div><label className="text-[10px] font-bold text-slate-500 uppercase">Data Sopralluogo</label><input type="date" className="w-full p-3 border rounded-xl" value={currentDoc.date} onChange={e => onUpdateDocument({...currentDoc, date: e.target.value})} /></div>
+                  <div><label className="text-[10px] font-bold text-slate-500 uppercase">Ora Inizio</label><input type="time" className="w-full p-3 border rounded-xl" value={currentDoc.time} onChange={e => onUpdateDocument({...currentDoc, time: e.target.value})} /></div>
+                  <div><label className="text-[10px] font-bold text-slate-500 uppercase">N. Progressivo</label><input type="number" className="w-full p-3 border rounded-xl font-bold" value={currentDoc.visitNumber} onChange={e => onUpdateDocument({...currentDoc, visitNumber: parseInt(e.target.value) || 1})} /></div>
+                </div>
+            </div>
+            
+            <div className="bg-white p-8 rounded-2xl shadow-sm border">
+                <h3 className="font-bold mb-6 text-xs uppercase text-slate-400 border-b pb-3">Tipologia Collaudo in corso</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <label className="flex items-center gap-3 p-4 border rounded-xl hover:bg-slate-50 cursor-pointer">
+                        <input type="checkbox" className="w-5 h-5 text-blue-600" checked={project.subjects.testerAppointment.isAdmin} onChange={e => onUpdateProject({...project, subjects: {...project.subjects, testerAppointment: {...project.subjects.testerAppointment, isAdmin: e.target.checked}}})} />
+                        <span className="text-sm font-bold text-slate-700">Tecnico-Amministrativo</span>
+                    </label>
+                    <label className="flex items-center gap-3 p-4 border rounded-xl hover:bg-slate-50 cursor-pointer">
+                        <input type="checkbox" className="w-5 h-5 text-blue-600" checked={project.subjects.testerAppointment.isStatic} onChange={e => onUpdateProject({...project, subjects: {...project.subjects, testerAppointment: {...project.subjects.testerAppointment, isStatic: e.target.checked}}})} />
+                        <span className="text-sm font-bold text-slate-700">Statico</span>
+                    </label>
+                    <label className="flex items-center gap-3 p-4 border rounded-xl hover:bg-slate-50 cursor-pointer">
+                        <input type="checkbox" className="w-5 h-5 text-blue-600" checked={project.subjects.testerAppointment.isFunctional} onChange={e => onUpdateProject({...project, subjects: {...project.subjects, testerAppointment: {...project.subjects.testerAppointment, isFunctional: e.target.checked}}})} />
+                        <span className="text-sm font-bold text-slate-700">Funzionale</span>
+                    </label>
+                </div>
             </div>
           </div>
         )}
 
-        {subTab === 'works' && (
+        {/* Tab 2: Convocazione */}
+        {subTab === 'convocation' && (
           <div className="bg-white p-8 rounded-2xl shadow-sm border">
-            <h3 className="font-bold text-xs uppercase text-slate-400 mb-6 border-b pb-3">4. Lavori</h3>
-            <div className="mb-8">
-                <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block italic">Frase Introduttiva</label>
-                <textarea className="w-full p-4 border rounded-xl h-24 text-sm bg-slate-50" value={currentDoc.worksIntroText} onChange={e => onUpdateDocument({...currentDoc, worksIntroText: e.target.value})}/>
+            <h3 className="font-bold mb-6 text-xs uppercase text-slate-400 border-b pb-3">Dettagli Convocazione</h3>
+            <div className="space-y-6">
+                <div>
+                    <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Dettagli testuali (es. Nota prot. PEC del...)</label>
+                    <textarea className="w-full p-4 border rounded-xl h-40 text-sm" value={currentDoc.convocationDetails || ''} onChange={e => onUpdateDocument({...currentDoc, convocationDetails: e.target.value})} placeholder="Es: Convocata con nota PEC prot. n. 1234 del 01/01/2025..."/>
+                </div>
             </div>
-            <div className="flex gap-2 mb-4">
-                <input type="text" className="flex-1 p-3 border rounded-xl text-sm" value={newItem} onChange={e => setNewItem(e.target.value)} onKeyDown={e => e.key === 'Enter' && addItemToList()} placeholder="Aggiungi lavorazione..."/>
-                <button onClick={addItemToList} className="bg-blue-600 text-white px-5 rounded-xl font-bold">+</button>
-            </div>
-            <ul className="space-y-2">
-                {currentDoc.worksExecuted.map((w, i) => (
-                    <li key={i} className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border">
-                        <span className="text-sm">{w}</span>
-                        <button onClick={() => { const n = [...currentDoc.worksExecuted]; n.splice(i, 1); onUpdateDocument({...currentDoc, worksExecuted: n}); }} className="text-red-300 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4"/></button>
-                    </li>
-                ))}
-            </ul>
           </div>
         )}
 
+        {/* Tab 3: Presenti */}
+        {subTab === 'attendees' && (
+          <div className="bg-white p-8 rounded-2xl shadow-sm border">
+            <div className="flex justify-between items-center mb-6 border-b pb-3">
+                <h3 className="font-bold text-xs uppercase text-slate-400">Soggetti Presenti</h3>
+                <button onClick={regenerateAttendees} className="text-[10px] font-bold text-blue-600 flex items-center gap-1 hover:underline"><RefreshCw className="w-3 h-3"/> Rigenera da Anagrafica</button>
+            </div>
+            <textarea className="w-full p-5 border rounded-2xl h-80 text-sm font-mono bg-slate-50 shadow-inner" value={currentDoc.attendees || ''} onChange={e => onUpdateDocument({...currentDoc, attendees: e.target.value})} placeholder="Elenco dei presenti..."/>
+          </div>
+        )}
+
+        {/* Tabs 5, 6, 7: Richieste, Inviti e Parti Comuni con MENU A FINESTRA */}
         {['requests', 'invites', 'common'].includes(subTab) && (
-            <div className="bg-white p-8 rounded-2xl shadow-sm border animate-in slide-in-from-bottom-2">
+            <div className="bg-white p-8 rounded-2xl shadow-sm border">
                 <h3 className="font-bold mb-6 text-xs uppercase text-slate-400 border-b pb-3">
-                    {subTab === 'requests' ? '5. Richieste' : subTab === 'invites' ? '6. Inviti' : '7. Parti Comuni'}
+                    {subTab === 'requests' ? '5. Richieste del Collaudatore' : subTab === 'invites' ? '6. Inviti del Collaudatore' : '7. Parti Comuni e Conclusioni'}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Menu a finestra */}
                     <div className="space-y-5">
-                        <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200">
-                            <label className="text-[10px] font-bold text-slate-500 uppercase mb-3 block">Menu a finestra (Seleziona per inserire)</label>
+                        <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100">
+                            <label className="text-[10px] font-bold text-blue-600 uppercase mb-3 block italic">Seleziona clausola dal menu:</label>
                             <select 
                                 className="w-full p-3 border rounded-xl bg-white text-sm shadow-sm cursor-pointer" 
                                 onChange={e => setTempText(e.target.value)}
                                 value=""
                             >
-                                <option value="">-- Scegli la clausola --</option>
+                                <option value="">-- Apri menu frasi standard --</option>
                                 {OPTIONS[subTab as keyof typeof OPTIONS].map((opt, idx) => (
-                                    <option key={idx} value={opt}>{opt.substring(0, 70)}...</option>
+                                    <option key={idx} value={opt}>{opt.substring(0, 80)}...</option>
                                 ))}
                             </select>
 
                             <div className="mt-6">
-                                <label className="text-[10px] font-bold text-blue-800 uppercase mb-2 block">Anteprima e Modifica:</label>
+                                <label className="text-[10px] font-bold text-slate-500 uppercase mb-2 block">Anteprima e Modifica:</label>
                                 <textarea 
                                     className="w-full p-4 border border-blue-200 rounded-xl h-48 text-sm bg-white shadow-inner outline-none" 
                                     value={tempText} 
                                     onChange={e => setTempText(e.target.value)}
+                                    placeholder="Il testo apparirà qui..."
                                 />
                                 <button 
                                     onClick={() => addToField(subTab === 'requests' ? 'testerRequests' : subTab === 'invites' ? 'testerInvitations' : 'commonParts' as any)} 
-                                    className="mt-4 w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-xs uppercase shadow hover:bg-blue-700 transition-all"
+                                    className="mt-4 w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-xs uppercase shadow hover:bg-blue-700 transition-all flex items-center justify-center gap-2"
                                 >
-                                    Aggiungi al Verbale
+                                    <Check className="w-4 h-4"/> Aggiungi al Verbale
                                 </button>
                             </div>
                         </div>
                     </div>
+
+                    {/* Editor finale */}
                     <div className="space-y-4">
                         <label className="text-[10px] font-bold text-slate-500 uppercase block tracking-widest">Testo nel Documento Finale:</label>
                         <textarea 
                             className="w-full p-5 border rounded-2xl h-[450px] text-sm leading-relaxed bg-slate-50 font-serif shadow-inner outline-none" 
-                            value={(currentDoc as any)[subTab === 'requests' ? 'testerRequests' : (subTab === 'invites' ? 'testerInvitations' : 'commonParts')]} 
+                            value={(currentDoc as any)[subTab === 'requests' ? 'testerRequests' : (subTab === 'invites' ? 'testerInvitations' : 'commonParts')] || ''} 
                             onChange={e => onUpdateDocument({...currentDoc, [subTab === 'requests' ? 'testerRequests' : (subTab === 'invites' ? 'testerInvitations' : 'commonParts')]: e.target.value})}
                         />
                     </div>
@@ -186,10 +238,11 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
             </div>
         )}
 
+        {/* Tab 8: Valutazioni */}
         {subTab === 'evaluations' && (
           <div className="bg-white p-8 rounded-2xl shadow-sm border">
             <h3 className="font-bold mb-6 text-xs uppercase text-slate-400 border-b pb-3">8. Valutazioni</h3>
-            <textarea className="w-full p-8 border rounded-2xl h-96 text-sm leading-relaxed font-serif bg-slate-50" value={currentDoc.observations} onChange={e => onUpdateDocument({...currentDoc, observations: e.target.value})} placeholder="Osservazioni conclusive..."/>
+            <textarea className="w-full p-8 border rounded-2xl h-96 text-sm leading-relaxed font-serif bg-slate-50 shadow-inner" value={currentDoc.observations || ''} onChange={e => onUpdateDocument({...currentDoc, observations: e.target.value})} placeholder="Inserisci osservazioni conclusive e valutazioni del collaudatore..."/>
           </div>
         )}
 

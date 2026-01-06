@@ -1,5 +1,5 @@
 
-import React, { ReactNode, ErrorInfo, Component } from 'react';
+import React, { ReactNode, ErrorInfo } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
@@ -17,13 +17,15 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-// Fix: Proper class inheritance from Component with generics to ensure 'props' and 'state' are correctly typed and available.
-// Removed the manual property declarations that were shadowing the base class properties and confusing the TypeScript compiler.
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
+// Fix: Explicitly extending React.Component with typed generics ensures 'props' and 'state' 
+// are correctly identified by the TypeScript compiler. Using property initialization for 
+// 'state' instead of constructor initialization guarantees it's defined and typed correctly 
+// on the instance, resolving errors where 'state' and 'props' were not found.
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  state: ErrorBoundaryState = {
+    hasError: false,
+    error: null,
+  };
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
@@ -34,7 +36,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   render() {
-    // Accessing state which is now correctly inherited from Component
+    // Accessing state which is now correctly inherited from React.Component
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-red-50 p-4">
@@ -57,7 +59,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         </div>
       );
     }
-    // Correctly accessing props.children inherited from Component through proper generic declaration
+    // Correctly accessing props.children inherited from React.Component
     return this.props.children;
   }
 }
