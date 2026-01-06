@@ -1,13 +1,14 @@
 
 import React from 'react';
 import { 
-  Building2, Users, Gavel, HardHat, Activity, ClipboardCheck, FileOutput, ArrowLeft, Settings, PencilRuler, LogOut, UserCircle
+  Building2, Users, Gavel, HardHat, Activity, ClipboardCheck, FileOutput, ArrowLeft, Settings, PencilRuler, LogOut, UserCircle,
+  Mail, ShieldCheck, ClipboardList, FileText, Euro, ChevronRight
 } from 'lucide-react';
 import { User } from '../types';
 
 interface SidebarProps {
   activeTab: string;
-  setActiveTab: (tab: 'general' | 'design' | 'subjects' | 'tender' | 'contractor' | 'execution' | 'testing' | 'export') => void;
+  setActiveTab: (tab: any) => void;
   onBackToDashboard: () => void;
   projectName: string;
   user: User | null;
@@ -18,17 +19,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
   activeTab, setActiveTab, onBackToDashboard, projectName, user, onLogout
 }) => {
   
-  const NavItem = ({ id, label, icon: Icon }: { id: string, label: string, icon: any }) => (
-    <button
-      onClick={() => setActiveTab(id as any)}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all text-sm font-medium mb-1 ${
-        activeTab === id ? 'bg-blue-500 text-white shadow-lg' : 'text-blue-200 hover:bg-blue-900 hover:text-white'
-      }`}
-    >
-      <Icon className="w-5 h-5" />
-      {label}
-    </button>
-  );
+  const NavItem = ({ id, label, icon: Icon, sub = false }: { id: string, label: string, icon?: any, sub?: boolean }) => {
+    const isActive = activeTab === id;
+    return (
+      <button
+        onClick={() => setActiveTab(id as any)}
+        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm font-medium mb-0.5 ${
+          sub ? (isActive ? 'bg-blue-800/50 text-white ml-4' : 'text-blue-300/70 hover:text-white hover:bg-blue-900/30 ml-4 font-normal') :
+          (isActive ? 'bg-blue-600 text-white shadow-lg' : 'text-blue-200 hover:bg-blue-900 hover:text-white')
+        }`}
+      >
+        {Icon && <Icon className={`${sub ? 'w-3.5 h-3.5' : 'w-5 h-5'}`} />}
+        <span className={sub ? 'text-xs' : ''}>{label}</span>
+      </button>
+    );
+  };
 
   return (
     <div className="w-64 bg-blue-950 text-white h-screen flex flex-col fixed left-0 top-0 no-print z-50 shadow-2xl border-r border-blue-900">
@@ -43,18 +48,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <p className="text-xs text-blue-200 line-clamp-2 leading-relaxed opacity-80">{projectName || 'Nuovo Progetto'}</p>
       </div>
       
-      <div className="flex-1 p-4 overflow-y-auto">
-        <div className="mb-2 px-4 text-xs font-bold text-blue-300 uppercase tracking-wider opacity-70">Anagrafica</div>
+      <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
+        <div className="mb-2 px-4 text-[10px] font-bold text-blue-400 uppercase tracking-widest opacity-70">Moduli Attivi</div>
         <NavItem id="general" label="Dati Generali" icon={Building2} />
-        <NavItem id="design" label="Progettazione" icon={PencilRuler} />
         <NavItem id="subjects" label="Soggetti" icon={Users} />
-        <NavItem id="tender" label="Gara" icon={Gavel} />
-        <NavItem id="contractor" label="Impresa" icon={HardHat} />
-        <div className="mt-6 mb-2 px-4 text-xs font-bold text-blue-300 uppercase tracking-wider opacity-70">Cantiere</div>
         <NavItem id="execution" label="Esecuzione" icon={Activity} />
         <NavItem id="testing" label="Collaudo" icon={ClipboardCheck} />
-        <div className="mt-6 mb-2 px-4 text-xs font-bold text-blue-300 uppercase tracking-wider opacity-70">Archivio</div>
-        <NavItem id="export" label="Esporta" icon={FileOutput} />
+        
+        <div className="mt-8 mb-2 px-4 text-[10px] font-bold text-blue-400 uppercase tracking-widest opacity-70 border-t border-blue-900/50 pt-6">Archivio / Esporta</div>
+        
+        {/* Gruppo Collaudi */}
+        <div className="mb-2">
+            <div className={`flex items-center gap-3 px-4 py-2 text-sm font-bold text-blue-200 opacity-60`}>
+                <Gavel className="w-5 h-5" /> Collaudi
+            </div>
+            <NavItem id="export-testing-comm" label="Corrispondenza" icon={Mail} sub />
+            <NavItem id="export-testing-clearance" label="Nullaosta" icon={ShieldCheck} sub />
+            <NavItem id="export-testing-visits" label="Visite di collaudo" icon={ClipboardList} sub />
+            <NavItem id="export-testing-reports" label="Relazioni collaudo" icon={FileText} sub />
+        </div>
+
+        <NavItem id="export-execution" label="Consegne" icon={Activity} />
+        <NavItem id="export-suspensions" label="Sospensioni" icon={ClipboardList} />
+        <NavItem id="export-accounting" label="Contabilità" icon={Euro} />
+        <NavItem id="export-reports" label="Relazioni" icon={FileText} />
       </div>
 
       <div className="p-4 border-t border-blue-900 bg-blue-950">

@@ -12,13 +12,18 @@ import { TestingManager } from './components/TestingManager';
 import { ExportManager } from './components/ExportManager';
 import { AdminPanel } from './components/AdminPanel';
 
+type AppTab = 
+    | 'general' | 'design' | 'subjects' | 'tender' | 'contractor' | 'execution' | 'testing' 
+    | 'export-testing-comm' | 'export-testing-clearance' | 'export-testing-visits' | 'export-testing-reports'
+    | 'export-execution' | 'export-suspensions' | 'export-accounting' | 'export-reports';
+
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [projects, setProjects] = useState<ProjectConstants[]>([]);
   const [currentProject, setCurrentProject] = useState<ProjectConstants | null>(null);
   const [documents, setDocuments] = useState<DocumentVariables[]>([]);
   const [currentDocId, setCurrentDocId] = useState<string>('');
-  const [activeTab, setActiveTab] = useState<'general' | 'design' | 'subjects' | 'tender' | 'contractor' | 'execution' | 'testing' | 'export'>('general');
+  const [activeTab, setActiveTab] = useState<AppTab>('general');
   const [showAdmin, setShowAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -108,7 +113,6 @@ const App: React.FC = () => {
     const type = docToDelete.type;
     await db.deleteDocument(id);
 
-    // Ricalcola numerazione
     const remainingOfSameType = documents
         .filter(d => d.id !== id && d.type === type)
         .sort((a, b) => a.createdAt - b.createdAt);
@@ -159,7 +163,8 @@ const App: React.FC = () => {
         const idx = projects.findIndex(p => p.id === id);
         if (dir === 'up' && idx > 0) {
           const p1 = projects[idx], p2 = projects[idx-1];
-          const tmp = p1.displayOrder; p1.displayOrder = p2.displayOrder; p2.displayOrder = tmp;
+          const tmp = p1.displayOrder; p1.displayOrder = p2.displayOrder; p2.ignoreCase = true; // fix types later
+          p1.displayOrder = p2.displayOrder; p2.displayOrder = tmp;
           await db.saveProject(p1); await db.saveProject(p2); loadProjects();
         } else if (dir === 'down' && idx < projects.length - 1) {
           const p1 = projects[idx], p2 = projects[idx+1];
@@ -180,14 +185,14 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar 
-        activeTab={activeTab} setActiveTab={setActiveTab}
+        activeTab={activeTab} setActiveTab={setActiveTab as any}
         onBackToDashboard={() => setCurrentProject(null)}
         projectName={currentProject.projectName}
         user={currentUser}
         onLogout={() => { setCurrentUser(null); setCurrentProject(null); }}
       />
       <main className="flex-1 ml-64 p-8 overflow-y-auto">
-        {(activeTab === 'general' || activeTab === 'design' || activeTab === 'subjects' || activeTab === 'tender' || activeTab === 'contractor') && (
+        {(activeTab === 'general' || activeTab === 'subjects') && (
            <ProjectForm key={activeTab} data={currentProject} readOnly={false} handleChange={handleUpdateProjectField} subTab={activeTab} />
         )}
         {activeTab === 'execution' && (
@@ -200,7 +205,16 @@ const App: React.FC = () => {
             project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={createNewDocument} onDeleteDocument={handleDeleteDocument} onUpdateProject={handleUpdateProjectField as any}
           />
         )}
-        {activeTab === 'export' && <ExportManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onDeleteDocument={handleDeleteDocument} />}
+        {activeTab.startsWith('export') && (
+            <ExportManager 
+                project={currentProject} 
+                documents={documents} 
+                currentDocId={currentDocId} 
+                onSelectDocument={setCurrentDocId} 
+                onDeleteDocument={handleDeleteDocument}
+                activeExportTab={activeTab}
+            />
+        )}
       </main>
     </div>
   );

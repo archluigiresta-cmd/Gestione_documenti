@@ -1,4 +1,3 @@
-
 import React, { ReactNode, ErrorInfo } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -17,14 +16,16 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-// Fix: Using React.Component explicitly with generic parameters and property initializer for state
-// to ensure TypeScript correctly recognizes inherited 'state' and 'props' properties.
+// Fix: Using a standard constructor with super(props) ensures that TypeScript 
+// correctly recognizes inherited 'props' and 'state' properties from React.Component.
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // Fix: Explicitly declare state using a property initializer to resolve state access errors.
-  state: ErrorBoundaryState = {
-    hasError: false,
-    error: null,
-  };
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null,
+    };
+  }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
@@ -35,7 +36,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   render() {
-    // Fix: Accessing 'this.state' correctly as a member of React.Component.
+    // Correctly access state through the instance inherited from React.Component.
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-red-50 p-4">
@@ -58,7 +59,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
         </div>
       );
     }
-    // Fix: Accessing 'this.props' correctly as a member of React.Component.
+    // Correctly access props through the instance inherited from React.Component.
     return this.props.children;
   }
 }
