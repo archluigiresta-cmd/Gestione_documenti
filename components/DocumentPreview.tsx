@@ -23,7 +23,7 @@ const formatCurrency = (val: any) => {
 };
 
 export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }) => {
-  if (!project || !doc) return <div className="p-10 text-center text-red-500 font-bold">Inizializzazione dati anteprima in corso...</div>;
+  if (!project || !doc) return <div className="p-10 text-center text-red-500 font-bold">Inizializzazione dati...</div>;
 
   const tester = project.subjects.tester.contact;
   const contractor = project.contractor.mainCompany;
@@ -41,7 +41,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }
     <div id="document-preview-container" className="font-serif-print text-black leading-snug w-full max-w-[21cm] mx-auto bg-white">
       <div className="p-[1.8cm] min-h-[29.7cm] flex flex-col border-none">
         
-        {/* Header Ente */}
         <table style={{ width: '100%', marginBottom: '20pt' }}>
             <tbody>
                 <tr>
@@ -54,7 +53,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }
             </tbody>
         </table>
 
-        {/* Oggetto e Titolo */}
         <div style={{ borderTop: '1pt solid black', paddingTop: '10pt', marginBottom: '20pt' }}>
             <p style={{ fontSize: '9pt', margin: '0 0 10pt 0' }}>CUP: {project.cup || 'N.D.'} - CIG: {project.cig || 'N.D.'}</p>
             <div style={{ textAlign: 'justify', fontSize: '11pt', fontWeight: 'bold', textTransform: 'uppercase' }}>
@@ -65,20 +63,17 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }
             </div>
         </div>
 
-        {/* Tabella Dati Tecnici */}
         <table style={{ width: '100%', border: '0.5pt solid black', borderCollapse: 'collapse', fontSize: '10pt', marginBottom: '25pt' }}>
             <tbody>
                 <tr><td style={{ border: '0.5pt solid black', padding: '6pt', fontWeight: 'bold', width: '30%' }}>Impresa Esecutrice:</td><td style={{ border: '0.5pt solid black', padding: '6pt' }}>{contractor.name || '...'}</td></tr>
                 <tr><td style={{ border: '0.5pt solid black', padding: '6pt', fontWeight: 'bold' }}>Contratto d'appalto:</td><td style={{ border: '0.5pt solid black', padding: '6pt' }}>Rep. n. {project.contract.repNumber || '...'} del {formatDate(project.contract.date)}</td></tr>
                 <tr><td style={{ border: '0.5pt solid black', padding: '6pt', fontWeight: 'bold' }}>Importo Contrattuale:</td><td style={{ border: '0.5pt solid black', padding: '6pt' }}>{formatCurrency(project.contract.totalAmount)} (di cui {formatCurrency(project.contract.securityCosts)} per oneri sicurezza) oltre IVA</td></tr>
-                <tr><td style={{ border: '0.5pt solid black', padding: '6pt', fontWeight: 'bold' }}>Termini Esecuzione:</td><td style={{ border: '0.5pt solid black', padding: '6pt' }}>giorni {project.contract.durationDays || '0'} decorrenti dal {formatDate(project.executionPhase.deliveryDate)}, ultimazione prevista {formatDate(project.executionPhase.completionDate)}</td></tr>
                 <tr><td style={{ border: '0.5pt solid black', padding: '6pt', fontWeight: 'bold' }}>R.U.P.:</td><td style={{ border: '0.5pt solid black', padding: '6pt' }}>{renderSubjectHeader('rup')}</td></tr>
                 <tr><td style={{ border: '0.5pt solid black', padding: '6pt', fontWeight: 'bold' }}>Direzione Lavori:</td><td style={{ border: '0.5pt solid black', padding: '6pt' }}>{renderSubjectHeader('dl')}</td></tr>
                 <tr><td style={{ border: '0.5pt solid black', padding: '6pt', fontWeight: 'bold' }}>C.S.E.:</td><td style={{ border: '0.5pt solid black', padding: '6pt' }}>{renderSubjectHeader('cse')}</td></tr>
             </tbody>
         </table>
 
-        {/* Corpo del Verbale */}
         <div style={{ textAlign: 'justify', fontSize: '11pt', lineHeight: '1.6' }}>
             <p style={{ margin: '0 0 10pt 0' }}>{doc.worksIntroText}</p>
             {doc.worksExecuted.length > 0 && (
@@ -111,19 +106,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc }
             )}
         </div>
 
-        {/* Firme Allineate a Sinistra */}
         <div style={{ marginTop: '80pt', pageBreakInside: 'avoid' }}>
             <div style={{ marginBottom: '25pt' }}>Il Collaudatore: {tester.title || 'Arch.'} {tester.name || '...'} <br/> ____________________________________________________</div>
             <div style={{ marginBottom: '25pt' }}>Il Responsabile Unico del Progetto: {renderSubjectHeader('rup')} <br/> ____________________________________________________</div>
             <div style={{ marginBottom: '25pt' }}>il Direttore dei Lavori e CSE: {renderSubjectHeader('dl')} <br/> ____________________________________________________</div>
             <div>Il rappresentante legale dell'impresa {contractor.name || '...'}:<br/>{contractor.repTitle || 'Sig.'} {contractor.repName || '...'} <br/> ____________________________________________________</div>
-        </div>
-
-        {/* Footer Pagina (Nascosto in UI, visibile in stampa se configurato) */}
-        <div id="f1" style={{ display: 'none' }}>
-           <p style={{ fontSize: '8pt', textAlign: 'center', borderTop: '0.5pt solid black', paddingTop: '5pt' }}>
-              {tester.title} {tester.name} - {tester.address} - Email: {tester.email} - PEC: {tester.pec}
-           </p>
         </div>
       </div>
     </div>

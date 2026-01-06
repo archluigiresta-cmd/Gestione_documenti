@@ -24,22 +24,19 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const init = async () => {
-      // Timeout di sicurezza di 3 secondi: se il database è lento, sblocchiamo comunque l'app
-      const safety = setTimeout(() => {
-        if (loading) {
-          console.warn("Forcing app start after timeout");
-          setLoading(false);
-        }
-      }, 3000);
-
       try {
         await db.ensureAdminExists();
         const saved = localStorage.getItem('loggedUser');
-        if (saved) setCurrentUser(JSON.parse(saved));
+        if (saved) {
+          try {
+            setCurrentUser(JSON.parse(saved));
+          } catch {
+            localStorage.removeItem('loggedUser');
+          }
+        }
       } catch (err) {
-        console.error("Initialization failure", err);
+        console.error("Inizializzazione fallita", err);
       } finally {
-        clearTimeout(safety);
         setLoading(false);
       }
     };
@@ -95,11 +92,12 @@ const App: React.FC = () => {
     const nextNum = documents.filter(d => d.type === type).length + 1;
     const newDoc = { ...createInitialDocument(currentProject.id), type, visitNumber: nextNum };
     
+    // Logica di eredità per verbali di collaudo
     if (type === 'VERBALE_COLLAUDO' && documents.length > 0) {
       const last = [...documents].filter(d => d.type === 'VERBALE_COLLAUDO').sort((a,b) => b.visitNumber - a.visitNumber)[0];
       if (last) {
         newDoc.premis = last.premis;
-        const ref = `In data ${new Date(last.date).toLocaleDateString()}, con verbale n. ${last.visitNumber}, lo scrivente ha preso atto dei lavori: ${last.worksExecuted.join(', ')}. Era in corso il ${last.worksInProgress}.`;
+        const ref = `In data ${new Date(last.date).toLocaleDateString('it-IT')}, con verbale n. ${last.visitNumber}, lo scrivente ha preso atto dei lavori: ${last.worksExecuted.join(', ')}.`;
         newDoc.premis += (newDoc.premis ? '\n\n' : '') + ref;
       }
     }
@@ -117,7 +115,7 @@ const App: React.FC = () => {
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
         <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Inizializzazione EdilApp...</p>
+        <p className="text-slate-500 font-bold text-xs uppercase tracking-widest">Accesso in corso...</p>
     </div>
   );
 
@@ -135,7 +133,7 @@ const App: React.FC = () => {
       projects={projects}
       onSelectProject={handleSelectProject}
       onNewProject={handleNewProject}
-      onDeleteProject={async (id) => { if(confirm("Eliminare?")) { await db.deleteProject(id); loadProjects(); } }}
+      onDeleteProject={async (id) => { if(confirm("Eliminare definitivamente l'appalto?")) { await db.deleteProject(id); loadProjects(); } }}
       onShareProject={() => {}}
       onOpenAdmin={() => setShowAdmin(true)}
       onUpdateOrder={async (id, ord) => {
@@ -179,12 +177,12 @@ const App: React.FC = () => {
         )}
         {activeTab === 'execution' && (
           <ExecutionManager 
-            project={currentProject} onUpdateProject={setCurrentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={() => createNewDocument('VERBALE_COLLAUDO')} onDeleteDocument={async id => { if(confirm("Eliminare?")) { await db.deleteDocument(id); setDocuments(prev => prev.filter(d => d.id !== id)); } }} 
+            project={currentProject} onUpdateProject={setCurrentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={() => createNewDocument('VERBALE_COLLAUDO')} onDeleteDocument={async id => { if(confirm("Eliminare il verbale?")) { await db.deleteDocument(id); setDocuments(prev => prev.filter(d => d.id !== id)); } }} 
           />
         )}
         {activeTab === 'testing' && (
           <TestingManager 
-            project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={createNewDocument} onDeleteDocument={async id => { if(confirm("Eliminare?")) { await db.deleteDocument(id); setDocuments(prev => prev.filter(d => d.id !== id)); } }} onUpdateProject={setCurrentProject}
+            project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={createNewDocument} onDeleteDocument={async id => { if(confirm("Eliminare il verbale di collaudo?")) { await db.deleteDocument(id); setDocuments(prev => prev.filter(d => d.id !== id)); } }} onUpdateProject={setCurrentProject}
           />
         )}
         {activeTab === 'export' && <ExportManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} />}
