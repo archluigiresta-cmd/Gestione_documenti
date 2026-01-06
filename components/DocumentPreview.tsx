@@ -22,7 +22,7 @@ const formatCurrency = (val: string) => {
 };
 
 export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, allDocuments }) => {
-  if (!project || !doc) return <div className="p-10 text-center">Dati insufficienti.</div>;
+  if (!project || !doc) return <div className="p-10 text-center">Dati insufficienti per generare l'anteprima.</div>;
 
   const tester = project.subjects.tester.contact;
   const rup = project.subjects.rup.contact;
@@ -36,7 +36,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
     <div id="document-preview-container" className="font-serif-print text-black leading-snug w-full max-w-[21cm] mx-auto animate-in fade-in">
       <div className="bg-white p-[1.8cm] min-h-[29.7cm] relative flex flex-col border shadow-xl print:shadow-none print:border-none">
         
-        {/* INTESTAZIONE STABILE PER WORD */}
+        {/* INTESTAZIONE ISTITUZIONALE TABELLARE */}
         <table style={{ width: '100%', marginBottom: '20pt', borderCollapse: 'collapse' }}>
             <tr>
                 <td align="center">
@@ -49,10 +49,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
         <div style={{ borderTop: '1.5pt solid black', paddingTop: '10pt', marginBottom: '20pt' }}>
             <table style={{ width: '100%', marginBottom: '5pt' }}>
-                <tr>
-                    <td style={{ fontSize: '9pt', fontFamily: 'monospace' }}>CUP: {project.cup}</td>
-                    <td align="right" style={{ fontSize: '9pt', fontFamily: 'monospace' }}>CIG: {project.cig}</td>
-                </tr>
+                <tr><td style={{ fontSize: '9pt', fontFamily: 'monospace' }}>CUP: {project.cup}</td><td align="right" style={{ fontSize: '9pt', fontFamily: 'monospace' }}>CIG: {project.cig}</td></tr>
             </table>
             <div style={{ textAlign: 'justify', fontSize: '11pt', fontWeight: 'bold', textTransform: 'uppercase', lineHeight: '1.4' }}>
                 LAVORI DI: <span style={{ whiteSpace: 'pre-wrap', fontWeight: 'normal' }}>{project.projectName}</span>
@@ -65,18 +62,17 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             </div>
         </div>
 
-        {/* TABELLA DATI APPALTO */}
+        {/* TABELLA DATI APPALTO PROFESSIONALE */}
         <table style={{ width: '100%', border: '1.5pt solid black', borderCollapse: 'collapse', fontSize: '9.5pt', marginBottom: '20pt' }}>
             <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold', width: '35%' }}>IMPRESA:</td><td style={{ padding: '4pt', textTransform: 'uppercase' }}>{contractor.name}</td></tr>
             <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>CONTRATTO APPALTO:</td><td style={{ padding: '4pt' }}>Rep. n. {project.contract.repNumber} del {formatDate(project.contract.date)}</td></tr>
-            <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>IMPORTO CONTRATTUALE:</td><td style={{ padding: '4pt' }}>{formatCurrency(project.contract.totalAmount)} (di cui {formatCurrency(project.contract.securityCosts)} per oneri sicurezza) oltre IVA</td></tr>
-            <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>SCADENZA LAVORI:</td><td style={{ padding: '4pt', textAlign: 'justify' }}>Giorni {project.contract.durationDays} naturali e consecutivi, decorrenti dal {formatDate(project.executionPhase.deliveryDate)}, data del verbale di consegna lavori, con ultimazione entro il {formatDate(project.executionPhase.completionDate)}</td></tr>
+            <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>IMPORTO CONTRATTUALE:</td><td style={{ padding: '4pt' }}>{formatCurrency(project.contract.totalAmount)} (di cui {formatCurrency(project.contract.securityCosts)} sicurezza) oltre IVA</td></tr>
+            <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>SCADENZA LAVORI:</td><td style={{ padding: '4pt', textAlign: 'justify' }}>Giorni {project.contract.durationDays} naturali e consecutivi, decorrenti dal {formatDate(project.executionPhase.deliveryDate)}, data verbale consegna, con ultimazione entro il {formatDate(project.executionPhase.completionDate)}</td></tr>
             <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>R.U.P.:</td><td style={{ padding: '4pt' }}>{rup.title} {rup.name}</td></tr>
             <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>DIRETTORE LAVORI:</td><td style={{ padding: '4pt' }}>{dl.title} {dl.name}</td></tr>
             <tr><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>C.S.E.:</td><td style={{ padding: '4pt' }}>{cse.title} {cse.name}</td></tr>
         </table>
 
-        {/* CORPO DEL VERBALE */}
         <div style={{ textAlign: 'justify', fontSize: '11pt', lineHeight: '1.6' }}>
             <p style={{ marginBottom: '15pt' }}>
                 Il giorno {doc.date ? new Date(doc.date).getDate() : '...'} del mese di {doc.date ? new Date(doc.date).toLocaleString('it-IT', { month: 'long' }) : '...'} dell'anno {doc.date ? new Date(doc.date).getFullYear() : '...'}, alle ore {doc.time}, presso il luogo dei lavori in {project.location || project.entity}, ha avvio la visita di collaudo n. {doc.visitNumber} convocata con nota via {doc.convocationMethod} del {formatDate(doc.convocationDate)}.
@@ -89,11 +85,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                 <h3 style={{ fontSize: '10pt', fontWeight: 'bold', textTransform: 'uppercase' }}>PREMESSO CHE:</h3>
                 <div style={{ fontSize: '10.5pt' }}>
                     <p style={{ marginBottom: '8pt' }}>
-                        1. con Determina {project.subjects.testerAppointment.nominationAuthority} n. {project.subjects.tester.appointment.number} del {formatDate(project.subjects.tester.appointment.date)} e successivo contratto rep. n. {project.subjects.testerAppointment.contractRepNumber} del {formatDate(project.subjects.testerAppointment.contractDate)}, prot. n. {project.subjects.testerAppointment.contractProtocol}, l'Ente {project.entity} ha affidato allo scrivente {tester.title} {tester.name}, iscritto all'Albo degli Architetti della Provincia di {tester.professionalOrder} al n. {tester.registrationNumber}, l'incarico di collaudo dell'intervento di {project.projectName} CUP: {project.cup};
+                        1. con Determina {project.subjects.testerAppointment.nominationAuthority} n. {project.subjects.tester.appointment.number} del {formatDate(project.subjects.tester.appointment.date)} e successivo contratto rep. n. {project.subjects.testerAppointment.contractRepNumber} del {formatDate(project.subjects.testerAppointment.contractDate)}, l'Ente {project.entity} ha affidato allo scrivente {tester.title} {tester.name}, iscritto all'Albo della Provincia di {tester.professionalOrder} al n. {tester.registrationNumber}, l'incarico professionale di collaudo relativo all’intervento di {project.projectName} CUP: {project.cup};
                     </p>
                     {prevVerbali.map((v, i) => (
                         <p key={v.id} style={{ marginBottom: '8pt' }}>
-                            {i + 2}. in data {formatDate(v.date)}, con verbale di visita n. {v.visitNumber}, lo scrivente ha preso atto dell'andamento dei lavori eseguiti fino a quella data, così come dettagliati dal Direttore dei Lavori e consistenti in: {v.worksExecuted.join(', ') || 'N.D.'}. Era in corso il {v.worksInProgress || 'N.D.'};
+                            {i + 2}. in data {formatDate(v.date)}, con verbale di visita n. {v.visitNumber}, lo scrivente ha preso atto dell'andamento dei lavori eseguiti dal {i === 0 ? formatDate(project.executionPhase.deliveryDate) : formatDate(prevVerbali[i-1].date)} a detta data: {v.worksExecuted.join(', ') || 'N.D.'}. Era in corso il {v.worksInProgress || 'N.D.'};
                         </p>
                     ))}
                     {doc.premis && <div style={{ whiteSpace: 'pre-wrap' }}>{doc.premis}</div>}
@@ -123,22 +119,21 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             {doc.observations && <div style={{ marginTop: '15pt', borderLeft: '3pt solid black', paddingLeft: '10pt', fontStyle: 'italic' }}>{doc.observations}</div>}
         </div>
 
-        {/* AREA FIRME STABILE */}
+        {/* AREA FIRME ALLINEATA A SINISTRA CON RIGHE */}
         <div style={{ marginTop: '50pt' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <tr>
-                    <td style={{ width: '10%' }}></td>
-                    <td style={{ width: '90%' }}>
+                    <td style={{ width: '100%' }}>
                         <div style={{ marginBottom: '30pt' }}>Il Collaudatore: {tester.title} {tester.name} ________________________________</div>
                         <div style={{ marginBottom: '30pt' }}>Il Responsabile Unico del Progetto: {rup.title} {rup.name} ________________________________</div>
                         <div style={{ marginBottom: '30pt' }}>il Direttore dei Lavori e CSE: {dl.title} {dl.name} ________________________________</div>
-                        <div>Il rappresentante legale dell'impresa appaltatrice {contractor.name}:<br/>Sig. {contractor.repName} ________________________________</div>
+                        <div>Il rappresentante legale dell'impresa {contractor.name}:<br/>{contractor.repTitle || 'Sig.'} {contractor.repName} ________________________________</div>
                     </td>
                 </tr>
             </table>
         </div>
 
-        {/* FOOTER PER WORD */}
+        {/* FOOTER NATURALE PER WORD */}
         <div id="f1" style={{ display: 'none' }}>
           <p style={{ textAlign: 'center', fontSize: '8pt', fontStyle: 'italic', borderTop: '0.5pt solid black', paddingTop: '5pt' }}>
             {tester.title} {tester.name} - {tester.address} - Email: {tester.email} - PEC: {tester.pec}

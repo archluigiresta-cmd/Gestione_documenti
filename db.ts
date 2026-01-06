@@ -11,45 +11,59 @@ const STORE_PERMISSIONS = 'permissions';
 export const db = {
   open: (): Promise<IDBDatabase> => {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(STORE_PROJECTS)) db.createObjectStore(STORE_PROJECTS, { keyPath: 'id' });
-        if (!db.objectStoreNames.contains(STORE_DOCUMENTS)) {
-          const docStore = db.createObjectStore(STORE_DOCUMENTS, { keyPath: 'id' });
-          docStore.createIndex('projectId', 'projectId', { unique: false });
-        }
-        if (!db.objectStoreNames.contains(STORE_USERS)) {
-          const userStore = db.createObjectStore(STORE_USERS, { keyPath: 'id' });
-          userStore.createIndex('email', 'email', { unique: true });
-        }
-        if (!db.objectStoreNames.contains(STORE_PERMISSIONS)) {
-          const permStore = db.createObjectStore(STORE_PERMISSIONS, { keyPath: 'id' });
-          permStore.createIndex('projectId', 'projectId', { unique: false });
-          permStore.createIndex('userEmail', 'userEmail', { unique: false });
-        }
-      };
-      request.onsuccess = (e) => resolve((e.target as IDBOpenDBRequest).result);
-      request.onerror = (e) => reject((e.target as IDBOpenDBRequest).error);
+      try {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        
+        request.onupgradeneeded = (event) => {
+          const db = (event.target as IDBOpenDBRequest).result;
+          if (!db.objectStoreNames.contains(STORE_PROJECTS)) db.createObjectStore(STORE_PROJECTS, { keyPath: 'id' });
+          if (!db.objectStoreNames.contains(STORE_DOCUMENTS)) {
+            const docStore = db.createObjectStore(STORE_DOCUMENTS, { keyPath: 'id' });
+            docStore.createIndex('projectId', 'projectId', { unique: false });
+          }
+          if (!db.objectStoreNames.contains(STORE_USERS)) {
+            const userStore = db.createObjectStore(STORE_USERS, { keyPath: 'id' });
+            userStore.createIndex('email', 'email', { unique: true });
+          }
+          if (!db.objectStoreNames.contains(STORE_PERMISSIONS)) {
+            const permStore = db.createObjectStore(STORE_PERMISSIONS, { keyPath: 'id' });
+            permStore.createIndex('projectId', 'projectId', { unique: false });
+            permStore.createIndex('userEmail', 'userEmail', { unique: false });
+          }
+        };
+
+        request.onsuccess = (e) => resolve((e.target as IDBOpenDBRequest).result);
+        request.onerror = (e) => reject((e.target as IDBOpenDBRequest).error);
+        request.onblocked = () => {
+          console.warn("Database blocked - please close other tabs");
+        };
+      } catch (err) {
+        reject(err);
+      }
     });
   },
 
   ensureAdminExists: async (): Promise<void> => {
-    const database = await db.open();
-    return new Promise((resolve) => {
-      const transaction = database.transaction(STORE_USERS, 'readwrite');
-      const store = transaction.objectStore(STORE_USERS);
-      const adminUser: User = {
-        id: 'admin-luigi-resta',
-        name: 'Luigi Resta (Admin)',
-        email: 'arch.luigiresta@gmail.com',
-        password: 'admin123',
-        isSystemAdmin: true,
-        status: 'active'
-      };
-      store.put(adminUser); // .put sovrascrive se già esistente, garantendo le credenziali
-      transaction.oncomplete = () => resolve();
-    });
+    try {
+      const database = await db.open();
+      return new Promise((resolve) => {
+        const transaction = database.transaction(STORE_USERS, 'readwrite');
+        const store = transaction.objectStore(STORE_USERS);
+        const adminUser: User = {
+          id: 'admin-luigi-resta',
+          name: 'Luigi Resta (Admin)',
+          email: 'arch.luigiresta@gmail.com',
+          password: 'admin123',
+          isSystemAdmin: true,
+          status: 'active'
+        };
+        store.put(adminUser);
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => resolve(); // Non bloccare l'app se fallisce il seeding
+      });
+    } catch (e) {
+      console.error("Admin seeding failed", e);
+    }
   },
 
   registerUser: async (user: User): Promise<void> => {
@@ -59,7 +73,7 @@ export const db = {
       const store = transaction.objectStore(STORE_USERS);
       const request = store.add(user);
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(new Error("Errore durante la registrazione. Forse l'email è già in uso."));
+      request.onerror = () => reject(new Error("Email già esistente o errore database."));
     });
   },
 
@@ -74,49 +88,48 @@ export const db = {
       request.onsuccess = () => {
         const user = request.result as User;
         if (user && user.password === password) {
-          if (user.status !== 'active') reject(new Error("Account non ancora attivo."));
+          if (user.status !== 'active') reject(new Error("Il tuo account è in attesa di approvazione."));
           else resolve(user);
-        } else reject(new Error("Credenziali non valide."));
+        } else reject(new Error("Credenziali errate."));
       };
-      request.onerror = () => reject(request.error);
+      request.onerror = () => reject(new Error("Errore durante l'accesso."));
     });
   },
 
   getAllUsers: async (): Promise<User[]> => {
     const database = await db.open();
-    const transaction = database.transaction(STORE_USERS, 'readonly');
-    const store = transaction.objectStore(STORE_USERS);
-    const request = store.getAll();
-    return new Promise(res => { request.onsuccess = () => res(request.result); });
+    const tx = database.transaction(STORE_USERS, 'readonly');
+    const store = tx.objectStore(STORE_USERS);
+    const req = store.getAll();
+    return new Promise(res => req.onsuccess = () => res(req.result));
   },
 
   updateUserStatus: async (userId: string, status: UserStatus, isSystemAdmin?: boolean): Promise<void> => {
     const database = await db.open();
     return new Promise((resolve, reject) => {
-      const transaction = database.transaction(STORE_USERS, 'readwrite');
-      const store = transaction.objectStore(STORE_USERS);
-      const request = store.get(userId);
-      request.onsuccess = () => {
-        const user = request.result as User;
-        if (user) {
-          user.status = status;
-          if (isSystemAdmin !== undefined) user.isSystemAdmin = isSystemAdmin;
-          store.put(user);
+      const tx = database.transaction(STORE_USERS, 'readwrite');
+      const store = tx.objectStore(STORE_USERS);
+      const req = store.get(userId);
+      req.onsuccess = () => {
+        const u = req.result;
+        if (u) {
+          u.status = status;
+          if (isSystemAdmin !== undefined) u.isSystemAdmin = isSystemAdmin;
+          store.put(u);
           resolve();
-        } else reject(new Error("Utente non trovato"));
+        } else reject();
       };
     });
   },
 
   getProjectsForUser: async (userId: string, userEmail: string): Promise<ProjectConstants[]> => {
     const database = await db.open();
-    const transaction = database.transaction(STORE_PROJECTS, 'readonly');
-    const store = transaction.objectStore(STORE_PROJECTS);
-    const request = store.getAll();
+    const tx = database.transaction(STORE_PROJECTS, 'readonly');
+    const store = tx.objectStore(STORE_PROJECTS);
+    const req = store.getAll();
     return new Promise((resolve) => {
-      request.onsuccess = () => {
-        const all = request.result as ProjectConstants[];
-        // Luigi Resta vede tutto, altri vedono solo i propri
+      req.onsuccess = () => {
+        const all = req.result as ProjectConstants[];
         if (userEmail === 'arch.luigiresta@gmail.com') resolve(all);
         else resolve(all.filter(p => p.ownerId === userId));
       };
@@ -135,10 +148,10 @@ export const db = {
     tx.objectStore(STORE_PROJECTS).delete(id);
   },
 
-  shareProject: async (permission: ProjectPermission) => {
+  shareProject: async (p: ProjectPermission) => {
     const database = await db.open();
     const tx = database.transaction(STORE_PERMISSIONS, 'readwrite');
-    tx.objectStore(STORE_PERMISSIONS).put(permission);
+    tx.objectStore(STORE_PERMISSIONS).put(p);
   },
 
   getProjectPermissions: async (projectId: string): Promise<ProjectPermission[]> => {
@@ -146,7 +159,7 @@ export const db = {
     const tx = database.transaction(STORE_PERMISSIONS, 'readonly');
     const index = tx.objectStore(STORE_PERMISSIONS).index('projectId');
     const req = index.getAll(projectId);
-    return new Promise(res => { req.onsuccess = () => res(req.result); });
+    return new Promise(res => req.onsuccess = () => res(req.result));
   },
 
   getDocumentsByProject: async (projectId: string): Promise<DocumentVariables[]> => {
@@ -154,7 +167,7 @@ export const db = {
     const tx = database.transaction(STORE_DOCUMENTS, 'readonly');
     const index = tx.objectStore(STORE_DOCUMENTS).index('projectId');
     const req = index.getAll(projectId);
-    return new Promise(res => { req.onsuccess = () => res(req.result); });
+    return new Promise(res => req.onsuccess = () => res(req.result));
   },
 
   saveDocument: async (doc: DocumentVariables) => {
@@ -197,9 +210,9 @@ export const db = {
     tx.objectStore(STORE_DOCUMENTS).clear();
     tx.objectStore(STORE_USERS).clear();
     tx.objectStore(STORE_PERMISSIONS).clear();
-    data.projects.forEach(p => tx.objectStore(STORE_PROJECTS).add(p));
-    data.documents.forEach(d => tx.objectStore(STORE_DOCUMENTS).add(d));
-    data.users.forEach(u => tx.objectStore(STORE_USERS).add(u));
+    if (data.projects) data.projects.forEach(p => tx.objectStore(STORE_PROJECTS).add(p));
+    if (data.documents) data.documents.forEach(d => tx.objectStore(STORE_DOCUMENTS).add(d));
+    if (data.users) data.users.forEach(u => tx.objectStore(STORE_USERS).add(u));
     if (data.permissions) data.permissions.forEach(p => tx.objectStore(STORE_PERMISSIONS).add(p));
   }
 };

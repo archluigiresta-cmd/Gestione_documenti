@@ -17,8 +17,9 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-// Fix: explicitly extending Component with generics to resolve state/props access issues in TypeScript
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+// Fix: explicitly extending React.Component with generics to resolve state/props access issues in TypeScript
+// Using React.Component explicitly ensures that the base class properties like 'props' and 'state' are correctly recognized
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   // Fix: Using class field for state initialization ensures 'state' is correctly typed and accessible
   state: ErrorBoundaryState = { hasError: false, error: null };
 
@@ -57,6 +58,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         </div>
       );
     }
+    // Fix: Using this.props.children which is now correctly inherited from React.Component
     return this.props.children;
   }
 }
