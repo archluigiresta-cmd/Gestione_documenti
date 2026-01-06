@@ -11,45 +11,68 @@ const STORE_PERMISSIONS = 'permissions';
 export const db = {
   open: (): Promise<IDBDatabase> => {
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
-        if (!db.objectStoreNames.contains(STORE_PROJECTS)) db.createObjectStore(STORE_PROJECTS, { keyPath: 'id' });
-        if (!db.objectStoreNames.contains(STORE_DOCUMENTS)) {
-          const docStore = db.createObjectStore(STORE_DOCUMENTS, { keyPath: 'id' });
-          docStore.createIndex('projectId', 'projectId', { unique: false });
-        }
-        if (!db.objectStoreNames.contains(STORE_USERS)) {
-          const userStore = db.createObjectStore(STORE_USERS, { keyPath: 'id' });
-          userStore.createIndex('email', 'email', { unique: true });
-        }
-        if (!db.objectStoreNames.contains(STORE_PERMISSIONS)) {
-          const permStore = db.createObjectStore(STORE_PERMISSIONS, { keyPath: 'id' });
-          permStore.createIndex('projectId', 'projectId', { unique: false });
-          permStore.createIndex('userEmail', 'userEmail', { unique: false });
-        }
-      };
-      request.onsuccess = (e) => resolve((e.target as IDBOpenDBRequest).result);
-      request.onerror = (e) => reject((e.target as IDBOpenDBRequest).error);
+      try {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
+        
+        request.onupgradeneeded = (event) => {
+          const db = (event.target as IDBOpenDBRequest).result;
+          if (!db.objectStoreNames.contains(STORE_PROJECTS)) {
+            db.createObjectStore(STORE_PROJECTS, { keyPath: 'id' });
+          }
+          if (!db.objectStoreNames.contains(STORE_DOCUMENTS)) {
+            const docStore = db.createObjectStore(STORE_DOCUMENTS, { keyPath: 'id' });
+            docStore.createIndex('projectId', 'projectId', { unique: false });
+          }
+          if (!db.objectStoreNames.contains(STORE_USERS)) {
+            const userStore = db.createObjectStore(STORE_USERS, { keyPath: 'id' });
+            userStore.createIndex('email', 'email', { unique: true });
+          }
+          if (!db.objectStoreNames.contains(STORE_PERMISSIONS)) {
+            const permStore = db.createObjectStore(STORE_PERMISSIONS, { keyPath: 'id' });
+            permStore.createIndex('projectId', 'projectId', { unique: false });
+            permStore.createIndex('userEmail', 'userEmail', { unique: false });
+          }
+        };
+
+        request.onsuccess = (e) => resolve((e.target as IDBOpenDBRequest).result);
+        request.onerror = (e) => reject((e.target as IDBOpenDBRequest).error);
+        
+        request.onblocked = () => {
+          console.warn("Database access blocked. Please close other tabs of this app.");
+          // We don't reject here to allow the user to fix the issue, 
+          // but App.tsx will eventually timeout if we don't resolve.
+        };
+      } catch (err) {
+        reject(err);
+      }
     });
   },
 
   ensureAdminExists: async (): Promise<void> => {
-    const database = await db.open();
-    return new Promise((resolve) => {
-      const transaction = database.transaction(STORE_USERS, 'readwrite');
-      const store = transaction.objectStore(STORE_USERS);
-      const adminUser: User = {
-        id: 'admin-luigi-resta',
-        name: 'Luigi Resta (Admin)',
-        email: 'arch.luigiresta@gmail.com',
-        password: 'admin123',
-        isSystemAdmin: true,
-        status: 'active'
-      };
-      store.put(adminUser);
-      transaction.oncomplete = () => resolve();
-    });
+    try {
+      const database = await db.open();
+      return new Promise((resolve) => {
+        const transaction = database.transaction(STORE_USERS, 'readwrite');
+        const store = transaction.objectStore(STORE_USERS);
+        const adminUser: User = {
+          id: 'admin-luigi-resta',
+          name: 'Luigi Resta (Admin)',
+          email: 'arch.luigiresta@gmail.com',
+          password: 'admin123',
+          isSystemAdmin: true,
+          status: 'active'
+        };
+        const request = store.put(adminUser);
+        
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => {
+          console.error("Admin seeding transaction failed");
+          resolve(); // Resolve anyway to avoid blocking App initialization
+        };
+      });
+    } catch (e) {
+      console.error("Admin seeding failed:", e);
+    }
   },
 
   registerUser: async (user: User): Promise<void> => {
@@ -59,7 +82,7 @@ export const db = {
       const store = transaction.objectStore(STORE_USERS);
       const request = store.add(user);
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(new Error("Email già in uso o errore database."));
+      request.onerror = () => reject(new Error("Email già registrata o errore database."));
     });
   },
 
@@ -74,11 +97,13 @@ export const db = {
       request.onsuccess = () => {
         const user = request.result as User;
         if (user && user.password === password) {
-          if (user.status !== 'active') reject(new Error("Il tuo account deve essere ancora approvato dall'amministratore."));
+          if (user.status !== 'active') reject(new Error("L'account è in attesa di attivazione da parte dell'amministratore."));
           else resolve(user);
-        } else reject(new Error("Credenziali non valide."));
+        } else {
+          reject(new Error("Email o password errate."));
+        }
       };
-      request.onerror = () => reject(request.error);
+      request.onerror = () => reject(new Error("Errore durante il login."));
     });
   },
 
@@ -103,8 +128,9 @@ export const db = {
           if (isSystemAdmin !== undefined) user.isSystemAdmin = isSystemAdmin;
           store.put(user);
           resolve();
-        } else reject();
+        } else reject(new Error("Utente non trovato"));
       };
+      req.onerror = () => reject(new Error("Errore database"));
     });
   },
 
@@ -116,6 +142,7 @@ export const db = {
     return new Promise((resolve) => {
       req.onsuccess = () => {
         const all = req.result as ProjectConstants[];
+        // Super Admin vede tutto
         if (userEmail === 'arch.luigiresta@gmail.com') resolve(all);
         else resolve(all.filter(p => p.ownerId === userId));
       };
@@ -154,7 +181,6 @@ export const db = {
     tx.objectStore(STORE_DOCUMENTS).delete(id);
   },
 
-  // Fix: Adding getProjectPermissions method to retrieve project sharing information
   getProjectPermissions: async (projectId: string): Promise<ProjectPermission[]> => {
     const database = await db.open();
     const tx = database.transaction(STORE_PERMISSIONS, 'readonly');
@@ -163,7 +189,6 @@ export const db = {
     return new Promise(res => req.onsuccess = () => res(req.result));
   },
 
-  // Fix: Adding shareProject method to save sharing permissions to the database
   shareProject: async (perm: ProjectPermission): Promise<void> => {
     const database = await db.open();
     const tx = database.transaction(STORE_PERMISSIONS, 'readwrite');

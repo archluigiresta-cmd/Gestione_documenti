@@ -24,13 +24,29 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const init = async () => {
+      // Timeout di sicurezza: se il DB non risponde entro 5 secondi, sblocchiamo comunque l'app
+      const safetyTimeout = setTimeout(() => {
+        if (loading) {
+          console.warn("Initialization timed out. Proceeding anyway.");
+          setLoading(false);
+        }
+      }, 5000);
+
       try {
         await db.ensureAdminExists();
         const saved = localStorage.getItem('loggedUser');
-        if (saved) setCurrentUser(JSON.parse(saved));
+        if (saved) {
+          try {
+            const user = JSON.parse(saved);
+            setCurrentUser(user);
+          } catch (e) {
+            localStorage.removeItem('loggedUser');
+          }
+        }
       } catch (err) {
-        console.error("Initialization error:", err);
+        console.error("Critical initialization failure:", err);
       } finally {
+        clearTimeout(safetyTimeout);
         setLoading(false);
       }
     };
@@ -43,19 +59,26 @@ const App: React.FC = () => {
 
   const loadProjects = async () => {
     if (!currentUser) return;
-    const list = await db.getProjectsForUser(currentUser.id, currentUser.email);
-    setProjects(list.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)));
+    try {
+        const list = await db.getProjectsForUser(currentUser.id, currentUser.email);
+        setProjects(list.sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)));
+    } catch (e) {
+        console.error("Failed to load projects:", e);
+    }
   };
 
   const handleSelectProject = async (p: ProjectConstants) => {
-    // Deep merge per stabilità campi nuovi
     const template = createEmptyProject(p.ownerId);
     const merged = { ...template, ...p };
     setCurrentProject(merged);
-    const docs = await db.getDocumentsByProject(p.id);
-    setDocuments(docs);
-    if (docs.length > 0) setCurrentDocId(docs[0].id);
-    else setCurrentDocId('');
+    try {
+        const docs = await db.getDocumentsByProject(p.id);
+        setDocuments(docs);
+        if (docs.length > 0) setCurrentDocId(docs[0].id);
+        else setCurrentDocId('');
+    } catch (e) {
+        console.error("Failed to load documents:", e);
+    }
     setActiveTab('general');
   };
 
@@ -87,14 +110,13 @@ const App: React.FC = () => {
     const nextNum = documents.filter(d => d.type === type).length + 1;
     const newDoc = { ...createInitialDocument(currentProject.id), type, visitNumber: nextNum };
     
-    // Logica storica per il collaudo
     if (type === 'VERBALE_COLLAUDO' && documents.length > 0) {
-      const last = [...documents].filter(d => d.type === 'VERBALE_COLLAUDO').sort((a,b) => b.visitNumber - a.visitNumber)[0];
+      const sortedVerbali = [...documents].filter(d => d.type === 'VERBALE_COLLAUDO').sort((a,b) => b.visitNumber - a.visitNumber);
+      const last = sortedVerbali[0];
       if (last) {
         newDoc.premis = last.premis;
-        // Aggiunge riferimento ai lavori del verbale precedente
-        const hist = `In data ${new Date(last.date).toLocaleDateString()}, con verbale n. ${last.visitNumber}, lo scrivente ha preso atto dell'andamento dei lavori: ${last.worksExecuted.join(', ')}. Era in corso il ${last.worksInProgress}.`;
-        newDoc.premis += (newDoc.premis ? '\n\n' : '') + hist;
+        const previousRef = `In data ${new Date(last.date).toLocaleDateString()}, con verbale n. ${last.visitNumber}, lo scrivente ha preso atto dell'andamento dei lavori: ${last.worksExecuted.join(', ') || 'N.D.'}. Era in corso il ${last.worksInProgress || 'N.D.'}.`;
+        newDoc.premis += (newDoc.premis ? '\n\n' : '') + previousRef;
       }
     }
 
@@ -116,7 +138,6 @@ const App: React.FC = () => {
     </div>
   );
 
-  // Forza AuthScreen se non loggato
   if (!currentUser) return (
     <AuthScreen onLogin={(u) => { 
       setCurrentUser(u); 
@@ -131,7 +152,7 @@ const App: React.FC = () => {
       projects={projects}
       onSelectProject={handleSelectProject}
       onNewProject={handleNewProject}
-      onDeleteProject={async (id) => { if(confirm("Eliminare intero progetto?")) { await db.deleteProject(id); loadProjects(); } }}
+      onDeleteProject={async (id) => { if(confirm("Eliminare l'intero appalto?")) { await db.deleteProject(id); loadProjects(); } }}
       onShareProject={() => {}}
       onOpenAdmin={() => setShowAdmin(true)}
       onUpdateOrder={async (id, ord) => {
@@ -154,7 +175,7 @@ const App: React.FC = () => {
         const data = await db.getDatabaseBackup();
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a'); a.href = url; a.download = 'backup_edilapp.json'; a.click();
+        const a = document.createElement('a'); a.href = url; a.download = `backup_edilapp_${new Date().toISOString().split('T')[0]}.json`; a.click();
       }}
       currentUser={currentUser}
     />
@@ -169,19 +190,21 @@ const App: React.FC = () => {
         user={currentUser}
         onLogout={() => { localStorage.removeItem('loggedUser'); setCurrentUser(null); setCurrentProject(null); }}
       />
-      <main className="flex-1 ml-64 p-8 overflow-y-auto">
+      <main className="flex-1 ml-64 p-8 overflow-y-auto h-screen">
         {activeTab === 'general' && (
           <div className="max-w-4xl mx-auto bg-white p-8 rounded-xl shadow-sm border border-slate-200">
-            <h2 className="text-2xl font-bold mb-6">Dati Generali Appalto</h2>
+            <h2 className="text-2xl font-bold mb-6 text-slate-800">Dati Generali Appalto</h2>
             <div className="space-y-6">
-              <div><label className="text-xs font-bold text-slate-500 uppercase">Committente</label><input type="text" className="w-full p-3 border rounded mt-1 shadow-sm" value={currentProject.entity} onChange={e => handleUpdateProjectField('entity', e.target.value)} /></div>
-              <div><label className="text-xs font-bold text-slate-500 uppercase">Provincia</label><input type="text" className="w-full p-3 border rounded mt-1 shadow-sm" value={currentProject.entityProvince} onChange={e => handleUpdateProjectField('entityProvince', e.target.value)} /></div>
-              <div><label className="text-xs font-bold text-slate-500 uppercase">Oggetto (Usa INVIO per gestire le righe)</label><textarea className="w-full p-3 border rounded mt-1 h-40 shadow-sm leading-relaxed" value={currentProject.projectName} onChange={e => handleUpdateProjectField('projectName', e.target.value)} /></div>
               <div className="grid grid-cols-2 gap-4">
-                <div><label className="text-xs font-bold text-slate-500 uppercase">CUP</label><input type="text" className="w-full p-3 border rounded mt-1 shadow-sm" value={currentProject.cup} onChange={e => handleUpdateProjectField('cup', e.target.value)} /></div>
-                <div><label className="text-xs font-bold text-slate-500 uppercase">CIG</label><input type="text" className="w-full p-3 border rounded mt-1 shadow-sm" value={currentProject.cig} onChange={e => handleUpdateProjectField('cig', e.target.value)} /></div>
+                <div><label className="text-xs font-bold text-slate-500 uppercase">Committente</label><input type="text" className="w-full p-3 border rounded mt-1 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none" value={currentProject.entity} onChange={e => handleUpdateProjectField('entity', e.target.value)} /></div>
+                <div><label className="text-xs font-bold text-slate-500 uppercase">Provincia</label><input type="text" className="w-full p-3 border rounded mt-1 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none" value={currentProject.entityProvince} onChange={e => handleUpdateProjectField('entityProvince', e.target.value)} /></div>
               </div>
-              <div className="pt-4 border-t"><label className="text-xs font-bold text-slate-500 uppercase">Note Generali</label><textarea className="w-full p-3 border rounded mt-1 h-32 shadow-sm" value={currentProject.generalNotes} onChange={e => handleUpdateProjectField('generalNotes', e.target.value)} /></div>
+              <div><label className="text-xs font-bold text-slate-500 uppercase">Oggetto (Usa INVIO per gestire le righe)</label><textarea className="w-full p-3 border rounded mt-1 h-40 shadow-sm leading-relaxed focus:ring-2 focus:ring-blue-500 outline-none" value={currentProject.projectName} onChange={e => handleUpdateProjectField('projectName', e.target.value)} /></div>
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="text-xs font-bold text-slate-500 uppercase">CUP</label><input type="text" className="w-full p-3 border rounded mt-1 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none" value={currentProject.cup} onChange={e => handleUpdateProjectField('cup', e.target.value)} /></div>
+                <div><label className="text-xs font-bold text-slate-500 uppercase">CIG</label><input type="text" className="w-full p-3 border rounded mt-1 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none" value={currentProject.cig} onChange={e => handleUpdateProjectField('cig', e.target.value)} /></div>
+              </div>
+              <div className="pt-4 border-t"><label className="text-xs font-bold text-slate-500 uppercase">Note Generali</label><textarea className="w-full p-3 border rounded mt-1 h-32 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none" value={currentProject.generalNotes} onChange={e => handleUpdateProjectField('generalNotes', e.target.value)} /></div>
             </div>
           </div>
         )}
