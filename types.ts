@@ -1,24 +1,22 @@
 
 export interface ContactInfo {
-  name: string; 
-  title?: string; 
+  name: string;
+  title?: string;
   address?: string;
   email?: string;
   pec?: string;
   phone?: string;
-  vat?: string; 
-  repName?: string; 
-  repRole?: string; 
-  repTitle?: string; 
-  professionalOrder?: string; 
-  registrationNumber?: string; 
-  colleagueEntityName?: string; 
-  colleagueEntityLogo?: string; 
-  // Fix: Added missing role property used in constants.ts
-  role?: string; 
+  vat?: string;
+  repName?: string;
+  repRole?: string;
+  repTitle?: string;
+  professionalOrder?: string;
+  registrationNumber?: string;
+  colleagueEntityName?: string;
+  colleagueEntityLogo?: string;
+  role?: string;
 }
 
-// Fix: Added missing PhotoAttachment interface used in various components
 export interface PhotoAttachment {
   id: string;
   url: string;
@@ -27,8 +25,8 @@ export interface PhotoAttachment {
 }
 
 export interface AppointmentData {
-  type: string; 
-  number: string; 
+  type: string;
+  number: string;
   date: string;
 }
 
@@ -38,30 +36,30 @@ export interface SubjectProfile {
 }
 
 export interface DesignerProfile extends SubjectProfile {
-  designLevels: string[]; 
-  roles: string[]; 
-  isLegalEntity: boolean; 
-  operatingDesigners: ContactInfo[]; 
+  designLevels: string[];
+  roles: string[];
+  isLegalEntity: boolean;
+  operatingDesigners: ContactInfo[];
 }
 
 export type CompanyType = 'single' | 'ati' | 'consortium';
 
 export interface ContractorStructure {
   type: CompanyType;
-  mainCompany: ContactInfo; 
-  mandants: ContactInfo[]; 
-  executors: ContactInfo[]; 
-  subcontractors: ContactInfo[]; 
+  mainCompany: ContactInfo;
+  mandants: ContactInfo[];
+  executors: ContactInfo[];
+  subcontractors: ContactInfo[];
 }
 
 export interface DesignPhaseData {
-  deliveryProtocol: string; 
+  deliveryProtocol: string;
   deliveryDate: string;
-  economicFramework: string; 
-  approvalType: string; 
+  economicFramework: string;
+  approvalType: string;
   approvalNumber: string;
   approvalDate: string;
-  localFolderLink: string; 
+  localFolderLink: string;
 }
 
 export type PermissionRole = 'viewer' | 'editor' | 'admin';
@@ -70,16 +68,16 @@ export type UserStatus = 'active' | 'pending' | 'suspended';
 export interface User {
   id: string;
   email: string;
-  password: string; 
+  password: string;
   name: string;
-  isSystemAdmin?: boolean; 
-  status: UserStatus; 
+  isSystemAdmin?: boolean;
+  status: UserStatus;
 }
 
 export interface ProjectPermission {
-  id: string; 
+  id: string;
   projectId: string;
-  userEmail: string; 
+  userEmail: string;
   role: PermissionRole;
 }
 
@@ -98,26 +96,26 @@ export interface SALData {
     date: string;
     periodFrom: string;
     periodTo: string;
-    netAmount: string; 
+    netAmount: string;
     paymentCertificateDate: string;
-    paymentCertificateAmount: string; 
-    localFolderLink: string; 
+    paymentCertificateAmount: string;
+    localFolderLink: string;
     notes: string;
 }
 
 export interface ProjectConstants {
-  id: string; 
-  ownerId: string; 
-  lastModified: number; 
-  displayOrder: number; 
-  entity: string; 
-  entityProvince?: string; 
-  headerLogo?: string; 
+  id: string;
+  ownerId: string;
+  lastModified: number;
+  displayOrder: number;
+  entity: string;
+  entityProvince?: string;
+  headerLogo?: string;
   projectName: string;
   location: string;
-  cup: string; 
-  cig?: string; 
-  generalNotes: string; 
+  cup: string;
+  cig?: string;
+  generalNotes: string;
   
   contract: {
     repNumber: string;
@@ -129,34 +127,33 @@ export interface ProjectConstants {
     totalAmount: string;
     securityCosts: string;
     durationDays: number;
-    deadline: string; 
+    deadline: string;
   };
 
   designPhase: {
-    docfap: DesignPhaseData; 
-    dip: DesignPhaseData;    
-    pfte: DesignPhaseData;   
-    executive: DesignPhaseData; 
+    docfap: DesignPhaseData;
+    dip: DesignPhaseData;
+    pfte: DesignPhaseData;
+    executive: DesignPhaseData;
   };
 
   subjects: {
-    rup: SubjectProfile; 
-    designers: DesignerProfile[]; 
-    csp: DesignerProfile; 
-    verifier: DesignerProfile; 
-    dl: DesignerProfile; 
-    dlOffice: SubjectProfile[]; 
-    cse: DesignerProfile; 
-    tester: SubjectProfile; 
-    testerAppointment: { 
-        // Fix: Added missing appointment fields used in constants.ts
+    rup: SubjectProfile;
+    designers: DesignerProfile[];
+    csp: DesignerProfile;
+    verifier: DesignerProfile;
+    dl: DesignerProfile;
+    dlOffice: SubjectProfile[];
+    cse: DesignerProfile;
+    tester: SubjectProfile;
+    testerAppointment: {
         nominationType?: string;
-        nominationAuthority: string; 
+        nominationAuthority: string;
         nominationNumber?: string;
         nominationDate?: string;
-        contractRepNumber: string; 
-        contractDate: string; 
-        contractProtocol: string; 
+        contractRepNumber: string;
+        contractDate: string;
+        contractProtocol: string;
         testerFee?: string;
         isStatic: boolean;
         isAdmin: boolean;
@@ -165,22 +162,21 @@ export interface ProjectConstants {
   };
 
   tenderPhase: {
-    verificationMinutesDate: string; 
-    validationMinutesDate: string; 
+    verificationMinutesDate: string;
+    validationMinutesDate: string;
   };
 
   contractor: ContractorStructure;
 
   executionPhase: {
-    deliveryDate: string; 
+    deliveryDate: string;
     deliveryType: 'ordinary' | 'anticipated';
     suspensions: { id: string; date: string; reason: string }[];
     resumptions: { id: string; date: string }[];
-    sals: SALData[]; 
-    variants: { id: string; date: string; approvalAct: string }[]; 
-    completionDate: string; 
+    sals: SALData[];
+    variants: { id: string; date: string; approvalAct: string }[];
+    completionDate: string;
     handoverDocs: {
-        // Fix: Added missing project approval fields used in constants.ts
         projectApprovalType?: string;
         projectApprovalNumber?: string;
         projectApprovalDate?: string;
@@ -213,25 +209,24 @@ export type DocumentType =
 
 export interface DocumentVariables {
   id: string;
-  projectId: string; 
-  type: DocumentType; 
-  createdAt: number; 
-  visitNumber: number; 
+  projectId: string;
+  type: DocumentType;
+  createdAt: number;
+  visitNumber: number;
   date: string;
   time: string;
-  convocationMethod: string; 
-  convocationDate: string;   
-  convocationDetails: string; 
-  attendees: string; 
-  premis: string; 
-  worksExecuted: string[]; 
-  worksInProgress: string; 
-  upcomingWorks: string; 
-  worksIntroText: string; 
-  testerRequests: string; 
-  testerInvitations: string; 
-  commonParts: string; 
-  observations: string; 
-  // Fix: Used the PhotoAttachment interface
+  convocationMethod: string;
+  convocationDate: string;
+  convocationDetails: string;
+  attendees: string;
+  premis: string;
+  worksExecuted: string[];
+  worksInProgress: string;
+  upcomingWorks: string;
+  worksIntroText: string;
+  testerRequests: string;
+  testerInvitations: string;
+  commonParts: string;
+  observations: string;
   photos: PhotoAttachment[];
 }

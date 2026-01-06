@@ -32,11 +32,22 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
   const prevVerbali = [...allDocuments].filter(d => d.type === 'VERBALE_COLLAUDO' && d.visitNumber < doc.visitNumber).sort((a,b) => a.visitNumber - b.visitNumber);
 
+  const renderSubjectHeader = (role: 'rup' | 'dl' | 'cse') => {
+      const s = project.subjects[role];
+      if (!s || !s.contact.name) return '...';
+      if ('isLegalEntity' in s && (s as any).isLegalEntity) {
+          const tech = (s as any).operatingDesigners?.[0];
+          if (tech) return `${tech.title || ''} ${tech.name} per ${(s as any).contact.name}`;
+          return `${(s as any).contact.repName} per ${(s as any).contact.name}`;
+      }
+      return `${s.contact.title || ''} ${s.contact.name}`.trim();
+  };
+
   return (
     <div id="document-preview-container" className="font-serif-print text-black leading-snug w-full max-w-[21cm] mx-auto animate-in fade-in">
       <div className="bg-white p-[1.8cm] min-h-[29.7cm] relative flex flex-col border shadow-xl print:shadow-none print:border-none">
         
-        {/* INTESTAZIONE ISTITUZIONALE TABELLARE */}
+        {/* INTESTAZIONE STABILE */}
         <table style={{ width: '100%', marginBottom: '20pt', borderCollapse: 'collapse' }}>
             <tr>
                 <td align="center">
@@ -62,82 +73,56 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             </div>
         </div>
 
-        {/* TABELLA DATI APPALTO PROFESSIONALE */}
-        <table style={{ width: '100%', border: '1.5pt solid black', borderCollapse: 'collapse', fontSize: '9.5pt', marginBottom: '20pt' }}>
-            <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold', width: '35%' }}>IMPRESA:</td><td style={{ padding: '4pt', textTransform: 'uppercase' }}>{contractor.name}</td></tr>
+        {/* TABELLA DATI TECNICI */}
+        <table style={{ width: '100%', border: '1pt solid black', borderCollapse: 'collapse', fontSize: '9.5pt', marginBottom: '20pt' }}>
+            <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold', width: '35%' }}>IMPRESA:</td><td style={{ padding: '4pt' }}>{contractor.name}</td></tr>
             <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>CONTRATTO APPALTO:</td><td style={{ padding: '4pt' }}>Rep. n. {project.contract.repNumber} del {formatDate(project.contract.date)}</td></tr>
-            <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>IMPORTO CONTRATTUALE:</td><td style={{ padding: '4pt' }}>{formatCurrency(project.contract.totalAmount)} (di cui {formatCurrency(project.contract.securityCosts)} sicurezza) oltre IVA</td></tr>
-            <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>SCADENZA LAVORI:</td><td style={{ padding: '4pt', textAlign: 'justify' }}>Giorni {project.contract.durationDays} naturali e consecutivi, decorrenti dal {formatDate(project.executionPhase.deliveryDate)}, data verbale consegna, con ultimazione entro il {formatDate(project.executionPhase.completionDate)}</td></tr>
-            <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>R.U.P.:</td><td style={{ padding: '4pt' }}>{rup.title} {rup.name}</td></tr>
-            <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>DIRETTORE LAVORI:</td><td style={{ padding: '4pt' }}>{dl.title} {dl.name}</td></tr>
-            <tr><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>C.S.E.:</td><td style={{ padding: '4pt' }}>{cse.title} {cse.name}</td></tr>
+            <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>IMPORTO CONTRATTUALE:</td><td style={{ padding: '4pt' }}>{formatCurrency(project.contract.totalAmount)} (di cui {formatCurrency(project.contract.securityCosts)} per oneri sicurezza) oltre IVA</td></tr>
+            <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>SCADENZA LAVORI:</td><td style={{ padding: '4pt' }}>Giorni {project.contract.durationDays} decorrenti dal {formatDate(project.executionPhase.deliveryDate)}, ultimazione entro il {formatDate(project.executionPhase.completionDate)}</td></tr>
+            <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>R.U.P.:</td><td style={{ padding: '4pt' }}>{renderSubjectHeader('rup')}</td></tr>
+            <tr style={{ borderBottom: '1pt solid black' }}><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>DIRETTORE LAVORI:</td><td style={{ padding: '4pt' }}>{renderSubjectHeader('dl')}</td></tr>
+            <tr><td style={{ padding: '4pt', borderRight: '1pt solid black', fontWeight: 'bold' }}>C.S.E.:</td><td style={{ padding: '4pt' }}>{renderSubjectHeader('cse')}</td></tr>
         </table>
 
+        {/* CORPO DEL DOCUMENTO */}
         <div style={{ textAlign: 'justify', fontSize: '11pt', lineHeight: '1.6' }}>
             <p style={{ marginBottom: '15pt' }}>
-                Il giorno {doc.date ? new Date(doc.date).getDate() : '...'} del mese di {doc.date ? new Date(doc.date).toLocaleString('it-IT', { month: 'long' }) : '...'} dell'anno {doc.date ? new Date(doc.date).getFullYear() : '...'}, alle ore {doc.time}, presso il luogo dei lavori in {project.location || project.entity}, ha avvio la visita di collaudo n. {doc.visitNumber} convocata con nota via {doc.convocationMethod} del {formatDate(doc.convocationDate)}.
+                Il giorno {doc.date ? new Date(doc.date).getDate() : '...'} del mese di {doc.date ? new Date(doc.date).toLocaleString('it-IT', { month: 'long' }) : '...'} dell'anno {doc.date ? new Date(doc.date).getFullYear() : '...'}, alle ore {doc.time}, presso il luogo dei lavori, ha avvio la visita di collaudo n. {doc.visitNumber} convocata con nota via {doc.convocationMethod} del {formatDate(doc.convocationDate)}.
             </p>
-            
-            <p style={{ fontWeight: 'bold', marginBottom: '10pt' }}>Sono presenti, oltre al sottoscritto Collaudatore {tester.title} {tester.name}:</p>
-            <div style={{ paddingLeft: '20pt', fontStyle: 'italic', whiteSpace: 'pre-wrap', marginBottom: '20pt' }}>{doc.attendees}</div>
+            <p style={{ fontWeight: 'bold' }}>Sono presenti, oltre al sottoscritto Collaudatore {tester.title} {tester.name}:</p>
+            <div style={{ whiteSpace: 'pre-wrap', fontStyle: 'italic', marginLeft: '20pt', marginBottom: '20pt' }}>{doc.attendees}</div>
 
-            <div style={{ borderTop: '1pt solid black', paddingTop: '10pt' }}>
-                <h3 style={{ fontSize: '10pt', fontWeight: 'bold', textTransform: 'uppercase' }}>PREMESSO CHE:</h3>
-                <div style={{ fontSize: '10.5pt' }}>
-                    <p style={{ marginBottom: '8pt' }}>
-                        1. con Determina {project.subjects.testerAppointment.nominationAuthority} n. {project.subjects.tester.appointment.number} del {formatDate(project.subjects.tester.appointment.date)} e successivo contratto rep. n. {project.subjects.testerAppointment.contractRepNumber} del {formatDate(project.subjects.testerAppointment.contractDate)}, l'Ente {project.entity} ha affidato allo scrivente {tester.title} {tester.name}, iscritto all'Albo della Provincia di {tester.professionalOrder} al n. {tester.registrationNumber}, l'incarico professionale di collaudo relativo all’intervento di {project.projectName} CUP: {project.cup};
-                    </p>
-                    {prevVerbali.map((v, i) => (
-                        <p key={v.id} style={{ marginBottom: '8pt' }}>
-                            {i + 2}. in data {formatDate(v.date)}, con verbale di visita n. {v.visitNumber}, lo scrivente ha preso atto dell'andamento dei lavori eseguiti dal {i === 0 ? formatDate(project.executionPhase.deliveryDate) : formatDate(prevVerbali[i-1].date)} a detta data: {v.worksExecuted.join(', ') || 'N.D.'}. Era in corso il {v.worksInProgress || 'N.D.'};
-                        </p>
-                    ))}
-                    {doc.premis && <div style={{ whiteSpace: 'pre-wrap' }}>{doc.premis}</div>}
-                </div>
-            </div>
+            <h3 style={{ fontSize: '10pt', fontWeight: 'bold', textTransform: 'uppercase' }}>PREMESSO CHE:</h3>
+            <p>1. Con determina {project.subjects.testerAppointment.nominationAuthority} è stato affidato l'incarico di collaudo allo scrivente {tester.title} {tester.name}...</p>
+            {doc.premis && <div style={{ whiteSpace: 'pre-wrap', marginTop: '10pt' }}>{doc.premis}</div>}
 
             <div style={{ marginTop: '20pt' }}>
-                <p style={{ fontStyle: 'italic', marginBottom: '10pt' }}>{doc.worksIntroText}</p>
-                {doc.worksExecuted && doc.worksExecuted.length > 0 && (
-                    <ul style={{ paddingLeft: '30pt', marginBottom: '10pt' }}>
-                        {doc.worksExecuted.map((w, i) => <li key={i}>{w}</li>)}
-                    </ul>
+                <p style={{ fontStyle: 'italic' }}>{doc.worksIntroText}</p>
+                {doc.worksExecuted.length > 0 && (
+                    <ul style={{ marginLeft: '30pt' }}>{doc.worksExecuted.map((w,i) => <li key={i}>{w}</li>)}</ul>
                 )}
-                {doc.worksInProgress && <p>Al momento, sono in corso le opere relative a: <span style={{ fontStyle: 'italic' }}>{doc.worksInProgress}</span></p>}
-                {doc.upcomingWorks && <p>Prossime attività previste: <span style={{ fontStyle: 'italic' }}>{doc.upcomingWorks}</span></p>}
             </div>
-
-            <div style={{ marginTop: '20pt' }}>
-                <p style={{ fontWeight: 'bold' }}>Dopo aver preso visione di tutte le aree di cantiere il Collaudatore:</p>
-                <p style={{ textDecoration: 'underline' }}>chiede ai presenti, ciascuno nell’ambito della propria competenza e responsabilità:</p>
-                <div style={{ paddingLeft: '20pt', fontStyle: 'italic', marginBottom: '10pt' }}>{doc.testerRequests}</div>
-                <p style={{ textDecoration: 'underline' }}>invita i presenti, ciascuno nell’ambito della propria competenza e responsabilità, a:</p>
-                <div style={{ paddingLeft: '20pt', fontStyle: 'italic', marginBottom: '10pt' }}>{doc.testerInvitations}</div>
-            </div>
-
-            <div style={{ marginTop: '10pt', fontStyle: 'italic' }}>{doc.commonParts}</div>
-            {doc.observations && <div style={{ marginTop: '15pt', borderLeft: '3pt solid black', paddingLeft: '10pt', fontStyle: 'italic' }}>{doc.observations}</div>}
+            {doc.observations && <div style={{ marginTop: '20pt', fontStyle: 'italic', borderLeft: '2pt solid black', paddingLeft: '10pt' }}>{doc.observations}</div>}
         </div>
 
-        {/* AREA FIRME ALLINEATA A SINISTRA CON RIGHE */}
-        <div style={{ marginTop: '50pt' }}>
+        {/* FIRME ALLINEATE A SINISTRA */}
+        <div style={{ marginTop: '60pt' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                 <tr>
-                    <td style={{ width: '100%' }}>
+                    <td>
                         <div style={{ marginBottom: '30pt' }}>Il Collaudatore: {tester.title} {tester.name} ________________________________</div>
-                        <div style={{ marginBottom: '30pt' }}>Il Responsabile Unico del Progetto: {rup.title} {rup.name} ________________________________</div>
-                        <div style={{ marginBottom: '30pt' }}>il Direttore dei Lavori e CSE: {dl.title} {dl.name} ________________________________</div>
+                        <div style={{ marginBottom: '30pt' }}>Il Responsabile Unico del Progetto: {renderSubjectHeader('rup')} ________________________________</div>
+                        <div style={{ marginBottom: '30pt' }}>il Direttore dei Lavori e CSE: {renderSubjectHeader('dl')} ________________________________</div>
                         <div>Il rappresentante legale dell'impresa {contractor.name}:<br/>{contractor.repTitle || 'Sig.'} {contractor.repName} ________________________________</div>
                     </td>
                 </tr>
             </table>
         </div>
 
-        {/* FOOTER NATURALE PER WORD */}
         <div id="f1" style={{ display: 'none' }}>
-          <p style={{ textAlign: 'center', fontSize: '8pt', fontStyle: 'italic', borderTop: '0.5pt solid black', paddingTop: '5pt' }}>
-            {tester.title} {tester.name} - {tester.address} - Email: {tester.email} - PEC: {tester.pec}
-          </p>
+           <p style={{ fontSize: '8pt', textAlign: 'center', borderTop: '0.5pt solid black', paddingTop: '5pt' }}>
+              {tester.title} {tester.name} - {tester.address} - Email: {tester.email} - PEC: {tester.pec}
+           </p>
         </div>
       </div>
     </div>

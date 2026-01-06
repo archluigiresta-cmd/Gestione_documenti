@@ -11,59 +11,45 @@ const STORE_PERMISSIONS = 'permissions';
 export const db = {
   open: (): Promise<IDBDatabase> => {
     return new Promise((resolve, reject) => {
-      try {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        
-        request.onupgradeneeded = (event) => {
-          const db = (event.target as IDBOpenDBRequest).result;
-          if (!db.objectStoreNames.contains(STORE_PROJECTS)) db.createObjectStore(STORE_PROJECTS, { keyPath: 'id' });
-          if (!db.objectStoreNames.contains(STORE_DOCUMENTS)) {
-            const docStore = db.createObjectStore(STORE_DOCUMENTS, { keyPath: 'id' });
-            docStore.createIndex('projectId', 'projectId', { unique: false });
-          }
-          if (!db.objectStoreNames.contains(STORE_USERS)) {
-            const userStore = db.createObjectStore(STORE_USERS, { keyPath: 'id' });
-            userStore.createIndex('email', 'email', { unique: true });
-          }
-          if (!db.objectStoreNames.contains(STORE_PERMISSIONS)) {
-            const permStore = db.createObjectStore(STORE_PERMISSIONS, { keyPath: 'id' });
-            permStore.createIndex('projectId', 'projectId', { unique: false });
-            permStore.createIndex('userEmail', 'userEmail', { unique: false });
-          }
-        };
-
-        request.onsuccess = (e) => resolve((e.target as IDBOpenDBRequest).result);
-        request.onerror = (e) => reject((e.target as IDBOpenDBRequest).error);
-        request.onblocked = () => {
-          console.warn("Database blocked - please close other tabs");
-        };
-      } catch (err) {
-        reject(err);
-      }
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        if (!db.objectStoreNames.contains(STORE_PROJECTS)) db.createObjectStore(STORE_PROJECTS, { keyPath: 'id' });
+        if (!db.objectStoreNames.contains(STORE_DOCUMENTS)) {
+          const docStore = db.createObjectStore(STORE_DOCUMENTS, { keyPath: 'id' });
+          docStore.createIndex('projectId', 'projectId', { unique: false });
+        }
+        if (!db.objectStoreNames.contains(STORE_USERS)) {
+          const userStore = db.createObjectStore(STORE_USERS, { keyPath: 'id' });
+          userStore.createIndex('email', 'email', { unique: true });
+        }
+        if (!db.objectStoreNames.contains(STORE_PERMISSIONS)) {
+          const permStore = db.createObjectStore(STORE_PERMISSIONS, { keyPath: 'id' });
+          permStore.createIndex('projectId', 'projectId', { unique: false });
+          permStore.createIndex('userEmail', 'userEmail', { unique: false });
+        }
+      };
+      request.onsuccess = (e) => resolve((e.target as IDBOpenDBRequest).result);
+      request.onerror = (e) => reject((e.target as IDBOpenDBRequest).error);
     });
   },
 
   ensureAdminExists: async (): Promise<void> => {
-    try {
-      const database = await db.open();
-      return new Promise((resolve) => {
-        const transaction = database.transaction(STORE_USERS, 'readwrite');
-        const store = transaction.objectStore(STORE_USERS);
-        const adminUser: User = {
-          id: 'admin-luigi-resta',
-          name: 'Luigi Resta (Admin)',
-          email: 'arch.luigiresta@gmail.com',
-          password: 'admin123',
-          isSystemAdmin: true,
-          status: 'active'
-        };
-        store.put(adminUser);
-        transaction.oncomplete = () => resolve();
-        transaction.onerror = () => resolve(); // Non bloccare l'app se fallisce il seeding
-      });
-    } catch (e) {
-      console.error("Admin seeding failed", e);
-    }
+    const database = await db.open();
+    return new Promise((resolve) => {
+      const transaction = database.transaction(STORE_USERS, 'readwrite');
+      const store = transaction.objectStore(STORE_USERS);
+      const adminUser: User = {
+        id: 'admin-luigi-resta',
+        name: 'Luigi Resta (Admin)',
+        email: 'arch.luigiresta@gmail.com',
+        password: 'admin123',
+        isSystemAdmin: true,
+        status: 'active'
+      };
+      store.put(adminUser);
+      transaction.oncomplete = () => resolve();
+    });
   },
 
   registerUser: async (user: User): Promise<void> => {
@@ -73,7 +59,7 @@ export const db = {
       const store = transaction.objectStore(STORE_USERS);
       const request = store.add(user);
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(new Error("Email già esistente o errore database."));
+      request.onerror = () => reject(new Error("Email già in uso o errore database."));
     });
   },
 
@@ -88,11 +74,11 @@ export const db = {
       request.onsuccess = () => {
         const user = request.result as User;
         if (user && user.password === password) {
-          if (user.status !== 'active') reject(new Error("Il tuo account è in attesa di approvazione."));
+          if (user.status !== 'active') reject(new Error("Il tuo account deve essere ancora approvato dall'amministratore."));
           else resolve(user);
-        } else reject(new Error("Credenziali errate."));
+        } else reject(new Error("Credenziali non valide."));
       };
-      request.onerror = () => reject(new Error("Errore durante l'accesso."));
+      request.onerror = () => reject(request.error);
     });
   },
 
@@ -111,11 +97,11 @@ export const db = {
       const store = tx.objectStore(STORE_USERS);
       const req = store.get(userId);
       req.onsuccess = () => {
-        const u = req.result;
-        if (u) {
-          u.status = status;
-          if (isSystemAdmin !== undefined) u.isSystemAdmin = isSystemAdmin;
-          store.put(u);
+        const user = req.result;
+        if (user) {
+          user.status = status;
+          if (isSystemAdmin !== undefined) user.isSystemAdmin = isSystemAdmin;
+          store.put(user);
           resolve();
         } else reject();
       };
@@ -148,20 +134,6 @@ export const db = {
     tx.objectStore(STORE_PROJECTS).delete(id);
   },
 
-  shareProject: async (p: ProjectPermission) => {
-    const database = await db.open();
-    const tx = database.transaction(STORE_PERMISSIONS, 'readwrite');
-    tx.objectStore(STORE_PERMISSIONS).put(p);
-  },
-
-  getProjectPermissions: async (projectId: string): Promise<ProjectPermission[]> => {
-    const database = await db.open();
-    const tx = database.transaction(STORE_PERMISSIONS, 'readonly');
-    const index = tx.objectStore(STORE_PERMISSIONS).index('projectId');
-    const req = index.getAll(projectId);
-    return new Promise(res => req.onsuccess = () => res(req.result));
-  },
-
   getDocumentsByProject: async (projectId: string): Promise<DocumentVariables[]> => {
     const database = await db.open();
     const tx = database.transaction(STORE_DOCUMENTS, 'readonly');
@@ -180,6 +152,23 @@ export const db = {
     const database = await db.open();
     const tx = database.transaction(STORE_DOCUMENTS, 'readwrite');
     tx.objectStore(STORE_DOCUMENTS).delete(id);
+  },
+
+  // Fix: Adding getProjectPermissions method to retrieve project sharing information
+  getProjectPermissions: async (projectId: string): Promise<ProjectPermission[]> => {
+    const database = await db.open();
+    const tx = database.transaction(STORE_PERMISSIONS, 'readonly');
+    const index = tx.objectStore(STORE_PERMISSIONS).index('projectId');
+    const req = index.getAll(projectId);
+    return new Promise(res => req.onsuccess = () => res(req.result));
+  },
+
+  // Fix: Adding shareProject method to save sharing permissions to the database
+  shareProject: async (perm: ProjectPermission): Promise<void> => {
+    const database = await db.open();
+    const tx = database.transaction(STORE_PERMISSIONS, 'readwrite');
+    tx.objectStore(STORE_PERMISSIONS).put(perm);
+    return new Promise(res => tx.oncomplete = () => res());
   },
 
   getDatabaseBackup: async (): Promise<BackupData> => {
@@ -210,9 +199,9 @@ export const db = {
     tx.objectStore(STORE_DOCUMENTS).clear();
     tx.objectStore(STORE_USERS).clear();
     tx.objectStore(STORE_PERMISSIONS).clear();
-    if (data.projects) data.projects.forEach(p => tx.objectStore(STORE_PROJECTS).add(p));
-    if (data.documents) data.documents.forEach(d => tx.objectStore(STORE_DOCUMENTS).add(d));
-    if (data.users) data.users.forEach(u => tx.objectStore(STORE_USERS).add(u));
+    data.projects.forEach(p => tx.objectStore(STORE_PROJECTS).add(p));
+    data.documents.forEach(d => tx.objectStore(STORE_DOCUMENTS).add(d));
+    data.users.forEach(u => tx.objectStore(STORE_USERS).add(u));
     if (data.permissions) data.permissions.forEach(p => tx.objectStore(STORE_PERMISSIONS).add(p));
   }
 };

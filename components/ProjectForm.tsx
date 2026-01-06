@@ -1,7 +1,7 @@
 
-import React from 'react';
-import { Stamp, Building, X, UserCircle, MapPin, Mail, Hash } from 'lucide-react';
-import { ProjectConstants } from '../types';
+import React, { useState } from 'react';
+import { Stamp, Building, X, UserCircle, MapPin, Mail, Hash, Phone, Users, Plus, Trash2, PencilRuler, Gavel, HardHat, FileText, ClipboardList, Briefcase, Info, CheckSquare } from 'lucide-react';
+import { ProjectConstants, DesignerProfile, ContactInfo, SubjectProfile } from '../types';
 
 interface ProjectFormProps {
     data: ProjectConstants;
@@ -10,122 +10,171 @@ interface ProjectFormProps {
     subTab: string;
 }
 
+// Fix: Defining an explicit interface for DesignerForm props to resolve the 'key' property error and typing issues
+interface DesignerFormProps {
+    designer: DesignerProfile;
+    index: number;
+    onUpdate: (v: DesignerProfile) => void;
+    onRemove: () => void;
+}
+
 export const ProjectForm: React.FC<ProjectFormProps> = ({ data, readOnly, handleChange, subTab }) => {
-    return (
-        <div className="space-y-6">
-            {subTab === 'tester' && data.subjects.tester && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4">
-                    
-                    {/* ENTE DI APPARTENENZA (LOGO E NOME) */}
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                       <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-3">
-                          <Building className="w-5 h-5 text-blue-500 bg-blue-50 p-1 rounded-full"/> Ente di Appartenenza (Solo per Nulla Osta)
-                       </h4>
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="md:col-span-2">
-                                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Nome Completo Ente</label>
-                                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" 
-                                    placeholder="Es. COMUNE DI FRANCAVILLA FONTANA"
-                                    value={data.subjects.tester.contact.colleagueEntityName || ''} onChange={e => handleChange('subjects.tester.contact.colleagueEntityName', e.target.value)} />
-                            </div>
-                            <div className="md:col-span-2 p-4 bg-slate-50 rounded-lg border border-dashed border-slate-300">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <label className="block text-sm font-bold text-slate-700 mb-1">Logo Istituzionale</label>
-                                        <p className="text-[10px] text-slate-500 italic">Apparirà in alto al centro nel Nulla Osta.</p>
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        {data.subjects.tester.contact.colleagueEntityLogo && (
-                                            <img src={data.subjects.tester.contact.colleagueEntityLogo} alt="Logo" className="h-12 w-auto object-contain border bg-white p-1 rounded" />
-                                        )}
-                                        {!readOnly && (
-                                            <label className="cursor-pointer bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-700">
-                                                {data.subjects.tester.contact.colleagueEntityLogo ? 'Cambia Logo' : 'Carica Logo'}
-                                                <input type="file" className="hidden" accept="image/*" onChange={e => {
-                                                    const file = e.target.files?.[0];
-                                                    if (file) {
-                                                        const reader = new FileReader();
-                                                        reader.onloadend = () => handleChange('subjects.tester.contact.colleagueEntityLogo', reader.result as string);
-                                                        reader.readAsDataURL(file);
-                                                    }
-                                                }} />
-                                            </label>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                       </div>
-                    </div>
+    const [localTab, setLocalTab] = useState('0');
 
-                    {/* ANAGRAFICA PROFESSIONALE (DATI PER FOOTER) */}
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                       <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-3">
-                          <UserCircle className="w-5 h-5 text-blue-500 bg-blue-50 p-1 rounded-full"/> Anagrafica Professionale (Dati Piè di Pagina)
-                       </h4>
-                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                           <div>
-                               <label className="text-xs font-bold text-slate-500 uppercase">Titolo</label>
-                               <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded mt-1" 
-                                   value={data.subjects.tester.contact.title || ''} onChange={e => handleChange('subjects.tester.contact.title', e.target.value)} />
-                           </div>
-                           <div className="lg:col-span-2">
-                               <label className="text-xs font-bold text-slate-500 uppercase">Nome e Cognome</label>
-                               <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded mt-1 font-bold" 
-                                   value={data.subjects.tester.contact.name || ''} onChange={e => handleChange('subjects.tester.contact.name', e.target.value)} />
-                           </div>
-                           <div className="lg:col-span-2">
-                               <label className="text-xs font-bold text-slate-500 uppercase">Albo / Ordine</label>
-                               <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded mt-1" placeholder="Es. Ordine degli Architetti di Taranto"
-                                   value={data.subjects.tester.contact.professionalOrder || ''} onChange={e => handleChange('subjects.tester.contact.professionalOrder', e.target.value)} />
-                           </div>
-                           <div>
-                               <label className="text-xs font-bold text-slate-500 uppercase">Numero Iscrizione</label>
-                               <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded mt-1" 
-                                   value={data.subjects.tester.contact.registrationNumber || ''} onChange={e => handleChange('subjects.tester.contact.registrationNumber', e.target.value)} />
-                           </div>
-                           <div className="lg:col-span-3">
-                               <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1"><MapPin className="w-3 h-3"/> Indirizzo Professionale</label>
-                               <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded mt-1" placeholder="Via/Piazza, CAP, Città"
-                                   value={data.subjects.tester.contact.address || ''} onChange={e => handleChange('subjects.tester.contact.address', e.target.value)} />
-                           </div>
-                           <div className="lg:col-span-2">
-                               <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1"><Mail className="w-3 h-3"/> PEC</label>
-                               <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded mt-1" 
-                                   value={data.subjects.tester.contact.pec || ''} onChange={e => handleChange('subjects.tester.contact.pec', e.target.value)} />
-                           </div>
-                           <div>
-                               <label className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1">Telefono</label>
-                               <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded mt-1" 
-                                   value={data.subjects.tester.contact.phone || ''} onChange={e => handleChange('subjects.tester.contact.phone', e.target.value)} />
-                           </div>
-                       </div>
-                    </div>
+    // Componente per Anagrafica Contatto
+    const ContactCard = ({ title, prefix, value, onChange, isCompany = false }: { title: string, prefix: string, value: ContactInfo, onChange: (v: ContactInfo) => void, isCompany?: boolean }) => (
+        <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
+            <h5 className="font-bold text-slate-700 text-xs uppercase tracking-widest mb-4 flex items-center gap-2">
+                <UserCircle className="w-4 h-4 text-blue-500" /> {title}
+            </h5>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {!isCompany && (
+                   <div className="md:col-span-2 flex gap-2">
+                      <select className="p-2 border rounded text-sm w-24" value={value.title} onChange={e => onChange({...value, title: e.target.value})}>
+                          <option value="Arch.">Arch.</option><option value="Ing.">Ing.</option><option value="Geom.">Geom.</option><option value="Dott.">Dott.</option><option value="Sig.">Sig.</option><option value="Altro">Altro</option>
+                      </select>
+                      <input type="text" className="flex-1 p-2 border rounded font-bold" placeholder="Nome e Cognome" value={value.name} onChange={e => onChange({...value, name: e.target.value})} />
+                   </div>
+                )}
+                {isCompany && (
+                   <div className="md:col-span-2">
+                      <label className="text-[10px] font-bold text-slate-500 uppercase">Ragione Sociale</label>
+                      <input type="text" className="w-full p-2 border rounded font-bold" value={value.name} onChange={e => onChange({...value, name: e.target.value})} />
+                   </div>
+                )}
+                <div><label className="text-[10px] font-bold text-slate-500 uppercase">Email / PEC</label><input type="text" className="w-full p-2 border rounded text-sm" value={value.pec} onChange={e => onChange({...value, pec: e.target.value})} /></div>
+                <div><label className="text-[10px] font-bold text-slate-500 uppercase">Telefono</label><input type="text" className="w-full p-2 border rounded text-sm" value={value.phone} onChange={e => onChange({...value, phone: e.target.value})} /></div>
+                <div className="md:col-span-2"><label className="text-[10px] font-bold text-slate-500 uppercase">Indirizzo Sede</label><input type="text" className="w-full p-2 border rounded text-sm" value={value.address} onChange={e => onChange({...value, address: e.target.value})} /></div>
+                {!isCompany && (
+                   <>
+                     <div><label className="text-[10px] font-bold text-slate-500 uppercase">Albo Professionale</label><input type="text" className="w-full p-2 border rounded text-sm" value={value.professionalOrder} onChange={e => onChange({...value, professionalOrder: e.target.value})} /></div>
+                     <div><label className="text-[10px] font-bold text-slate-500 uppercase">N. Iscrizione</label><input type="text" className="w-full p-2 border rounded text-sm" value={value.registrationNumber} onChange={e => onChange({...value, registrationNumber: e.target.value})} /></div>
+                   </>
+                )}
+                {isCompany && (
+                   <div><label className="text-[10px] font-bold text-slate-500 uppercase">P.IVA / C.F.</label><input type="text" className="w-full p-2 border rounded text-sm" value={value.vat} onChange={e => onChange({...value, vat: e.target.value})} /></div>
+                )}
+            </div>
+        </div>
+    );
 
-                    {/* ATTO DI NOMINA */}
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                       <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-3">
-                          <Stamp className="w-5 h-5 text-blue-500 bg-blue-50 p-1 rounded-full"/> Atto di Nomina
-                       </h4>
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           <div className="md:col-span-2">
-                               <label className="text-xs font-bold text-slate-500 uppercase">Tipo Atto e Autorità</label>
-                               <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded mt-1" placeholder="Es. Determina Dirigenziale del Settore Tecnico"
-                                      value={data.subjects.testerAppointment.nominationType} onChange={e => handleChange('subjects.testerAppointment.nominationType', e.target.value)} />
+    // Fix: Explicitly typing DesignerForm as a React.FC with DesignerFormProps to handle the 'key' and prop types correctly
+    const DesignerForm: React.FC<DesignerFormProps> = ({ designer, index, onUpdate, onRemove }) => (
+        <div className="bg-white p-6 rounded-2xl border-2 border-slate-100 shadow-sm space-y-6">
+            <div className="flex justify-between items-center border-b pb-4">
+                <h4 className="font-bold text-slate-800">Progettista n. {index + 1}</h4>
+                <button onClick={onRemove} className="text-red-400 hover:text-red-600"><Trash2 className="w-5 h-5"/></button>
+            </div>
+            
+            <div className="flex items-center gap-4 bg-blue-50 p-3 rounded-lg">
+                <span className="text-xs font-bold text-blue-700 uppercase">Tipo Soggetto:</span>
+                <label className="flex items-center gap-2 text-sm"><input type="radio" checked={!designer.isLegalEntity} onChange={() => onUpdate({...designer, isLegalEntity: false})} /> Libero Professionista</label>
+                <label className="flex items-center gap-2 text-sm"><input type="radio" checked={designer.isLegalEntity} onChange={() => onUpdate({...designer, isLegalEntity: true})} /> Società / RTP</label>
+            </div>
+
+            <ContactCard title={designer.isLegalEntity ? "Dati Società" : "Anagrafica Professionista"} prefix="" value={designer.contact} onChange={v => onUpdate({...designer, contact: v})} isCompany={designer.isLegalEntity} />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h5 className="font-bold text-xs uppercase text-slate-500 mb-3">Livelli di Progettazione</h5>
+                    <div className="grid grid-cols-2 gap-2">
+                        {['DocFAP', 'DIP', 'PFTE', 'Esecutivo'].map(l => (
+                           <label key={l} className="flex items-center gap-2 p-2 border rounded hover:bg-slate-50 text-sm">
+                               <input type="checkbox" checked={designer.designLevels.includes(l)} onChange={e => {
+                                   const next = e.target.checked ? [...designer.designLevels, l] : designer.designLevels.filter(x => x !== l);
+                                   onUpdate({...designer, designLevels: next});
+                               }} /> {l}
+                           </label>
+                        ))}
+                    </div>
+                </div>
+                <div>
+                    <h5 className="font-bold text-xs uppercase text-slate-500 mb-3">Incarichi Specifici</h5>
+                    <div className="grid grid-cols-2 gap-2">
+                        {['Architettonico', 'Strutturale', 'Impiantistico', 'Ambientale', 'Sicurezza'].map(r => (
+                           <label key={r} className="flex items-center gap-2 p-2 border rounded hover:bg-slate-50 text-sm">
+                               <input type="checkbox" checked={designer.roles.includes(r)} onChange={e => {
+                                   const next = e.target.checked ? [...designer.roles, r] : designer.roles.filter(x => x !== r);
+                                   onUpdate({...designer, roles: next});
+                               }} /> {r}
+                           </label>
+                        ))}
+                    </div>
+                </div>
+            </div>
+            
+            {designer.isLegalEntity && (
+                <div className="p-4 bg-amber-50 rounded-xl border border-amber-100">
+                    <h5 className="font-bold text-amber-800 text-xs uppercase mb-3">Tecnici Operativi / Firmatari</h5>
+                    <button onClick={() => onUpdate({...designer, operatingDesigners: [...designer.operatingDesigners, {name: '', title: 'Ing.'}]})} className="text-[10px] font-bold bg-white px-3 py-1 rounded border border-amber-200">+ Aggiungi Tecnico</button>
+                    <div className="space-y-2 mt-3">
+                        {designer.operatingDesigners.map((op, idx) => (
+                           <div key={idx} className="flex gap-2 items-center bg-white p-2 rounded shadow-sm">
+                               <select className="p-1 border rounded text-xs" value={op.title} onChange={e => {
+                                   const next = [...designer.operatingDesigners]; next[idx].title = e.target.value; onUpdate({...designer, operatingDesigners: next});
+                               }}><option value="Arch.">Arch.</option><option value="Ing.">Ing.</option><option value="Geom.">Geom.</option></select>
+                               <input type="text" className="flex-1 p-1 border rounded text-xs" placeholder="Nome Tecnico" value={op.name} onChange={e => {
+                                   const next = [...designer.operatingDesigners]; next[idx].name = e.target.value; onUpdate({...designer, operatingDesigners: next});
+                               }} />
+                               <button onClick={() => {
+                                   const next = [...designer.operatingDesigners]; next.splice(idx,1); onUpdate({...designer, operatingDesigners: next});
+                               }} className="text-red-300"><X className="w-4 h-4"/></button>
                            </div>
-                           <div>
-                               <label className="text-xs font-bold text-slate-500 uppercase">Numero</label>
-                               <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded mt-1" 
-                                      value={data.subjects.testerAppointment.nominationNumber} onChange={e => handleChange('subjects.testerAppointment.nominationNumber', e.target.value)} />
-                           </div>
-                           <div>
-                               <label className="text-xs font-bold text-slate-500 uppercase">Data</label>
-                               <input disabled={readOnly} type="date" className="w-full p-2 border border-slate-300 rounded mt-1" 
-                                      value={data.subjects.testerAppointment.nominationDate} onChange={e => handleChange('subjects.testerAppointment.nominationDate', e.target.value)} />
-                           </div>
-                       </div>
+                        ))}
                     </div>
                 </div>
             )}
+        </div>
+    );
+
+    return (
+        <div className="max-w-5xl mx-auto pb-20 animate-in fade-in slide-in-from-bottom-4">
+            <div className="flex bg-white p-1 rounded-xl shadow-sm border border-slate-200 mb-8 overflow-x-auto no-scrollbar">
+                {subTab === 'design' && ['DocFAP', 'DIP', 'PFTE', 'Esecutivo'].map((l, i) => (
+                    <button key={l} onClick={() => setLocalTab(i.toString())} className={`flex-1 py-2 px-4 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${localTab === i.toString() ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>{l}</button>
+                ))}
+                {subTab === 'subjects' && ['RUP', 'Progettisti', 'DL', 'Sicurezza', 'Collaudo'].map((l, i) => (
+                    <button key={l} onClick={() => setLocalTab(i.toString())} className={`flex-1 py-2 px-4 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${localTab === i.toString() ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>{l}</button>
+                ))}
+                {subTab === 'contractor' && ['Anagrafica', 'ATI / Mandanti', 'Subappalti'].map((l, i) => (
+                    <button key={l} onClick={() => setLocalTab(i.toString())} className={`flex-1 py-2 px-4 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${localTab === i.toString() ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}>{l}</button>
+                ))}
+            </div>
+
+            {subTab === 'design' && (
+                <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 space-y-8">
+                   {/* Logica dinamica per caricare docfap, dip, pfte o executive in base a localTab */}
+                   {['docfap', 'dip', 'pfte', 'executive'].map((key, i) => i.toString() === localTab && (
+                      <div key={key} className="space-y-6">
+                         <h3 className="text-xl font-bold border-b pb-4 flex items-center gap-2"><PencilRuler className="text-blue-600"/> Dati Livello: {key.toUpperCase()}</h3>
+                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div><label className="text-xs font-bold text-slate-500 uppercase">Prot. Consegna</label><input type="text" className="w-full p-2 border rounded" value={data.designPhase[key as keyof typeof data.designPhase].deliveryProtocol} onChange={e => handleChange(`designPhase.${key}.deliveryProtocol`, e.target.value)} /></div>
+                            <div><label className="text-xs font-bold text-slate-500 uppercase">Data Consegna</label><input type="date" className="w-full p-2 border rounded" value={data.designPhase[key as keyof typeof data.designPhase].deliveryDate} onChange={e => handleChange(`designPhase.${key}.deliveryDate`, e.target.value)} /></div>
+                            <div><label className="text-xs font-bold text-slate-500 uppercase">Importo Q.E. (€)</label><input type="text" className="w-full p-2 border rounded" value={data.designPhase[key as keyof typeof data.designPhase].economicFramework} onChange={e => handleChange(`designPhase.${key}.economicFramework`, e.target.value)} /></div>
+                            <div className="md:col-span-3 pt-4 border-t"><label className="text-xs font-bold text-slate-500 uppercase block mb-1">Link Cartella Locale Progetto</label><input type="text" className="w-full p-2 border rounded font-mono text-xs bg-slate-50" placeholder="C:\Progetti\..." value={data.designPhase[key as keyof typeof data.designPhase].localFolderLink} onChange={e => handleChange(`designPhase.${key}.localFolderLink`, e.target.value)} /></div>
+                         </div>
+                      </div>
+                   ))}
+                </div>
+            )}
+
+            {subTab === 'subjects' && localTab === '1' && (
+                <div className="space-y-6">
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-xl font-bold text-slate-800">Elenco Progettisti</h3>
+                        <button onClick={() => handleChange('subjects.designers', [...data.subjects.designers, {contact: {name: '', title: 'Arch.'}, designLevels: [], roles: [], isLegalEntity: false, operatingDesigners: [], appointment: {type: 'Determina', number: '', date: ''}}])} className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-xs">+ Aggiungi Progettista</button>
+                    </div>
+                    {data.subjects.designers.map((d, i) => (
+                        <DesignerForm key={i} designer={d} index={i} onUpdate={v => {
+                            const next = [...data.subjects.designers]; next[i] = v; handleChange('subjects.designers', next);
+                        }} onRemove={() => {
+                            const next = [...data.subjects.designers]; next.splice(i,1); handleChange('subjects.designers', next);
+                        }} />
+                    ))}
+                </div>
+            )}
+
+            {/* Aggiungere altri tab soggetti, impresa, ecc. seguendo la stessa logica di DesignerForm e ContactCard */}
         </div>
     );
 };
