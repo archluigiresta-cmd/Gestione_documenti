@@ -22,7 +22,6 @@ const App: React.FC = () => {
   const [showAdmin, setShowAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Forza SEMPRE la schermata di login all'avvio (Rimosso caricamento da localStorage)
   useEffect(() => {
     const init = async () => {
       try {
@@ -100,6 +99,39 @@ const App: React.FC = () => {
     await db.saveDocument(doc);
   };
 
+  const handleDeleteDocument = async (id: string) => {
+    if (!confirm("Eliminare definitivamente il documento? La numerazione degli altri verbali dello stesso tipo verrà ricalcolata.")) return;
+    
+    const docToDelete = documents.find(d => d.id === id);
+    if (!docToDelete) return;
+
+    const type = docToDelete.type;
+    await db.deleteDocument(id);
+
+    // Ricalcola numerazione
+    const remainingOfSameType = documents
+        .filter(d => d.id !== id && d.type === type)
+        .sort((a, b) => a.createdAt - b.createdAt);
+    
+    const updatedDocs = remainingOfSameType.map((d, index) => ({
+        ...d,
+        visitNumber: index + 1
+    }));
+
+    for (const ud of updatedDocs) {
+        await db.saveDocument(ud);
+    }
+
+    const otherTypes = documents.filter(d => d.type !== type && d.id !== id);
+    const finalDocs = [...otherTypes, ...updatedDocs];
+    
+    setDocuments(finalDocs);
+    if (currentDocId === id) {
+        const next = updatedDocs.length > 0 ? updatedDocs[0].id : (otherTypes.length > 0 ? otherTypes[0].id : '');
+        setCurrentDocId(next);
+    }
+  };
+
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white">
         <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
@@ -107,10 +139,7 @@ const App: React.FC = () => {
     </div>
   );
 
-  // Se non loggato, mostra SEMPRE AuthScreen
-  if (!currentUser) return (
-    <AuthScreen onLogin={(u) => setCurrentUser(u)} />
-  );
+  if (!currentUser) return <AuthScreen onLogin={(u) => setCurrentUser(u)} />;
 
   if (showAdmin) return <AdminPanel onBack={() => setShowAdmin(false)} currentUser={currentUser} />;
 
@@ -163,15 +192,15 @@ const App: React.FC = () => {
         )}
         {activeTab === 'execution' && (
           <ExecutionManager 
-            project={currentProject} onUpdateProject={setCurrentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={() => createNewDocument('VERBALE_COLLAUDO')} onDeleteDocument={async id => { if(confirm("Eliminare il verbale?")) { await db.deleteDocument(id); setDocuments(prev => prev.filter(d => d.id !== id)); } }} 
+            project={currentProject} onUpdateProject={setCurrentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={() => createNewDocument('VERBALE_COLLAUDO')} onDeleteDocument={handleDeleteDocument} 
           />
         )}
         {activeTab === 'testing' && (
           <TestingManager 
-            project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={createNewDocument} onDeleteDocument={async id => { if(confirm("Eliminare il verbale di collaudo?")) { await db.deleteDocument(id); setDocuments(prev => prev.filter(d => d.id !== id)); } }} onUpdateProject={setCurrentProject}
+            project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleUpdateDocument} onNewDocument={createNewDocument} onDeleteDocument={handleDeleteDocument} onUpdateProject={handleUpdateProjectField as any}
           />
         )}
-        {activeTab === 'export' && <ExportManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} />}
+        {activeTab === 'export' && <ExportManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onDeleteDocument={handleDeleteDocument} />}
       </main>
     </div>
   );
