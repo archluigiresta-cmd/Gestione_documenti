@@ -22,16 +22,13 @@ const App: React.FC = () => {
   const [showAdmin, setShowAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Forza SEMPRE la schermata di login all'avvio (Rimosso caricamento da localStorage)
   useEffect(() => {
     const init = async () => {
       try {
         await db.ensureAdminExists();
-        const saved = localStorage.getItem('loggedUser');
-        if (saved) {
-          setCurrentUser(JSON.parse(saved));
-        }
       } catch (err) {
-        console.error("Init error:", err);
+        console.error("Init database error:", err);
       } finally {
         setLoading(false);
       }
@@ -84,12 +81,15 @@ const App: React.FC = () => {
   const createNewDocument = async (type: DocumentType) => {
     if (!currentProject) return;
     const nextNum = documents.filter(d => d.type === type).length + 1;
-    const newDoc = { ...createInitialDocument(currentProject.id), type, visitNumber: nextNum };
+    const newDoc = { 
+        ...createInitialDocument(currentProject.id), 
+        type, 
+        visitNumber: nextNum,
+        worksIntroText: type === 'VERBALE_COLLAUDO' 
+            ? "Lo scrivente collaudatore, alla presenza dei signori sopra indicati, ha proceduto alla visita di collaudo rilevando quanto segue:"
+            : ""
+    };
     
-    if (type === 'VERBALE_COLLAUDO') {
-        newDoc.worksIntroText = "Lo scrivente collaudatore, alla presenza dei signori sopra indicati, ha proceduto alla visita di collaudo rilevando quanto segue:";
-    }
-
     setDocuments(prev => [...prev, newDoc]);
     setCurrentDocId(newDoc.id);
     await db.saveDocument(newDoc);
@@ -103,15 +103,13 @@ const App: React.FC = () => {
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white">
         <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-sm font-bold tracking-widest uppercase">Caricamento Sistema...</p>
+        <p className="text-sm font-bold tracking-widest uppercase">Avvio EdilApp...</p>
     </div>
   );
 
+  // Se non loggato, mostra SEMPRE AuthScreen
   if (!currentUser) return (
-    <AuthScreen onLogin={(u) => { 
-      setCurrentUser(u); 
-      localStorage.setItem('loggedUser', JSON.stringify(u)); 
-    }} />
+    <AuthScreen onLogin={(u) => setCurrentUser(u)} />
   );
 
   if (showAdmin) return <AdminPanel onBack={() => setShowAdmin(false)} currentUser={currentUser} />;
@@ -157,7 +155,7 @@ const App: React.FC = () => {
         onBackToDashboard={() => setCurrentProject(null)}
         projectName={currentProject.projectName}
         user={currentUser}
-        onLogout={() => { localStorage.removeItem('loggedUser'); setCurrentUser(null); setCurrentProject(null); }}
+        onLogout={() => { setCurrentUser(null); setCurrentProject(null); }}
       />
       <main className="flex-1 ml-64 p-8 overflow-y-auto">
         {(activeTab === 'general' || activeTab === 'design' || activeTab === 'subjects' || activeTab === 'tender' || activeTab === 'contractor') && (
