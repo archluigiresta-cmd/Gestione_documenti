@@ -28,12 +28,7 @@ const App: React.FC = () => {
         await db.ensureAdminExists();
         const saved = localStorage.getItem('loggedUser');
         if (saved) {
-          try {
-            const user = JSON.parse(saved);
-            setCurrentUser(user);
-          } catch {
-            localStorage.removeItem('loggedUser');
-          }
+          setCurrentUser(JSON.parse(saved));
         }
       } catch (err) {
         console.error("Init error:", err);
@@ -55,9 +50,7 @@ const App: React.FC = () => {
   };
 
   const handleSelectProject = async (p: ProjectConstants) => {
-    const template = createEmptyProject(p.ownerId);
-    const merged = { ...template, ...p };
-    setCurrentProject(merged);
+    setCurrentProject(p);
     const docs = await db.getDocumentsByProject(p.id);
     setDocuments(docs);
     if (docs.length > 0) setCurrentDocId(docs[0].id);
@@ -93,13 +86,8 @@ const App: React.FC = () => {
     const nextNum = documents.filter(d => d.type === type).length + 1;
     const newDoc = { ...createInitialDocument(currentProject.id), type, visitNumber: nextNum };
     
-    if (type === 'VERBALE_COLLAUDO' && documents.length > 0) {
-      const last = [...documents].filter(d => d.type === 'VERBALE_COLLAUDO').sort((a,b) => b.visitNumber - a.visitNumber)[0];
-      if (last) {
-        newDoc.premis = last.premis;
-        const ref = `In data ${new Date(last.date).toLocaleDateString('it-IT')}, con verbale n. ${last.visitNumber}, lo scrivente ha preso atto dei lavori: ${last.worksExecuted.join(', ')}.`;
-        newDoc.premis += (newDoc.premis ? '\n\n' : '') + ref;
-      }
+    if (type === 'VERBALE_COLLAUDO') {
+        newDoc.worksIntroText = "Lo scrivente collaudatore, alla presenza dei signori sopra indicati, ha proceduto alla visita di collaudo rilevando quanto segue:";
     }
 
     setDocuments(prev => [...prev, newDoc]);
@@ -113,9 +101,9 @@ const App: React.FC = () => {
   };
 
   if (loading) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-slate-500 font-bold text-xs uppercase tracking-widest italic">EdilApp - Caricamento Sistema...</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-900 text-white">
+        <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-sm font-bold tracking-widest uppercase">Caricamento Sistema...</p>
     </div>
   );
 

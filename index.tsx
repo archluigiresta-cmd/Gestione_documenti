@@ -1,5 +1,5 @@
 
-import React, { ReactNode, ErrorInfo } from 'react';
+import React, { ReactNode, ErrorInfo, Component } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
@@ -17,11 +17,9 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-// Fix: Explicitly extending React.Component with typed generics ensures 'props' and 'state' 
-// are correctly identified by the TypeScript compiler. Using property initialization for 
-// 'state' instead of constructor initialization guarantees it's defined and typed correctly 
-// on the instance, resolving errors where 'state' and 'props' were not found.
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+// Fix: Using property initializer for state and explicit Component inheritance 
+// to ensure TypeScript correctly resolves 'props' and 'state' from the base class.
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = {
     hasError: false,
     error: null,
@@ -36,7 +34,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   render() {
-    // Accessing state which is now correctly inherited from React.Component
+    // Accessing state which is inherited from Component
     if (this.state.hasError) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-red-50 p-4">
@@ -59,7 +57,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
         </div>
       );
     }
-    // Correctly accessing props.children inherited from React.Component
+    // Accessing props.children inherited from Component
     return this.props.children;
   }
 }
