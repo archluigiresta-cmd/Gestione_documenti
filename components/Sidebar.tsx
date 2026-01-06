@@ -2,7 +2,7 @@
 import React from 'react';
 import { 
   Building2, Users, Gavel, HardHat, Activity, ClipboardCheck, FileOutput, ArrowLeft, Settings, PencilRuler, LogOut, UserCircle,
-  Mail, ShieldCheck, ClipboardList, FileText, Euro, ChevronRight
+  Mail, ShieldCheck, ClipboardList, FileText, Euro
 } from 'lucide-react';
 import { User } from '../types';
 
@@ -24,13 +24,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     return (
       <button
         onClick={() => setActiveTab(id as any)}
-        className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all text-sm font-medium mb-0.5 ${
-          sub ? (isActive ? 'bg-blue-800/50 text-white ml-4' : 'text-blue-300/70 hover:text-white hover:bg-blue-900/30 ml-4 font-normal') :
+        className={`w-full flex items-center gap-3 px-4 py-2 rounded-lg transition-all text-sm font-medium mb-0.5 ${
+          sub ? (isActive ? 'bg-blue-800/40 text-white ml-5' : 'text-blue-300/60 hover:text-white hover:bg-blue-900/30 ml-5 font-normal') :
           (isActive ? 'bg-blue-600 text-white shadow-lg' : 'text-blue-200 hover:bg-blue-900 hover:text-white')
         }`}
       >
-        {Icon && <Icon className={`${sub ? 'w-3.5 h-3.5' : 'w-5 h-5'}`} />}
-        <span className={sub ? 'text-xs' : ''}>{label}</span>
+        {Icon && <Icon className={`${sub ? 'w-3.5 h-3.5 opacity-70' : 'w-5 h-5'}`} />}
+        <span className={sub ? 'text-[13px]' : ''}>{label}</span>
       </button>
     );
   };
@@ -49,29 +49,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
       
       <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
-        <div className="mb-2 px-4 text-[10px] font-bold text-blue-400 uppercase tracking-widest opacity-70">Moduli Attivi</div>
-        <NavItem id="general" label="Dati Generali" icon={Building2} />
-        <NavItem id="subjects" label="Soggetti" icon={Users} />
-        <NavItem id="execution" label="Esecuzione" icon={Activity} />
-        <NavItem id="testing" label="Collaudo" icon={ClipboardCheck} />
+        <div className="mb-2 px-4 text-[10px] font-bold text-blue-400 uppercase tracking-widest opacity-70">Moduli</div>
+        <NavItem id="general" label="Anagrafica" icon={Building2} />
+        <NavItem id="execution" label="Cantiere" icon={Activity} />
+        <NavItem id="testing" label="Nuovo Verbale" icon={ClipboardCheck} />
         
-        <div className="mt-8 mb-2 px-4 text-[10px] font-bold text-blue-400 uppercase tracking-widest opacity-70 border-t border-blue-900/50 pt-6">Archivio / Esporta</div>
+        <div className="mt-8 mb-2 px-4 text-[10px] font-bold text-blue-400 uppercase tracking-widest opacity-70 border-t border-blue-900/50 pt-6">Archivio Esportazione</div>
         
-        {/* Gruppo Collaudi */}
-        <div className="mb-2">
-            <div className={`flex items-center gap-3 px-4 py-2 text-sm font-bold text-blue-200 opacity-60`}>
+        {/* Gruppo Collaudi con Sottovoci */}
+        <div className="mb-1">
+            <div className={`flex items-center gap-3 px-4 py-2 text-sm font-bold text-blue-200/50`}>
                 <Gavel className="w-5 h-5" /> Collaudi
             </div>
             <NavItem id="export-testing-comm" label="Corrispondenza" icon={Mail} sub />
             <NavItem id="export-testing-clearance" label="Nullaosta" icon={ShieldCheck} sub />
             <NavItem id="export-testing-visits" label="Visite di collaudo" icon={ClipboardList} sub />
-            <NavItem id="export-testing-reports" label="Relazioni collaudo" icon={FileText} sub />
+            <NavItem id="export-testing-reports" label="Relazioni" icon={FileText} sub />
         </div>
 
         <NavItem id="export-execution" label="Consegne" icon={Activity} />
         <NavItem id="export-suspensions" label="Sospensioni" icon={ClipboardList} />
         <NavItem id="export-accounting" label="Contabilità" icon={Euro} />
-        <NavItem id="export-reports" label="Relazioni" icon={FileText} />
+        <NavItem id="export-reports" label="Relazioni Finali" icon={FileText} />
       </div>
 
       <div className="p-4 border-t border-blue-900 bg-blue-950">

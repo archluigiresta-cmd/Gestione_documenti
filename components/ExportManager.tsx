@@ -10,7 +10,7 @@ interface ExportManagerProps {
   currentDocId: string;
   onSelectDocument: (id: string) => void;
   onDeleteDocument: (id: string) => void;
-  activeExportTab: string; // Ricevuto da App.tsx
+  activeExportTab: string;
 }
 
 export const ExportManager: React.FC<ExportManagerProps> = ({
@@ -23,12 +23,12 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Mapping dei tipi documento in base al tab della Sidebar
+  // Mappatura precisa per ripristinare il verbale del 4.12 e gestire gli altri documenti
   const getFilterTypes = (tab: string): DocumentType[] => {
     switch (tab) {
         case 'export-testing-comm': return ['CORRISPONDENZA_COLLAUDO'];
         case 'export-testing-clearance': return ['NULLAOSTA_COLLAUDO'];
-        case 'export-testing-visits': return ['VERBALE_COLLAUDO']; // I tuoi verbali precedenti sono qui
+        case 'export-testing-visits': return ['VERBALE_COLLAUDO']; // I verbali storici (come il 4.12) sono VERBALE_COLLAUDO
         case 'export-testing-reports': return ['RELAZIONE_COLLAUDO'];
         case 'export-execution': return ['VERBALE_CONSEGNA'];
         case 'export-suspensions': return ['SOSPENSIONE_LAVORI', 'RIPRESA_LAVORI'];
@@ -43,6 +43,7 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
   const filteredDocs = documents.filter(d => {
     const isOfType = currentTypes.includes(d.type);
     const search = searchTerm.toLowerCase();
+    // Cerchiamo anche per data (stringa ISO contiene la data leggibile)
     const matchesSearch = (d.visitNumber?.toString() || '').includes(search) || (d.date || '').includes(search);
     return isOfType && matchesSearch;
   }).sort((a, b) => (b.visitNumber || 0) - (a.visitNumber || 0));
@@ -60,20 +61,20 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
     const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `Documento_N${currentDoc.visitNumber}.doc`;
+    link.download = `Verbale_N${currentDoc.visitNumber}_${currentDoc.date}.doc`;
     link.click();
   };
 
   return (
     <div className="flex h-[calc(100vh-6rem)] gap-0 overflow-hidden bg-white rounded-2xl shadow-xl border border-slate-200">
       
-      {/* 1. Lista Documenti (Fascia Sinistra) */}
+      {/* 1. Lista Documenti Filtrata */}
       <div className="w-80 flex flex-col border-r bg-slate-50 no-print">
         <div className="p-4 border-b bg-white">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Documenti in Archivio</h3>
+            <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">Documenti Trovati</h3>
             <div className="relative">
-                <Search className="absolute left-2.5 top-2 w-3.5 h-3.5 text-slate-400"/>
-                <input type="text" placeholder="Cerca per data o numero..." className="w-full pl-8 pr-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-slate-400"/>
+                <input type="text" placeholder="Cerca data o numero..." className="w-full pl-8 pr-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
         </div>
 
@@ -82,17 +83,19 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
               <div className="flex flex-col items-center justify-center py-20 opacity-20 text-center">
                   <FileText className="w-12 h-12 mb-2"/>
                   <p className="text-xs font-bold uppercase">Archivio Vuoto</p>
-                  <p className="text-[10px] mt-1 italic">Nessun documento in questa sezione</p>
+                  <p className="text-[10px] mt-1 italic">Nessun atto per questa categoria</p>
               </div>
           ) : (
             filteredDocs.map(doc => (
                 <div key={doc.id} className="relative group">
                     <button onClick={() => onSelectDocument(doc.id)} className={`w-full text-left p-4 rounded-xl border transition-all ${currentDocId === doc.id ? 'bg-white border-blue-500 shadow-md ring-2 ring-blue-500/5' : 'bg-white hover:border-slate-300 shadow-sm'}`}>
                         <div className="flex justify-between items-start">
-                            <span className="text-[10px] font-bold uppercase text-blue-600 tracking-wider">Documento N. {doc.visitNumber}</span>
+                            <span className="text-[10px] font-bold uppercase text-blue-600 tracking-wider">Verbale N. {doc.visitNumber}</span>
                             <span className="text-[10px] text-slate-400">{new Date(doc.date).toLocaleDateString('it-IT')}</span>
                         </div>
-                        <p className="text-xs font-bold text-slate-800 mt-2 line-clamp-2">{doc.observations?.substring(0, 60) || 'Atto archiviato'}</p>
+                        <p className="text-xs font-bold text-slate-800 mt-2 line-clamp-2 leading-relaxed">
+                            {doc.observations ? doc.observations.substring(0, 60) + '...' : 'Nessuna osservazione registrata.'}
+                        </p>
                     </button>
                     <button 
                         onClick={(e) => { e.stopPropagation(); onDeleteDocument(doc.id); }}
@@ -107,16 +110,16 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
         </div>
       </div>
 
-      {/* 2. Area Anteprima (Fascia Destra Larga) */}
+      {/* 2. Visualizzatore Anteprima */}
       <div className="flex-1 flex flex-col h-full bg-slate-100 overflow-hidden relative">
         {currentDoc ? (
             <>
                 <div className="bg-white p-4 border-b no-print flex items-center justify-between shadow-sm z-10">
                     <div className="flex items-center gap-3">
-                        <div className="bg-blue-100 p-2 rounded-lg"><FileCheck className="w-5 h-5 text-blue-600"/></div>
+                        <div className="bg-blue-100 p-2 rounded-lg shadow-inner"><FileCheck className="w-5 h-5 text-blue-600"/></div>
                         <div>
-                            <h4 className="font-bold text-slate-800 text-sm">Anteprima Atto</h4>
-                            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Modulo Archivio / Prot. {currentDoc.id.slice(0,8)}</p>
+                            <h4 className="font-bold text-slate-800 text-sm">Visualizzazione Archivio</h4>
+                            <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Protocollo Interno: {currentDoc.id.slice(0,8)}</p>
                         </div>
                     </div>
                     <div className="flex gap-2">
@@ -124,8 +127,10 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
                         <button onClick={() => window.print()} className="bg-slate-900 text-white px-5 py-2 rounded-lg flex items-center gap-2 font-bold text-xs hover:bg-black transition-all shadow-md"><Printer className="w-4 h-4" /> PDF / STAMPA</button>
                     </div>
                 </div>
-                <div className="flex-1 overflow-y-auto p-12 print:p-0 print:bg-white scroll-smooth">
-                    <DocumentPreview project={project} doc={currentDoc} type={currentDoc.type} allDocuments={documents} />
+                <div className="flex-1 overflow-y-auto p-12 print:p-0 print:bg-white scroll-smooth bg-[#f8fafc] print:bg-transparent">
+                    <div className="bg-white shadow-2xl print:shadow-none p-1 mx-auto max-w-[21cm]">
+                        <DocumentPreview project={project} doc={currentDoc} type={currentDoc.type} allDocuments={documents} />
+                    </div>
                 </div>
             </>
         ) : (
@@ -133,8 +138,8 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
                 <div className="w-24 h-24 bg-white rounded-full shadow-inner flex items-center justify-center mb-6">
                     <Folder className="w-12 h-12 opacity-10"/>
                 </div>
-                <h3 className="text-xl font-bold opacity-30 uppercase tracking-widest">Seleziona un atto</h3>
-                <p className="max-w-xs mt-2 text-sm opacity-30 italic">Scegli un documento dalla lista a sinistra per visualizzarne l'anteprima di stampa.</p>
+                <h3 className="text-xl font-bold opacity-30 uppercase tracking-widest">Seleziona un atto dall'archivio</h3>
+                <p className="max-w-xs mt-2 text-sm opacity-30 italic">Usa il menu a sinistra per navigare tra le diverse tipologie di documenti archiviati.</p>
             </div>
         )}
       </div>

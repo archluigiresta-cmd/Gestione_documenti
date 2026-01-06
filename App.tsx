@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ProjectConstants, DocumentVariables, DocumentType, User } from './types';
 import { db } from './db';
@@ -163,12 +162,15 @@ const App: React.FC = () => {
         const idx = projects.findIndex(p => p.id === id);
         if (dir === 'up' && idx > 0) {
           const p1 = projects[idx], p2 = projects[idx-1];
-          const tmp = p1.displayOrder; p1.displayOrder = p2.displayOrder; p2.ignoreCase = true; // fix types later
-          p1.displayOrder = p2.displayOrder; p2.displayOrder = tmp;
+          const tmp = p1.displayOrder; 
+          p1.displayOrder = p2.displayOrder; 
+          p2.displayOrder = tmp;
           await db.saveProject(p1); await db.saveProject(p2); loadProjects();
         } else if (dir === 'down' && idx < projects.length - 1) {
           const p1 = projects[idx], p2 = projects[idx+1];
-          const tmp = p1.displayOrder; p1.displayOrder = p2.displayOrder; p2.displayOrder = tmp;
+          const tmp = p1.displayOrder; 
+          p1.displayOrder = p2.displayOrder; 
+          p2.displayOrder = tmp;
           await db.saveProject(p1); await db.saveProject(p2); loadProjects();
         }
       }}
