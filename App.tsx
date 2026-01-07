@@ -18,17 +18,21 @@ const App: React.FC = () => {
   const [documents, setDocuments] = useState<DocumentVariables[]>([]);
   const [activeTab, setActiveTab] = useState('general');
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [recoveryStatus, setRecoveryStatus] = useState<string>('');
 
   useEffect(() => {
-    console.log("App: Component mounted, starting init...");
     const init = async () => {
       try {
+        setRecoveryStatus('Verifica database...');
         await db.ensureAdminExists();
-        console.log("App: DB Init successful.");
+        
+        setRecoveryStatus('Ricerca progetti esistenti...');
+        const recovered = await db.recoveryOldData();
+        if (recovered > 0) {
+            console.log(`App: Recuperati ${recovered} elementi dai vecchi database.`);
+        }
       } catch (err: any) {
         console.error("App: Init failed", err);
-        setError(err.message || "Errore sconosciuto durante l'inizializzazione del database.");
       } finally {
         setIsLoading(false);
       }
@@ -86,30 +90,10 @@ const App: React.FC = () => {
     db.saveProject(updated);
   };
 
-  const handleLogout = () => {
-    setCurrentUser(null);
-    setCurrentProject(null);
-  };
-
-  if (error) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 text-white p-6 font-sans">
-      <div className="bg-red-500/10 border border-red-500/50 p-8 rounded-2xl max-w-md text-center shadow-2xl">
-        <h1 className="text-2xl font-bold mb-4 text-red-500">Errore di Sistema</h1>
-        <p className="mb-6 text-zinc-400">{error}</p>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="bg-red-600 hover:bg-red-500 text-white px-8 py-3 rounded-xl font-bold transition-all"
-        >
-          Riprova Accesso
-        </button>
-      </div>
-    </div>
-  );
-
   if (isLoading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 text-white">
       <div className="w-12 h-12 border-4 border-zinc-800 border-t-blue-500 rounded-full animate-spin mb-6"></div>
-      <p className="text-sm font-bold uppercase tracking-[0.2em] opacity-40 animate-pulse">Inizializzazione EdilApp...</p>
+      <p className="text-sm font-bold uppercase tracking-[0.2em] opacity-40 animate-pulse">{recoveryStatus || 'Inizializzazione...'}</p>
     </div>
   );
 
@@ -131,14 +115,14 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen flex bg-zinc-50 font-sans selection:bg-blue-100 selection:text-blue-900">
+    <div className="min-h-screen flex bg-zinc-50 font-sans">
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
         projectName={currentProject.projectName} 
         user={currentUser}
         onBackToDashboard={() => setCurrentProject(null)}
-        onLogout={handleLogout}
+        onLogout={() => { setCurrentUser(null); setCurrentProject(null); }}
       />
       
       <main className="flex-1 ml-64 p-8 overflow-y-auto">

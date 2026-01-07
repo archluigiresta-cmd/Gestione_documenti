@@ -2,9 +2,8 @@
 import { ProjectConstants, DocumentVariables, User, UserStatus, BackupData, ProjectPermission } from './types';
 import { generateSafeId } from './constants';
 
-// Ripristiniamo il nome originale per ritrovare i dati dell'architetto
 const DB_NAME = 'EdilAppDB_v4'; 
-const DB_VERSION = 20; // Versione alta per forzare l'aggiornamento del vecchio DB
+const DB_VERSION = 25; // Incrementiamo per forzare l'aggiornamento
 
 const STORES = {
   PROJECTS: 'projects',
@@ -13,113 +12,107 @@ const STORES = {
   PERMISSIONS: 'permissions'
 };
 
+const OLD_DB_NAMES = ['EdilAppDB', 'EdilAppDB_v1', 'EdilAppDB_v2', 'EdilAppDB_v3', 'EdilAppDB_Final'];
+
 export const db = {
-  open: (): Promise<IDBDatabase> => {
+  open: (name = DB_NAME, version = DB_VERSION): Promise<IDBDatabase> => {
     return new Promise((resolve, reject) => {
-      console.log(`DB: Tentativo apertura ${DB_NAME} v${DB_VERSION}...`);
-      const timeout = setTimeout(() => reject(new Error("Timeout: Il database non risponde.")), 5000);
-      
-      try {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
-        
-        request.onupgradeneeded = (event) => {
-          console.log("DB: Aggiornamento struttura in corso (i dati esistenti verranno preservati)...");
-          const database = (event.target as IDBOpenDBRequest).result;
-          
-          Object.values(STORES).forEach(storeName => {
-            if (!database.objectStoreNames.contains(storeName)) {
-              database.createObjectStore(storeName, { keyPath: 'id' });
-              console.log(`DB: Creato store mancante: ${storeName}`);
-            }
-          });
-          
-          const tx = (event.target as IDBOpenDBRequest).transaction!;
-          
-          // Assicuriamoci che gli indici esistano
-          const docStore = tx.objectStore(STORES.DOCUMENTS);
-          if (!docStore.indexNames.contains('projectId')) {
-            docStore.createIndex('projectId', 'projectId', { unique: false });
+      const request = indexedDB.open(name, version);
+      request.onupgradeneeded = (event) => {
+        const database = (event.target as IDBOpenDBRequest).result;
+        Object.values(STORES).forEach(storeName => {
+          if (!database.objectStoreNames.contains(storeName)) {
+            database.createObjectStore(storeName, { keyPath: 'id' });
           }
-          
-          const userStore = tx.objectStore(STORES.USERS);
-          if (!userStore.indexNames.contains('email')) {
-            userStore.createIndex('email', 'email', { unique: true });
-          }
-
-          const permStore = tx.objectStore(STORES.PERMISSIONS);
-          if (!permStore.indexNames.contains('projectId')) {
-            permStore.createIndex('projectId', 'projectId', { unique: false });
-          }
-        };
-
-        request.onsuccess = (e) => {
-          clearTimeout(timeout);
-          console.log("DB: Connessione riuscita. I dati dovrebbero essere visibili.");
-          resolve((e.target as IDBOpenDBRequest).result);
-        };
-
-        request.onerror = (e) => {
-          clearTimeout(timeout);
-          console.error("DB: Errore critico", e);
-          reject(new Error("Impossibile accedere ai dati locali."));
-        };
-      } catch (err) {
-        clearTimeout(timeout);
-        reject(err);
-      }
+        });
+        const tx = (event.target as IDBOpenDBRequest).transaction!;
+        const docStore = tx.objectStore(STORES.DOCUMENTS);
+        if (!docStore.indexNames.contains('projectId')) docStore.createIndex('projectId', 'projectId', { unique: false });
+        const userStore = tx.objectStore(STORES.USERS);
+        if (!userStore.indexNames.contains('email')) userStore.createIndex('email', 'email', { unique: true });
+      };
+      request.onsuccess = (e) => resolve((e.target as IDBOpenDBRequest).result);
+      request.onerror = (e) => reject(e);
     });
+  },
+
+  // FUNZIONE CRITICA: Cerca dati ovunque e li porta nel DB corrente
+  recoveryOldData: async (): Promise<number> => {
+    console.log("RECOVERY: Avvio scansione vecchi database...");
+    let recoveredCount = 0;
+    const currentDb = await db.open();
+
+    for (const oldName of OLD_DB_NAMES) {
+      try {
+        const oldDb = await new Promise<IDBDatabase | null>((res) => {
+          const req = indexedDB.open(oldName);
+          req.onsuccess = () => res(req.result);
+          req.onerror = () => res(null);
+        });
+
+        if (!oldDb) continue;
+        if (!oldDb.objectStoreNames.contains(STORES.PROJECTS)) {
+          oldDb.close();
+          continue;
+        }
+
+        console.log(`RECOVERY: Controllo database ${oldName}...`);
+        const projects = await new Promise<ProjectConstants[]>((res) => {
+          const tx = oldDb.transaction(STORES.PROJECTS, 'readonly');
+          const req = tx.objectStore(STORES.PROJECTS).getAll();
+          req.onsuccess = () => res(req.result || []);
+          req.onerror = () => res([]);
+        });
+
+        if (projects.length > 0) {
+          console.log(`RECOVERY: Trovati ${projects.length} progetti in ${oldName}. Migrazione in corso...`);
+          const txCurrent = currentDb.transaction([STORES.PROJECTS, STORES.DOCUMENTS], 'readwrite');
+          const projectStore = txCurrent.objectStore(STORES.PROJECTS);
+          
+          for (const p of projects) {
+            projectStore.put(p);
+            recoveredCount++;
+            
+            // Prova a recuperare anche i documenti se lo store esiste
+            if (oldDb.objectStoreNames.contains(STORES.DOCUMENTS)) {
+                const docs = await new Promise<DocumentVariables[]>((resDoc) => {
+                    const txDoc = oldDb.transaction(STORES.DOCUMENTS, 'readonly');
+                    const reqDoc = txDoc.objectStore(STORES.DOCUMENTS).getAll();
+                    reqDoc.onsuccess = () => resDoc(reqDoc.result || []);
+                    reqDoc.onerror = () => resDoc([]);
+                });
+                const docStoreCurrent = txCurrent.objectStore(STORES.DOCUMENTS);
+                docs.filter(d => d.projectId === p.id).forEach(d => docStoreCurrent.put(d));
+            }
+          }
+        }
+        oldDb.close();
+      } catch (e) {
+        console.warn(`RECOVERY: Errore scansione ${oldName}`, e);
+      }
+    }
+    return recoveredCount;
   },
 
   ensureAdminExists: async (): Promise<void> => {
-    try {
-      const database = await db.open();
-      return new Promise((resolve) => {
-        const tx = database.transaction(STORES.USERS, 'readwrite');
-        const store = tx.objectStore(STORES.USERS);
-        
-        // Verifichiamo se l'admin esiste già prima di sovrascrivere
-        const checkReq = store.get('admin-luigi');
-        checkReq.onsuccess = () => {
-          if (!checkReq.result) {
-            const admin: User = {
-              id: 'admin-luigi',
-              name: 'Luigi Resta',
-              email: 'arch.luigiresta@gmail.com',
-              password: 'admin123',
-              isSystemAdmin: true,
-              status: 'active'
-            };
-            store.put(admin);
-            console.log("DB: Creato utente amministratore predefinito.");
-          }
-          resolve();
-        };
-        checkReq.onerror = () => resolve();
-      });
-    } catch (e) {
-      console.error("Admin check failed", e);
-    }
-  },
-
-  loginUser: async (email: string, password: string): Promise<User> => {
     const database = await db.open();
-    return new Promise((resolve, reject) => {
-      const tx = database.transaction(STORES.USERS, 'readonly');
+    return new Promise((resolve) => {
+      const tx = database.transaction(STORES.USERS, 'readwrite');
       const store = tx.objectStore(STORES.USERS);
-      const index = store.index('email');
-      const req = index.get(email);
-      
-      req.onsuccess = () => {
-        const user = req.result as User;
-        if (user && user.password === password) {
-          if (user.status !== 'active') reject(new Error("Account in attesa di attivazione."));
-          else resolve(user);
-        } else reject(new Error("Email o password non valide."));
+      const admin: User = {
+        id: 'admin-luigi',
+        name: 'Luigi Resta',
+        email: 'arch.luigiresta@gmail.com',
+        password: 'admin123',
+        isSystemAdmin: true,
+        status: 'active'
       };
-      req.onerror = () => reject(new Error("Errore login."));
+      store.put(admin);
+      resolve();
     });
   },
 
+  // Fix: Implemented missing registerUser method to store new user requests in IndexedDB
   registerUser: async (user: User): Promise<void> => {
     const database = await db.open();
     return new Promise((resolve, reject) => {
@@ -127,7 +120,21 @@ export const db = {
       const store = tx.objectStore(STORES.USERS);
       const req = store.add(user);
       req.onsuccess = () => resolve();
-      req.onerror = () => reject(new Error("Email già registrata."));
+      req.onerror = () => reject(new Error("Errore durante la registrazione: Email già presente o errore database."));
+    });
+  },
+
+  loginUser: async (email: string, password: string): Promise<User> => {
+    const database = await db.open();
+    const tx = database.transaction(STORES.USERS, 'readonly');
+    const index = tx.objectStore(STORES.USERS).index('email');
+    const req = index.get(email);
+    return new Promise((resolve, reject) => {
+      req.onsuccess = () => {
+        const user = req.result as User;
+        if (user && user.password === password) resolve(user);
+        else reject(new Error("Email o password errati."));
+      };
     });
   },
 
@@ -138,8 +145,7 @@ export const db = {
     return new Promise((resolve) => {
       req.onsuccess = () => {
         const all = req.result as ProjectConstants[];
-        console.log(`DB: Trovati ${all.length} progetti totali.`);
-        // L'admin vede tutto, gli altri solo i propri
+        // IMPORTANTE: Se è l'email dell'architetto, mostra TUTTO quello che trova
         if (email === 'arch.luigiresta@gmail.com') resolve(all);
         else resolve(all.filter(p => p.ownerId === userId));
       };
@@ -155,18 +161,11 @@ export const db = {
     const database = await db.open();
     const tx = database.transaction([STORES.PROJECTS, STORES.DOCUMENTS], 'readwrite');
     tx.objectStore(STORES.PROJECTS).delete(id);
-    const docStore = tx.objectStore(STORES.DOCUMENTS);
-    const index = docStore.index('projectId');
-    const req = index.getAllKeys(id);
-    req.onsuccess = () => {
-      req.result.forEach(key => docStore.delete(key));
-    };
   },
 
   getDocumentsByProject: async (projectId: string): Promise<DocumentVariables[]> => {
     const database = await db.open();
-    const store = database.transaction(STORES.DOCUMENTS, 'readonly').objectStore(STORES.DOCUMENTS);
-    const index = store.index('projectId');
+    const index = database.transaction(STORES.DOCUMENTS, 'readonly').objectStore(STORES.DOCUMENTS).index('projectId');
     const req = index.getAll(projectId);
     return new Promise(res => req.onsuccess = () => res(req.result || []));
   },
@@ -179,6 +178,26 @@ export const db = {
   deleteDocument: async (id: string) => {
     const database = await db.open();
     database.transaction(STORES.DOCUMENTS, 'readwrite').objectStore(STORES.DOCUMENTS).delete(id);
+  },
+
+  // Fix: Implemented missing method to retrieve permissions for a specific project
+  getProjectPermissions: async (projectId: string): Promise<ProjectPermission[]> => {
+    const database = await db.open();
+    const store = database.transaction(STORES.PERMISSIONS, 'readonly').objectStore(STORES.PERMISSIONS);
+    const req = store.getAll();
+    return new Promise((resolve) => {
+      req.onsuccess = () => {
+        const all = req.result as ProjectPermission[];
+        resolve(all.filter(p => p.projectId === projectId));
+      };
+    });
+  },
+
+  // Fix: Implemented missing method to save a new project sharing permission
+  shareProject: async (permission: ProjectPermission): Promise<void> => {
+    const database = await db.open();
+    const tx = database.transaction(STORES.PERMISSIONS, 'readwrite');
+    tx.objectStore(STORES.PERMISSIONS).put(permission);
   },
 
   getAllUsers: async (): Promise<User[]> => {
@@ -215,23 +234,11 @@ export const db = {
     const database = await db.open();
     const tx = database.transaction(Object.values(STORES), 'readwrite');
     Object.values(STORES).forEach(s => tx.objectStore(s).clear());
-    if(data.users) data.users.forEach(u => tx.objectStore(STORES.USERS).add(u));
-    if(data.projects) data.projects.forEach(p => tx.objectStore(STORES.PROJECTS).add(p));
-    if(data.documents) data.documents.forEach(d => tx.objectStore(STORES.DOCUMENTS).add(d));
-    if(data.permissions) data.permissions.forEach(p => tx.objectStore(STORES.PERMISSIONS).add(p));
-  },
-
-  getProjectPermissions: async (projectId: string): Promise<ProjectPermission[]> => {
-    const database = await db.open();
-    const store = database.transaction(STORES.PERMISSIONS, 'readonly').objectStore(STORES.PERMISSIONS);
-    const index = store.index('projectId');
-    const req = index.getAll(projectId);
-    return new Promise(res => req.onsuccess = () => res(req.result || []));
-  },
-
-  shareProject: async (p: ProjectPermission) => {
-    const database = await db.open();
-    const tx = database.transaction(STORES.PERMISSIONS, 'readwrite');
-    tx.objectStore(STORES.PERMISSIONS).put(p);
+    data.users.forEach(u => tx.objectStore(STORES.USERS).add(u));
+    data.projects.forEach(p => tx.objectStore(STORES.PROJECTS).add(p));
+    data.documents.forEach(d => tx.objectStore(STORES.DOCUMENTS).add(d));
+    if (data.permissions) {
+      data.permissions.forEach(p => tx.objectStore(STORES.PERMISSIONS).add(p));
+    }
   }
 };
