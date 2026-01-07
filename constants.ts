@@ -1,6 +1,17 @@
 
 import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData, ContactInfo, DesignerProfile } from './types';
 
+export const generateSafeId = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    try {
+      return crypto.randomUUID();
+    } catch (e) {
+      // Fallback if randomUUID fails
+    }
+  }
+  return Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
+};
+
 const emptyContact: ContactInfo = { name: '', title: '', email: '', pec: '', phone: '', professionalOrder: '', registrationNumber: '' };
 const emptyAppointment = { type: 'Determina', number: '', date: '' };
 
@@ -28,7 +39,7 @@ const createEmptyDesignPhase = (): DesignPhaseData => ({
 });
 
 export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
-  id: crypto.randomUUID(),
+  id: generateSafeId(),
   ownerId: ownerId, 
   lastModified: Date.now(),
   displayOrder: 0,
@@ -88,7 +99,6 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
     }
   },
 
-  // Fix: Removed 'tenderPhase' as it does not exist in the ProjectConstants interface.
   contractor: {
     type: 'single',
     mainCompany: { 
@@ -108,7 +118,6 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
     resumptions: [],
     sals: [],
     variants: [],
-    // Fix: removed testerVisitSummaries as it does not exist in type definition
     completionDate: '',
     
     handoverDocs: {
@@ -132,7 +141,7 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
 });
 
 export const createInitialDocument = (projectId: string): DocumentVariables => ({
-  id: crypto.randomUUID(),
+  id: generateSafeId(),
   projectId,
   type: 'VERBALE_COLLAUDO', 
   createdAt: Date.now(),

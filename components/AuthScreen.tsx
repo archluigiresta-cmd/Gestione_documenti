@@ -2,7 +2,8 @@
 import React, { useState, useRef } from 'react';
 import { User, BackupData } from '../types';
 import { db } from '../db';
-import { Building2, KeyRound, Mail, UserPlus, ArrowRight, ShieldCheck, Info, Upload, Download } from 'lucide-react';
+import { generateSafeId } from '../constants';
+import { Building2, KeyRound, Mail, UserPlus, ArrowRight, ShieldCheck, Info, Upload } from 'lucide-react';
 
 interface AuthScreenProps {
   onLogin: (user: User) => void;
@@ -26,21 +27,21 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
       if (isRegister) {
         if (!name || !email || !password) throw new Error("Compila tutti i campi.");
         const newUser: User = {
-           id: crypto.randomUUID(),
+           id: generateSafeId(),
            name,
            email,
            password, 
-           status: 'pending' // Default status
+           status: 'pending' 
         };
         await db.registerUser(newUser);
-        setSuccessMsg("Registrazione inviata! L'amministratore dovrà approvare l'account prima che tu possa accedere.");
+        setSuccessMsg("Richiesta inviata! Attendi l'approvazione dell'amministratore.");
         setIsRegister(false);
       } else {
         const user = await db.loginUser(email, password);
         onLogin(user);
       }
     } catch (err: any) {
-      setError(err.message || "Si è verificato un errore.");
+      setError(err.message || "Credenziali non valide.");
     }
   };
 
@@ -52,114 +53,96 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
       reader.onload = async (ev) => {
           try {
               const json = JSON.parse(ev.target?.result as string) as BackupData;
-              if (confirm(`Rilevati ${json.projects.length} progetti nel file. Vuoi importare questi dati su questo dispositivo? \n\nATTENZIONE: I dati attuali del browser verranno sovrascritti.`)) {
+              if (confirm(`Ripristinare backup del ${new Date(json.timestamp).toLocaleString()}? I dati correnti verranno sovrascritti.`)) {
                   await db.restoreDatabaseBackup(json);
-                  setSuccessMsg("Dati importati con successo! Ora puoi effettuare il login con le tue credenziali.");
-                  // Optional: clear inputs
-                  setEmail('');
-                  setPassword('');
+                  setSuccessMsg("Backup ripristinato! Ora puoi accedere.");
               }
           } catch (err) {
-              setError("Il file selezionato non è un backup valido.");
+              setError("Il file di backup non è valido.");
           }
       };
       reader.readAsText(file);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-slate-900 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4 selection:bg-blue-500 selection:text-white">
+      <div className="bg-zinc-900 border border-zinc-800 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
          
-         <div className="bg-blue-600 p-8 text-center">
-            <div className="bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-sm">
-                <Building2 className="w-8 h-8 text-white" />
+         <div className="p-10 text-center border-b border-zinc-800 bg-zinc-900/50">
+            <div className="bg-blue-600/10 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-blue-600/20">
+                <Building2 className="w-8 h-8 text-blue-500" />
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">EdilApp Gestionale</h1>
-            <p className="text-blue-100 text-sm mt-2">Piattaforma gestione Opere Pubbliche</p>
+            <h1 className="text-2xl font-bold text-white tracking-tight">EdilApp</h1>
+            <p className="text-zinc-500 text-sm mt-2 font-medium">Gestione Tecnica Opere Pubbliche</p>
          </div>
 
-         <div className="p-8">
-            <div className="flex gap-4 mb-8 bg-slate-100 p-1 rounded-lg">
+         <div className="p-10">
+            <div className="flex gap-2 mb-8 bg-zinc-950 p-1.5 rounded-xl border border-zinc-800">
                 <button 
                   onClick={() => setIsRegister(false)}
-                  className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${!isRegister ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${!isRegister ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
                 >
-                   Accedi
+                   ACCESSO
                 </button>
                 <button 
                   onClick={() => setIsRegister(true)}
-                  className={`flex-1 py-2 text-sm font-bold rounded-md transition-all ${isRegister ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${isRegister ? 'bg-zinc-800 text-white shadow-lg' : 'text-zinc-500 hover:text-zinc-300'}`}
                 >
-                   Registrati
+                   REGISTRATI
                 </button>
             </div>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2 border border-red-100">
-                 <ShieldCheck className="w-4 h-4 min-w-[16px]"/> {error}
+              <div className="mb-6 p-4 bg-red-500/10 text-red-400 text-xs font-bold rounded-xl flex items-center gap-3 border border-red-500/20">
+                 <ShieldCheck className="w-4 h-4"/> {error}
               </div>
             )}
 
             {successMsg && (
-              <div className="mb-4 p-3 bg-green-50 text-green-700 text-sm rounded-lg flex items-center gap-2 border border-green-100">
-                 <Info className="w-4 h-4 min-w-[16px]"/> {successMsg}
+              <div className="mb-6 p-4 bg-green-500/10 text-green-400 text-xs font-bold rounded-xl flex items-center gap-3 border border-green-500/20">
+                 <Info className="w-4 h-4"/> {successMsg}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
                {isRegister && (
-                 <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-500 uppercase">Nome Completo</label>
-                    <div className="relative">
-                        <UserPlus className="absolute left-3 top-3 w-5 h-5 text-slate-400"/>
-                        <input type="text" className="w-full p-3 pl-10 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
-                           placeholder="Es. Mario Rossi"
-                           value={name} onChange={e => setName(e.target.value)} />
-                    </div>
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Nome Completo</label>
+                    <input type="text" className="w-full p-4 bg-zinc-950 border border-zinc-800 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-zinc-700" 
+                       placeholder="Arch. Mario Rossi"
+                       value={name} onChange={e => setName(e.target.value)} />
                  </div>
                )}
                
-               <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Email</label>
-                  <div className="relative">
-                      <Mail className="absolute left-3 top-3 w-5 h-5 text-slate-400"/>
-                      <input type="email" className="w-full p-3 pl-10 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
-                         placeholder="mario.rossi@email.it"
-                         value={email} onChange={e => setEmail(e.target.value)} />
-                  </div>
+               <div className="space-y-2">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Email Professionale</label>
+                  <input type="email" className="w-full p-4 bg-zinc-950 border border-zinc-800 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-zinc-700" 
+                     placeholder="mario.rossi@email.it"
+                     value={email} onChange={e => setEmail(e.target.value)} />
                </div>
 
-               <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-500 uppercase">Password</label>
-                  <div className="relative">
-                      <KeyRound className="absolute left-3 top-3 w-5 h-5 text-slate-400"/>
-                      <input type="password" className="w-full p-3 pl-10 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" 
-                         placeholder="••••••••"
-                         value={password} onChange={e => setPassword(e.target.value)} />
-                  </div>
+               <div className="space-y-2">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Password</label>
+                  <input type="password" className="w-full p-4 bg-zinc-950 border border-zinc-800 rounded-xl text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-zinc-700" 
+                     placeholder="••••••••"
+                     value={password} onChange={e => setPassword(e.target.value)} />
                </div>
 
-               <button type="submit" className="w-full bg-slate-900 text-white py-3 rounded-lg font-bold hover:bg-black transition-colors flex items-center justify-center gap-2 mt-6 shadow-lg">
-                  {isRegister ? 'Invia Richiesta' : 'Accedi al Portale'}
+               <button type="submit" className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-500 transition-all flex items-center justify-center gap-3 mt-8 shadow-xl shadow-blue-500/10 active:scale-95">
+                  {isRegister ? 'Invia Richiesta' : 'Entra nel Portale'}
                   <ArrowRight className="w-4 h-4" />
                </button>
             </form>
 
-            {/* QUICK RESTORE FOR NEW DEVICES */}
-            <div className="mt-8 pt-6 border-t border-slate-100 text-center">
-                <p className="text-xs text-slate-400 mb-3">Primo accesso su questo dispositivo?</p>
+            <div className="mt-10 pt-8 border-t border-zinc-800 text-center">
                 <button 
                     onClick={() => fileInputRef.current?.click()}
-                    className="text-blue-600 text-xs font-bold hover:text-blue-800 flex items-center justify-center gap-2 w-full p-2 hover:bg-blue-50 rounded transition-colors"
+                    className="text-zinc-500 text-xs font-bold hover:text-zinc-300 flex items-center justify-center gap-2 w-full p-3 hover:bg-zinc-800 rounded-xl transition-all"
                 >
-                    <Upload className="w-3 h-3"/> Importa Dati da File (Backup)
+                    <Upload className="w-3 h-3"/> Importa backup locale (.json)
                 </button>
                 <input type="file" ref={fileInputRef} onChange={handleRestore} accept=".json" className="hidden"/>
             </div>
-         </div>
-         
-         <div className="bg-slate-50 p-4 text-center text-xs text-slate-400 border-t border-slate-100">
-             © 2025 EdilApp v2.3 - Gestione Lavori Pubblici
          </div>
       </div>
     </div>

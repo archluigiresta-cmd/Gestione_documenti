@@ -1,4 +1,5 @@
-import React, { ReactNode, ErrorInfo, Component } from 'react';
+
+import React, { Component, ReactNode, ErrorInfo } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
@@ -16,31 +17,28 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-// Fix: Explicitly declaring 'props' and 'state' properties
-// ensures that TypeScript correctly recognizes inherited properties from Component.
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // Explicitly declare props and state properties for proper TypeScript inheritance recognition.
-  props: ErrorBoundaryProps;
-  state: ErrorBoundaryState = {
-    hasError: false,
-    error: null,
-  };
-
+// Fix: using React.Component directly to ensure standard React class component typing is correctly applied
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
+    // Initialize state within constructor
+    this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    // Update state so the next render will show the fallback UI.
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // You can also log the error to an error reporting service
     console.error("Uncaught error:", error, errorInfo);
   }
 
   render() {
-    // Access state through the instance inherited from Component.
+    // Check if error occurred
     if (this.state.hasError) {
+      // Fallback UI
       return (
         <div className="min-h-screen flex items-center justify-center bg-red-50 p-4">
           <div className="bg-white p-8 rounded-lg shadow-xl max-w-lg w-full border-l-4 border-red-500">
@@ -62,7 +60,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         </div>
       );
     }
-    // Access props through the instance inherited from Component.
+    // Access props safely
     return this.props.children;
   }
 }

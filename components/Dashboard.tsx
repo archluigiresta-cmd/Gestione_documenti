@@ -1,224 +1,100 @@
 
 import React from 'react';
 import { ProjectConstants, User } from '../types';
-import { FolderPlus, Trash2, Shield, Share2, Building2, Calendar, ChevronUp, ChevronDown, Download } from 'lucide-react';
+import { FolderPlus, Trash2, Building2, Calendar, LayoutGrid, List, MoreVertical, Search, FileText } from 'lucide-react';
 
 interface DashboardProps {
   projects: ProjectConstants[];
   onSelectProject: (project: ProjectConstants) => void;
   onNewProject: () => void;
   onDeleteProject: (id: string) => void;
+  currentUser: User | null;
+  // Altre prop per compatibilità ma semplificate
   onShareProject: (id: string) => void; 
   onOpenAdmin: () => void;
   onUpdateOrder: (id: string, newOrder: number) => void; 
   onMoveProject: (id: string, direction: 'up' | 'down') => void; 
-  onExportData: () => void; // New Prop
-  currentUser: User | null;
+  onExportData: () => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ 
-  projects, 
-  onSelectProject, 
-  onNewProject, 
-  onDeleteProject, 
-  onShareProject,
-  onOpenAdmin,
-  onUpdateOrder,
-  onMoveProject,
-  onExportData,
-  currentUser
-}) => {
-
-  const formatDate = (dateString: string) => {
-      if (!dateString) return '-';
-      try {
-          return new Date(dateString).toLocaleDateString('it-IT');
-      } catch {
-          return dateString;
-      }
-  };
-
+export const Dashboard: React.FC<DashboardProps> = ({ projects, onSelectProject, onNewProject, onDeleteProject, currentUser }) => {
   return (
-    <div className="max-w-7xl mx-auto p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="min-h-screen bg-slate-50 p-8">
+      <header className="max-w-7xl mx-auto flex items-center justify-between mb-12">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">I Miei Appalti</h1>
-          <p className="text-slate-500 mt-2">Gestione opere pubbliche: elenco interventi e stato avanzamento.</p>
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Gestione Appalti</h1>
+          <p className="text-slate-500 font-medium">Benvenuto, {currentUser?.name}. Hai {projects.length} progetti attivi.</p>
         </div>
-        <div className="flex gap-3">
-             <button
-                onClick={onExportData}
-                className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-3 rounded-lg shadow-sm flex items-center gap-2 font-medium transition-colors text-sm"
-                title="Scarica tutti i dati in JSON per trasferirli su un altro dispositivo"
-             >
-                <Download className="w-5 h-5"/>
-                Scarica Backup
-             </button>
-             {currentUser?.isSystemAdmin && (
-                 <button 
-                   onClick={onOpenAdmin}
-                   className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-3 rounded-lg shadow-md flex items-center gap-2 font-medium transition-colors text-sm"
-                 >
-                    <Shield className="w-5 h-5" />
-                    Pannello Admin
-                 </button>
-             )}
-            <button
-              onClick={onNewProject}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg shadow-md flex items-center gap-2 font-medium transition-colors text-sm"
-            >
-              <FolderPlus className="w-5 h-5" />
-              Nuovo Intervento
-            </button>
-        </div>
-      </div>
-
-      {projects.length === 0 ? (
-        <div className="text-center py-20 bg-white rounded-xl shadow border border-slate-200">
-          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FolderPlus className="w-8 h-8 text-slate-400" />
+        <div className="flex gap-4">
+          <div className="relative">
+             <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400"/>
+             <input type="text" placeholder="Cerca appalto..." className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none w-64 shadow-sm" />
           </div>
-          <h3 className="text-xl font-semibold text-slate-700">Nessun progetto presente</h3>
-          <p className="text-slate-500 mt-2 mb-6">Inizia creando un nuovo fascicolo per un appalto.</p>
-          <button
+          <button 
             onClick={onNewProject}
-            className="text-blue-600 font-medium hover:underline"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-bold shadow-lg shadow-blue-500/20 flex items-center gap-2 transition-all active:scale-95"
           >
-            Crea il primo progetto
+            <FolderPlus className="w-5 h-5"/> Nuovo Progetto
           </button>
         </div>
-      ) : (
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                    <thead className="bg-slate-50 border-b border-slate-200">
-                        <tr>
-                            <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider w-16 text-center">N.</th>
-                            <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider">Ente Appaltante</th>
-                            <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider w-1/3">Intervento</th>
-                            <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider">Consegna</th>
-                            <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider">Ultimazione</th>
-                            <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider w-1/4">Note</th>
-                            <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider text-right">Azioni</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm">
-                        {projects.map((project, index) => {
-                            const isOwner = project.ownerId === currentUser?.id;
-                            const isFirst = index === 0;
-                            const isLast = index === projects.length - 1;
+      </header>
 
-                            return (
-                                <tr 
-                                    key={project.id} 
-                                    onClick={() => onSelectProject(project)}
-                                    className="hover:bg-blue-50 cursor-pointer transition-colors group"
-                                >
-                                    <td className="p-4 align-top" onClick={e => e.stopPropagation()}>
-                                        <div className="flex flex-col items-center gap-1">
-                                            <input 
-                                              type="number" 
-                                              className="w-12 p-1 text-center border border-slate-200 rounded font-bold text-slate-700 text-xs focus:ring-2 focus:ring-blue-500 outline-none"
-                                              value={project.displayOrder || 0}
-                                              onChange={(e) => onUpdateOrder(project.id, parseInt(e.target.value) || 0)}
-                                            />
-                                            <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button 
-                                                  disabled={isFirst}
-                                                  onClick={() => onMoveProject(project.id, 'up')}
-                                                  className="p-0.5 hover:bg-slate-200 rounded text-slate-500 disabled:opacity-20"
-                                                >
-                                                    <ChevronUp className="w-3 h-3"/>
-                                                </button>
-                                                <button 
-                                                  disabled={isLast}
-                                                  onClick={() => onMoveProject(project.id, 'down')}
-                                                  className="p-0.5 hover:bg-slate-200 rounded text-slate-500 disabled:opacity-20"
-                                                >
-                                                    <ChevronDown className="w-3 h-3"/>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="p-4 align-top">
-                                        <div className="flex items-center gap-2">
-                                            <Building2 className="w-4 h-4 text-blue-500 shrink-0"/>
-                                            <span className="font-semibold text-slate-700 line-clamp-2" title={project.entity}>
-                                                {project.entity || 'N/D'}
-                                                {project.entityProvince && <span className="text-slate-400 font-normal ml-1">({project.entityProvince})</span>}
-                                            </span>
-                                        </div>
-                                        <div className="text-xs text-slate-400 mt-1 pl-6">
-                                            CUP: {project.cup || '-'}
-                                        </div>
-                                    </td>
-                                    <td className="p-4 align-top">
-                                        <div className="font-medium text-slate-900 line-clamp-2" title={project.projectName}>
-                                            {project.projectName || 'Nuovo Progetto'}
-                                        </div>
-                                        <div className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                                            <Shield className="w-3 h-3"/>
-                                            {isOwner ? 'Proprietario' : 'Condiviso'}
-                                        </div>
-                                    </td>
-                                    <td className="p-4 align-top whitespace-nowrap">
-                                        <div className="flex items-center gap-2 text-slate-600">
-                                            <Calendar className="w-3 h-3 text-slate-400"/>
-                                            {formatDate(project.executionPhase?.deliveryDate)}
-                                        </div>
-                                    </td>
-                                    <td className="p-4 align-top whitespace-nowrap">
-                                        <div className="flex items-center gap-2 text-slate-600">
-                                            <Calendar className="w-3 h-3 text-slate-400"/>
-                                            {formatDate(project.executionPhase?.completionDate)}
-                                        </div>
-                                    </td>
-                                    <td className="p-4 align-top">
-                                        <div className="text-slate-500 italic line-clamp-2 text-xs" title={project.generalNotes}>
-                                            {project.generalNotes || '-'}
-                                        </div>
-                                    </td>
-                                    <td className="p-4 align-top text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            {isOwner && (
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onShareProject(project.id);
-                                                    }}
-                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                                                    title="Condividi"
-                                                >
-                                                    <Share2 className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                            {isOwner && (
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        if(confirm('Sei sicuro di voler eliminare questo appalto?')) {
-                                                            onDeleteProject(project.id);
-                                                        }
-                                                    }}
-                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                                    title="Elimina"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                            <button className="px-3 py-1 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded hover:bg-slate-50 hover:text-blue-600">
-                                                Apri
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {projects.length === 0 ? (
+          <div className="col-span-full py-32 flex flex-col items-center justify-center bg-white rounded-3xl border-2 border-dashed border-slate-200">
+            <div className="p-6 bg-slate-50 rounded-full mb-4">
+              <FileText className="w-12 h-12 text-slate-300"/>
             </div>
-        </div>
-      )}
+            <h3 className="text-xl font-bold text-slate-800">Inizia il tuo primo appalto</h3>
+            <p className="text-slate-500 mb-8">Non ci sono ancora progetti registrati in questo database locale.</p>
+            <button onClick={onNewProject} className="text-blue-600 font-bold flex items-center gap-2 hover:underline">
+               Crea ora il fascicolo digitale <FolderPlus className="w-4 h-4"/>
+            </button>
+          </div>
+        ) : (
+          projects.map(project => (
+            <div 
+              key={project.id}
+              onClick={() => onSelectProject(project)}
+              className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group"
+            >
+              <div className="flex justify-between items-start mb-4">
+                <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                  <Building2 className="w-6 h-6"/>
+                </div>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onDeleteProject(project.id); }}
+                  className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                >
+                  <Trash2 className="w-4 h-4"/>
+                </button>
+              </div>
+              
+              <h3 className="text-lg font-bold text-slate-800 mb-2 line-clamp-2 leading-tight h-14">
+                {project.projectName || 'Senza Titolo'}
+              </h3>
+              
+              <div className="space-y-3 mb-6">
+                <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
+                  <Calendar className="w-4 h-4"/> {project.executionPhase.deliveryDate || 'Data N/D'}
+                </div>
+                <div className="text-sm text-slate-600 font-medium">
+                  {project.entity}
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-50 flex items-center justify-between">
+                <div className="flex -space-x-2">
+                   <div className="w-8 h-8 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] font-bold">RUP</div>
+                   <div className="w-8 h-8 rounded-full bg-blue-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-blue-600">DL</div>
+                   <div className="w-8 h-8 rounded-full bg-green-100 border-2 border-white flex items-center justify-center text-[10px] font-bold text-green-600">COLL</div>
+                </div>
+                <span className="text-xs font-bold text-blue-600 group-hover:underline">Dettagli &gt;</span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 };

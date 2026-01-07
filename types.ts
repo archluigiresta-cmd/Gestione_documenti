@@ -22,7 +22,8 @@ export interface PhotoAttachment {
   file?: File;
 }
 
-export interface AppointmentData {
+// Fix: Added missing types for project management subjects and design phases.
+export interface Appointment {
   type: string;
   number: string;
   date: string;
@@ -30,7 +31,7 @@ export interface AppointmentData {
 
 export interface SubjectProfile {
   contact: ContactInfo;
-  appointment: AppointmentData;
+  appointment: Appointment;
 }
 
 export interface DesignerProfile extends SubjectProfile {
@@ -38,16 +39,6 @@ export interface DesignerProfile extends SubjectProfile {
   roles: string[];
   isLegalEntity: boolean;
   operatingDesigners: ContactInfo[];
-}
-
-export type CompanyType = 'single' | 'ati' | 'consortium';
-
-export interface ContractorStructure {
-  type: CompanyType;
-  mainCompany: ContactInfo;
-  mandants: ContactInfo[];
-  executors: ContactInfo[];
-  subcontractors: ContactInfo[];
 }
 
 export interface DesignPhaseData {
@@ -60,47 +51,17 @@ export interface DesignPhaseData {
   localFolderLink: string;
 }
 
-export type PermissionRole = 'viewer' | 'editor' | 'admin';
-export type UserStatus = 'active' | 'pending' | 'suspended';
-
-export interface User {
-  id: string;
-  email: string;
-  password: string;
-  name: string;
-  isSystemAdmin?: boolean;
-  status: UserStatus;
-}
-
-// Added ProjectPermission interface to fix missing export error used in db.ts and ProjectSharing.tsx
-export interface ProjectPermission {
-  id: string;
-  projectId: string;
-  userEmail: string;
-  role: PermissionRole;
-}
-
-// Added BackupData interface to fix missing export error used in db.ts, AuthScreen.tsx and AdminPanel.tsx
-export interface BackupData {
-  version: number;
-  timestamp: number;
-  users: User[];
-  projects: ProjectConstants[];
-  documents: DocumentVariables[];
-  permissions: ProjectPermission[];
-}
-
 export interface SALData {
-    id: string;
-    number: string;
-    date: string;
-    periodFrom: string;
-    periodTo: string;
-    netAmount: string;
-    paymentCertificateDate: string;
-    paymentCertificateAmount: string;
-    localFolderLink: string;
-    notes: string;
+  id: string;
+  number: string;
+  date: string;
+  periodFrom: string;
+  periodTo: string;
+  netAmount: string;
+  paymentCertificateDate?: string;
+  paymentCertificateAmount?: string;
+  localFolderLink: string;
+  notes: string;
 }
 
 export interface ProjectConstants {
@@ -116,96 +77,94 @@ export interface ProjectConstants {
   cup: string;
   cig?: string;
   generalNotes: string;
-  
   contract: {
     repNumber: string;
     date: string;
-    regPlace: string;
-    regDate: string;
-    regNumber: string;
-    regSeries: string;
+    regPlace?: string;
+    regDate?: string;
+    regNumber?: string;
+    regSeries?: string;
     totalAmount: string;
     securityCosts: string;
     durationDays: number;
-    deadline: string;
+    deadline?: string;
   };
-
   designPhase: {
     docfap: DesignPhaseData;
     dip: DesignPhaseData;
     pfte: DesignPhaseData;
     executive: DesignPhaseData;
   };
-
   subjects: {
     rup: SubjectProfile;
+    dl: DesignerProfile;
+    cse: DesignerProfile;
+    tester: SubjectProfile;
     designers: DesignerProfile[];
     csp: DesignerProfile;
     verifier: DesignerProfile;
-    dl: DesignerProfile;
-    dlOffice: SubjectProfile[];
-    cse: DesignerProfile;
-    tester: SubjectProfile;
+    dlOffice: DesignerProfile[];
     testerAppointment: {
-        nominationType?: string;
-        nominationAuthority: string;
-        nominationNumber?: string;
-        nominationDate?: string;
-        contractRepNumber: string;
-        contractDate: string;
-        contractProtocol: string;
-        testerFee?: string;
-        isStatic: boolean;
-        isAdmin: boolean;
-        isFunctional: boolean;
-    }
+      nominationType: string;
+      nominationAuthority: string;
+      nominationNumber: string;
+      nominationDate: string;
+      contractRepNumber: string;
+      contractDate: string;
+      contractProtocol: string;
+      testerFee: string;
+      isStatic: boolean;
+      isAdmin: boolean;
+      isFunctional: boolean;
+    };
   };
-
-  contractor: ContractorStructure;
-
+  contractor: {
+    type: string;
+    mainCompany: ContactInfo;
+    mandants: ContactInfo[];
+    executors: ContactInfo[];
+    subcontractors: ContactInfo[];
+  };
   executionPhase: {
     deliveryDate: string;
-    deliveryType: 'ordinary' | 'anticipated';
-    suspensions: { id: string; date: string; reason: string }[];
-    resumptions: { id: string; date: string }[];
+    deliveryType?: string;
+    suspensions: any[];
+    resumptions: any[];
     sals: SALData[];
-    variants: { id: string; date: string; approvalAct: string }[];
+    variants: any[];
     completionDate: string;
     handoverDocs: {
-        projectApprovalType?: string;
-        projectApprovalNumber?: string;
-        projectApprovalDate?: string;
-        ainopProtocol: string;
-        ainopDate: string;
-        municipalityProtocol: string;
-        municipalityDate: string;
-        hasWasteNotes: boolean;
-        hasUpdatedPOS: boolean;
-        hasUpdatedSchedule: boolean;
-        hasPreliminaryNotification: boolean;
-        preliminaryNotifNumber: string;
-        preliminaryNotifDate: string;
-        hasOtherDocs: boolean;
-        otherDocsDescription: string;
+      projectApprovalType: string;
+      projectApprovalNumber: string;
+      projectApprovalDate: string;
+      ainopProtocol: string;
+      ainopDate: string;
+      municipalityProtocol: string;
+      municipalityDate: string;
+      hasWasteNotes: boolean;
+      hasUpdatedPOS: boolean;
+      hasUpdatedSchedule: boolean;
+      hasPreliminaryNotification: boolean;
+      preliminaryNotifNumber: string;
+      preliminaryNotifDate: string;
+      hasOtherDocs: boolean;
+      otherDocsDescription: string;
     };
   };
 }
 
 export type DocumentType = 
   | 'VERBALE_COLLAUDO'
-  | 'LET_RICHIESTA_AUT_COLLAUDO'
   | 'LET_CONVOCAZIONE_COLLAUDO'
   | 'NULLAOSTA_COLLAUDO'
+  | 'LET_RICHIESTA_AUT_COLLAUDO'
   | 'REL_COLLAUDO_TECN_AMM'
   | 'REL_COLLAUDO_STATICO'
   | 'REL_COLLAUDO_FUNZ_IMP'
-  | 'VERBALE_CONSEGNA' 
-  | 'SOSPENSIONE_LAVORI' 
-  | 'RIPRESA_LAVORI' 
-  | 'SAL' 
-  | 'RELAZIONE_FINALE' 
-  | 'CERTIFICATO_ULTIMAZIONE'
-  | 'CERTIFICATO_REGOLARE_ESECUZIONE';
+  | 'CERTIFICATO_REGOLARE_ESECUZIONE'
+  | 'VERBALE_CONSEGNA'
+  | 'SOSPENSIONE_LAVORI'
+  | 'RIPRESA_LAVORI';
 
 export interface DocumentVariables {
   id: string;
@@ -221,12 +180,42 @@ export interface DocumentVariables {
   attendees: string;
   premis: string;
   worksExecuted: string[];
-  worksInProgress: string;
-  upcomingWorks: string;
-  worksIntroText: string;
+  worksInProgress?: string;
+  upcomingWorks?: string;
+  worksIntroText?: string;
   testerRequests: string;
   testerInvitations: string;
-  commonParts: string;
+  commonParts?: string;
   observations: string;
   photos: PhotoAttachment[];
+}
+
+// Fix: Added missing types for User, Auth and Backup management.
+export type UserStatus = 'active' | 'pending' | 'suspended';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  password?: string;
+  isSystemAdmin?: boolean;
+  status: UserStatus;
+}
+
+export type PermissionRole = 'viewer' | 'editor' | 'admin';
+
+export interface ProjectPermission {
+  id: string;
+  projectId: string;
+  userEmail: string;
+  role: PermissionRole;
+}
+
+export interface BackupData {
+  version: number;
+  timestamp: number;
+  users: User[];
+  projects: ProjectConstants[];
+  documents: DocumentVariables[];
+  permissions: ProjectPermission[];
 }
