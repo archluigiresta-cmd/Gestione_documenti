@@ -12,8 +12,6 @@ export interface ContactInfo {
   repTitle?: string;
   professionalOrder?: string;
   registrationNumber?: string;
-  colleagueEntityName?: string;
-  colleagueEntityLogo?: string;
   role?: string;
 }
 
@@ -74,6 +72,7 @@ export interface User {
   status: UserStatus;
 }
 
+// Added ProjectPermission interface to fix missing export error used in db.ts and ProjectSharing.tsx
 export interface ProjectPermission {
   id: string;
   projectId: string;
@@ -81,6 +80,7 @@ export interface ProjectPermission {
   role: PermissionRole;
 }
 
+// Added BackupData interface to fix missing export error used in db.ts, AuthScreen.tsx and AdminPanel.tsx
 export interface BackupData {
   version: number;
   timestamp: number;
@@ -161,11 +161,6 @@ export interface ProjectConstants {
     }
   };
 
-  tenderPhase: {
-    verificationMinutesDate: string;
-    validationMinutesDate: string;
-  };
-
   contractor: ContractorStructure;
 
   executionPhase: {
@@ -198,9 +193,12 @@ export interface ProjectConstants {
 
 export type DocumentType = 
   | 'VERBALE_COLLAUDO'
-  | 'CORRISPONDENZA_COLLAUDO'
+  | 'LET_RICHIESTA_AUT_COLLAUDO'
+  | 'LET_CONVOCAZIONE_COLLAUDO'
   | 'NULLAOSTA_COLLAUDO'
-  | 'RELAZIONE_COLLAUDO'
+  | 'REL_COLLAUDO_TECN_AMM'
+  | 'REL_COLLAUDO_STATICO'
+  | 'REL_COLLAUDO_FUNZ_IMP'
   | 'VERBALE_CONSEGNA' 
   | 'SOSPENSIONE_LAVORI' 
   | 'RIPRESA_LAVORI' 

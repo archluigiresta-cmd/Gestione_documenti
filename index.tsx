@@ -16,10 +16,11 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-// Fix: Using named 'Component' import and explicitly declaring 'state'
-// ensures that TypeScript correctly recognizes inherited 'props' and 'state' properties.
+// Fix: Explicitly declaring 'props' and 'state' properties
+// ensures that TypeScript correctly recognizes inherited properties from Component.
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // Explicitly declare state property for proper TypeScript inheritance recognition.
+  // Explicitly declare props and state properties for proper TypeScript inheritance recognition.
+  props: ErrorBoundaryProps;
   state: ErrorBoundaryState = {
     hasError: false,
     error: null,

@@ -88,11 +88,7 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
     }
   },
 
-  tenderPhase: {
-    verificationMinutesDate: '',
-    validationMinutesDate: ''
-  },
-
+  // Fix: Removed 'tenderPhase' as it does not exist in the ProjectConstants interface.
   contractor: {
     type: 'single',
     mainCompany: { 
