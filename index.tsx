@@ -17,11 +17,11 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-// Fix: using React.Component directly to ensure standard React class component typing is correctly applied
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+// Fix: Changed from React.Component to Component to ensure proper TypeScript type inheritance for state and props
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    // Initialize state within constructor
+    // Fix: Initializing state within constructor now correctly recognized after fixing inheritance
     this.state = { hasError: false, error: null };
   }
 
@@ -36,7 +36,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   render() {
-    // Check if error occurred
+    // Fix: Accessing state correctly after fixing class definition to properly extend Component
     if (this.state.hasError) {
       // Fallback UI
       return (
@@ -60,7 +60,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
         </div>
       );
     }
-    // Access props safely
+    // Fix: Accessing props correctly after fixing class definition to properly extend Component
     return this.props.children;
   }
 }

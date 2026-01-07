@@ -2,8 +2,10 @@
 import { ProjectConstants, DocumentVariables, User, UserStatus, BackupData, ProjectPermission } from './types';
 import { generateSafeId } from './constants';
 
-const DB_NAME = 'EdilAppDB_Final';
-const DB_VERSION = 11; // Forced bump to add permissions index
+// Ripristiniamo il nome originale per ritrovare i dati dell'architetto
+const DB_NAME = 'EdilAppDB_v4'; 
+const DB_VERSION = 20; // Versione alta per forzare l'aggiornamento del vecchio DB
+
 const STORES = {
   PROJECTS: 'projects',
   DOCUMENTS: 'documents',
@@ -14,24 +16,26 @@ const STORES = {
 export const db = {
   open: (): Promise<IDBDatabase> => {
     return new Promise((resolve, reject) => {
-      console.log("DB: Opening IndexedDB...");
-      const timeout = setTimeout(() => reject(new Error("Timeout: IndexedDB non risponde. Prova a ricaricare la pagina.")), 4000);
+      console.log(`DB: Tentativo apertura ${DB_NAME} v${DB_VERSION}...`);
+      const timeout = setTimeout(() => reject(new Error("Timeout: Il database non risponde.")), 5000);
       
       try {
         const request = indexedDB.open(DB_NAME, DB_VERSION);
         
         request.onupgradeneeded = (event) => {
-          console.log("DB: Upgrade needed...");
+          console.log("DB: Aggiornamento struttura in corso (i dati esistenti verranno preservati)...");
           const database = (event.target as IDBOpenDBRequest).result;
           
           Object.values(STORES).forEach(storeName => {
             if (!database.objectStoreNames.contains(storeName)) {
               database.createObjectStore(storeName, { keyPath: 'id' });
+              console.log(`DB: Creato store mancante: ${storeName}`);
             }
           });
           
-          // Create indexes
           const tx = (event.target as IDBOpenDBRequest).transaction!;
+          
+          // Assicuriamoci che gli indici esistano
           const docStore = tx.objectStore(STORES.DOCUMENTS);
           if (!docStore.indexNames.contains('projectId')) {
             docStore.createIndex('projectId', 'projectId', { unique: false });
@@ -42,7 +46,6 @@ export const db = {
             userStore.createIndex('email', 'email', { unique: true });
           }
 
-          // Fix: added projectId index for permissions store
           const permStore = tx.objectStore(STORES.PERMISSIONS);
           if (!permStore.indexNames.contains('projectId')) {
             permStore.createIndex('projectId', 'projectId', { unique: false });
@@ -51,14 +54,14 @@ export const db = {
 
         request.onsuccess = (e) => {
           clearTimeout(timeout);
-          console.log("DB: Success opening.");
+          console.log("DB: Connessione riuscita. I dati dovrebbero essere visibili.");
           resolve((e.target as IDBOpenDBRequest).result);
         };
 
         request.onerror = (e) => {
           clearTimeout(timeout);
-          console.error("DB: Error opening", e);
-          reject(new Error("Errore critico IndexedDB. Verifica di non essere in navigazione incognito."));
+          console.error("DB: Errore critico", e);
+          reject(new Error("Impossibile accedere ai dati locali."));
         };
       } catch (err) {
         clearTimeout(timeout);
@@ -70,25 +73,31 @@ export const db = {
   ensureAdminExists: async (): Promise<void> => {
     try {
       const database = await db.open();
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         const tx = database.transaction(STORES.USERS, 'readwrite');
         const store = tx.objectStore(STORES.USERS);
         
-        const admin: User = {
-          id: 'admin-luigi',
-          name: 'Luigi Resta',
-          email: 'arch.luigiresta@gmail.com',
-          password: 'admin123',
-          isSystemAdmin: true,
-          status: 'active'
+        // Verifichiamo se l'admin esiste già prima di sovrascrivere
+        const checkReq = store.get('admin-luigi');
+        checkReq.onsuccess = () => {
+          if (!checkReq.result) {
+            const admin: User = {
+              id: 'admin-luigi',
+              name: 'Luigi Resta',
+              email: 'arch.luigiresta@gmail.com',
+              password: 'admin123',
+              isSystemAdmin: true,
+              status: 'active'
+            };
+            store.put(admin);
+            console.log("DB: Creato utente amministratore predefinito.");
+          }
+          resolve();
         };
-        
-        const req = store.put(admin);
-        req.onsuccess = () => resolve();
-        req.onerror = () => reject(new Error("Errore seeding admin"));
+        checkReq.onerror = () => resolve();
       });
     } catch (e) {
-      console.error("Admin seed failed", e);
+      console.error("Admin check failed", e);
     }
   },
 
@@ -107,7 +116,7 @@ export const db = {
           else resolve(user);
         } else reject(new Error("Email o password non valide."));
       };
-      req.onerror = () => reject(new Error("Errore ricerca utente."));
+      req.onerror = () => reject(new Error("Errore login."));
     });
   },
 
@@ -118,7 +127,7 @@ export const db = {
       const store = tx.objectStore(STORES.USERS);
       const req = store.add(user);
       req.onsuccess = () => resolve();
-      req.onerror = () => reject(new Error("Email già registrata o errore database."));
+      req.onerror = () => reject(new Error("Email già registrata."));
     });
   },
 
@@ -129,6 +138,8 @@ export const db = {
     return new Promise((resolve) => {
       req.onsuccess = () => {
         const all = req.result as ProjectConstants[];
+        console.log(`DB: Trovati ${all.length} progetti totali.`);
+        // L'admin vede tutto, gli altri solo i propri
         if (email === 'arch.luigiresta@gmail.com') resolve(all);
         else resolve(all.filter(p => p.ownerId === userId));
       };
@@ -137,15 +148,13 @@ export const db = {
 
   saveProject: async (p: ProjectConstants) => {
     const database = await db.open();
-    const tx = database.transaction(STORES.PROJECTS, 'readwrite');
-    tx.objectStore(STORES.PROJECTS).put(p);
+    database.transaction(STORES.PROJECTS, 'readwrite').objectStore(STORES.PROJECTS).put(p);
   },
 
   deleteProject: async (id: string) => {
     const database = await db.open();
     const tx = database.transaction([STORES.PROJECTS, STORES.DOCUMENTS], 'readwrite');
     tx.objectStore(STORES.PROJECTS).delete(id);
-    // Cleanup documents too
     const docStore = tx.objectStore(STORES.DOCUMENTS);
     const index = docStore.index('projectId');
     const req = index.getAllKeys(id);
@@ -206,13 +215,12 @@ export const db = {
     const database = await db.open();
     const tx = database.transaction(Object.values(STORES), 'readwrite');
     Object.values(STORES).forEach(s => tx.objectStore(s).clear());
-    data.users.forEach(u => tx.objectStore(STORES.USERS).add(u));
-    data.projects.forEach(p => tx.objectStore(STORES.PROJECTS).add(p));
-    data.documents.forEach(d => tx.objectStore(STORES.DOCUMENTS).add(d));
-    data.permissions.forEach(p => tx.objectStore(STORES.PERMISSIONS).add(p));
+    if(data.users) data.users.forEach(u => tx.objectStore(STORES.USERS).add(u));
+    if(data.projects) data.projects.forEach(p => tx.objectStore(STORES.PROJECTS).add(p));
+    if(data.documents) data.documents.forEach(d => tx.objectStore(STORES.DOCUMENTS).add(d));
+    if(data.permissions) data.permissions.forEach(p => tx.objectStore(STORES.PERMISSIONS).add(p));
   },
 
-  // Fix: added missing getProjectPermissions method to resolve Property access error
   getProjectPermissions: async (projectId: string): Promise<ProjectPermission[]> => {
     const database = await db.open();
     const store = database.transaction(STORES.PERMISSIONS, 'readonly').objectStore(STORES.PERMISSIONS);
@@ -221,7 +229,6 @@ export const db = {
     return new Promise(res => req.onsuccess = () => res(req.result || []));
   },
 
-  // Fix: added missing shareProject method to resolve Property access error
   shareProject: async (p: ProjectPermission) => {
     const database = await db.open();
     const tx = database.transaction(STORES.PERMISSIONS, 'readwrite');
