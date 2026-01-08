@@ -3,7 +3,7 @@ import { ProjectConstants, DocumentVariables, User, UserStatus, BackupData, Proj
 import { generateSafeId } from './constants';
 
 const DB_NAME = 'EdilAppDB_v4'; 
-const DB_VERSION = 25; // Incrementiamo per forzare l'aggiornamento
+const DB_VERSION = 30; // Versione incrementata per forzare la sincronizzazione degli store
 
 const STORES = {
   PROJECTS: 'projects',
@@ -12,7 +12,7 @@ const STORES = {
   PERMISSIONS: 'permissions'
 };
 
-const OLD_DB_NAMES = ['EdilAppDB', 'EdilAppDB_v1', 'EdilAppDB_v2', 'EdilAppDB_v3', 'EdilAppDB_Final'];
+const OLD_DB_NAMES = ['EdilAppDB', 'EdilAppDB_v1', 'EdilAppDB_v2', 'EdilAppDB_v3', 'EdilAppDB_Final', 'EdilAppDB_v4_temp'];
 
 export const db = {
   open: (name = DB_NAME, version = DB_VERSION): Promise<IDBDatabase> => {
@@ -36,13 +36,12 @@ export const db = {
     });
   },
 
-  // FUNZIONE CRITICA: Cerca dati ovunque e li porta nel DB corrente
   recoveryOldData: async (): Promise<number> => {
-    console.log("RECOVERY: Avvio scansione vecchi database...");
     let recoveredCount = 0;
     const currentDb = await db.open();
 
     for (const oldName of OLD_DB_NAMES) {
+      if (oldName === DB_NAME) continue; // Evita loop su se stesso
       try {
         const oldDb = await new Promise<IDBDatabase | null>((res) => {
           const req = indexedDB.open(oldName);
@@ -56,7 +55,6 @@ export const db = {
           continue;
         }
 
-        console.log(`RECOVERY: Controllo database ${oldName}...`);
         const projects = await new Promise<ProjectConstants[]>((res) => {
           const tx = oldDb.transaction(STORES.PROJECTS, 'readonly');
           const req = tx.objectStore(STORES.PROJECTS).getAll();
@@ -65,7 +63,6 @@ export const db = {
         });
 
         if (projects.length > 0) {
-          console.log(`RECOVERY: Trovati ${projects.length} progetti in ${oldName}. Migrazione in corso...`);
           const txCurrent = currentDb.transaction([STORES.PROJECTS, STORES.DOCUMENTS], 'readwrite');
           const projectStore = txCurrent.objectStore(STORES.PROJECTS);
           
@@ -73,7 +70,6 @@ export const db = {
             projectStore.put(p);
             recoveredCount++;
             
-            // Prova a recuperare anche i documenti se lo store esiste
             if (oldDb.objectStoreNames.contains(STORES.DOCUMENTS)) {
                 const docs = await new Promise<DocumentVariables[]>((resDoc) => {
                     const txDoc = oldDb.transaction(STORES.DOCUMENTS, 'readonly');
@@ -88,7 +84,7 @@ export const db = {
         }
         oldDb.close();
       } catch (e) {
-        console.warn(`RECOVERY: Errore scansione ${oldName}`, e);
+        console.warn(`RECOVERY: Ignorato ${oldName}`);
       }
     }
     return recoveredCount;
@@ -112,15 +108,13 @@ export const db = {
     });
   },
 
-  // Fix: Implemented missing registerUser method to store new user requests in IndexedDB
   registerUser: async (user: User): Promise<void> => {
     const database = await db.open();
+    const tx = database.transaction(STORES.USERS, 'readwrite');
     return new Promise((resolve, reject) => {
-      const tx = database.transaction(STORES.USERS, 'readwrite');
-      const store = tx.objectStore(STORES.USERS);
-      const req = store.add(user);
+      const req = tx.objectStore(STORES.USERS).add(user);
       req.onsuccess = () => resolve();
-      req.onerror = () => reject(new Error("Errore durante la registrazione: Email già presente o errore database."));
+      req.onerror = () => reject(new Error("Errore registrazione."));
     });
   },
 
@@ -133,7 +127,7 @@ export const db = {
       req.onsuccess = () => {
         const user = req.result as User;
         if (user && user.password === password) resolve(user);
-        else reject(new Error("Email o password errati."));
+        else reject(new Error("Credenziali errate."));
       };
     });
   },
@@ -145,7 +139,7 @@ export const db = {
     return new Promise((resolve) => {
       req.onsuccess = () => {
         const all = req.result as ProjectConstants[];
-        // IMPORTANTE: Se è l'email dell'architetto, mostra TUTTO quello che trova
+        // Luigi vede tutto, indipendentemente dall'ownerId per sicurezza di recupero
         if (email === 'arch.luigiresta@gmail.com') resolve(all);
         else resolve(all.filter(p => p.ownerId === userId));
       };
@@ -161,6 +155,11 @@ export const db = {
     const database = await db.open();
     const tx = database.transaction([STORES.PROJECTS, STORES.DOCUMENTS], 'readwrite');
     tx.objectStore(STORES.PROJECTS).delete(id);
+    // Cancellazione documenti collegati
+    const docStore = tx.objectStore(STORES.DOCUMENTS);
+    const index = docStore.index('projectId');
+    const req = index.getAllKeys(id);
+    req.onsuccess = () => req.result.forEach(key => docStore.delete(key));
   },
 
   getDocumentsByProject: async (projectId: string): Promise<DocumentVariables[]> => {
@@ -180,24 +179,16 @@ export const db = {
     database.transaction(STORES.DOCUMENTS, 'readwrite').objectStore(STORES.DOCUMENTS).delete(id);
   },
 
-  // Fix: Implemented missing method to retrieve permissions for a specific project
   getProjectPermissions: async (projectId: string): Promise<ProjectPermission[]> => {
     const database = await db.open();
     const store = database.transaction(STORES.PERMISSIONS, 'readonly').objectStore(STORES.PERMISSIONS);
     const req = store.getAll();
-    return new Promise((resolve) => {
-      req.onsuccess = () => {
-        const all = req.result as ProjectPermission[];
-        resolve(all.filter(p => p.projectId === projectId));
-      };
-    });
+    return new Promise((res) => req.onsuccess = () => res((req.result || []).filter((p:any) => p.projectId === projectId)));
   },
 
-  // Fix: Implemented missing method to save a new project sharing permission
-  shareProject: async (permission: ProjectPermission): Promise<void> => {
+  shareProject: async (perm: ProjectPermission) => {
     const database = await db.open();
-    const tx = database.transaction(STORES.PERMISSIONS, 'readwrite');
-    tx.objectStore(STORES.PERMISSIONS).put(permission);
+    database.transaction(STORES.PERMISSIONS, 'readwrite').objectStore(STORES.PERMISSIONS).put(perm);
   },
 
   getAllUsers: async (): Promise<User[]> => {
@@ -237,8 +228,6 @@ export const db = {
     data.users.forEach(u => tx.objectStore(STORES.USERS).add(u));
     data.projects.forEach(p => tx.objectStore(STORES.PROJECTS).add(p));
     data.documents.forEach(d => tx.objectStore(STORES.DOCUMENTS).add(d));
-    if (data.permissions) {
-      data.permissions.forEach(p => tx.objectStore(STORES.PERMISSIONS).add(p));
-    }
+    if (data.permissions) data.permissions.forEach(p => tx.objectStore(STORES.PERMISSIONS).add(p));
   }
 };

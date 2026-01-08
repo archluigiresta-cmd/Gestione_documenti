@@ -1,5 +1,5 @@
 
-import React, { ReactNode, ErrorInfo } from 'react';
+import React, { ReactNode, ErrorInfo, Component } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
@@ -17,11 +17,11 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-// Fix: Changed inheritance to use React.Component and ensured type parameters are correctly applied to fix state/props access errors
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+// Fix: Changed inheritance to use Component directly from named imports to ensure generic type application and fix state/props access errors
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    // Fix: Correctly initialize state on the instance
+    // Fix: Explicitly initialize state on the instance
     this.state = { hasError: false, error: null };
   }
 
@@ -36,7 +36,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   render() {
-    // Fix: Access state from the instance after correctly extending React.Component
+    // Fix: Correctly access state from the Component instance
     if (this.state.hasError) {
       // Fallback UI
       return (
@@ -60,7 +60,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
         </div>
       );
     }
-    // Fix: Access props from the instance after correctly extending React.Component
+    // Fix: Correctly access props from the Component instance
     return this.props.children;
   }
 }
