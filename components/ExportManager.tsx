@@ -21,7 +21,8 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
   onDeleteDocument,
   onEdit
 }) => {
-  const [activeTab, setActiveTab] = useState<'verbali' | 'convocazione'>('verbali');
+  // Impostata "convocazione" come scheda predefinita (la prima)
+  const [activeTab, setActiveTab] = useState<'convocazione' | 'verbali'>('convocazione');
   const currentDoc = documents.find(d => d.id === currentDocId) || documents[0];
   const [docType, setDocType] = useState<DocumentType>('VERBALE_COLLAUDO');
   const [searchTerm, setSearchTerm] = useState('');
@@ -68,25 +69,25 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)] no-print">
       
-      {/* BARRA SUPERIORE SCHEDE */}
+      {/* BARRA SUPERIORE SCHEDE - Ordine invertito come richiesto */}
       <div className="flex bg-white border border-slate-200 rounded-xl mb-4 p-1 shadow-sm">
-        <button 
-          onClick={() => setActiveTab('verbali')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-lg font-bold text-sm transition-all ${activeTab === 'verbali' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
-        >
-          <FileText className="w-5 h-5"/> Verbali
-        </button>
         <button 
           onClick={() => setActiveTab('convocazione')}
           className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-lg font-bold text-sm transition-all ${activeTab === 'convocazione' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
         >
           <Mail className="w-5 h-5"/> Lettera Convocazione
         </button>
+        <button 
+          onClick={() => setActiveTab('verbali')}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-lg font-bold text-sm transition-all ${activeTab === 'verbali' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+        >
+          <FileText className="w-5 h-5"/> Verbali
+        </button>
       </div>
 
       <div className="flex flex-1 gap-6 overflow-hidden">
         
-        {/* SIDEBAR ARCHIVIO (Presente in entrambe le schede) */}
+        {/* SIDEBAR ARCHIVIO */}
         <div className="w-80 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden shrink-0">
           <div className="p-4 border-b border-slate-100 bg-slate-50">
             <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-3 text-sm">

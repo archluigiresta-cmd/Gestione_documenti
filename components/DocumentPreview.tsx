@@ -15,13 +15,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
     try { return new Date(dateStr).toLocaleDateString('it-IT'); } catch { return dateStr; }
   };
 
-  const formatCurrency = (val: string | number) => {
-      if (!val) return '€ 0,00';
-      const num = typeof val === 'string' ? parseFloat(val.replace(',', '.')) : val;
-      if (isNaN(num)) return val.toString();
-      return new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(num);
-  };
-
   const verboseDate = (() => {
       try {
           const date = new Date(doc.date);
@@ -55,6 +48,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       return `${titlePrefix}${contact.name}`;
   };
 
+  // Layout specifico per LETTERA_CONVOCAZIONE
   if (type === 'LETTERA_CONVOCAZIONE') {
     return (
       <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm] bg-white p-[2cm] shadow-lg min-h-[29.7cm]">
@@ -98,6 +92,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
     );
   }
 
+  // Ripristino Layout completo Verbale (versione 15.12.2025)
   return (
     <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
       <div className="bg-white shadow-lg p-[2cm] min-h-[29.7cm] print-page mb-8 relative flex flex-col justify-between">
@@ -134,9 +129,46 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
             <div className="text-sm text-justify space-y-4">
                 <p>L'anno {verboseDate.year}, il giorno {verboseDate.day} del mese di {verboseDate.month}, presso il luogo dei lavori...</p>
-                <div className="italic pl-4 whitespace-pre-line">{doc.attendees || "..."}</div>
-                <div className="mt-4"><p className="font-bold underline">Premesso che:</p><p>{doc.premis || "..."}</p></div>
-                <div className="mt-4"><p className="font-bold underline">Osservazioni:</p><p>{doc.observations || "..."}</p></div>
+                <div className="italic pl-4 whitespace-pre-line font-bold">Presenti: {doc.attendees || "..."}</div>
+                
+                <div className="mt-4"><p className="font-bold underline">Premesso che:</p><p className="whitespace-pre-line">{doc.premis || "..."}</p></div>
+
+                {/* RIPRISTINO SEZIONE LAVORI */}
+                <div className="mt-4">
+                    <p className="font-bold underline">{doc.worksIntroText || "Lavorazioni eseguite:"}</p>
+                    <ul className="list-disc pl-8 mt-1">
+                        {doc.worksExecuted.map((w, i) => <li key={i}>{w}</li>)}
+                    </ul>
+                </div>
+
+                {doc.worksInProgress && (
+                    <div className="mt-4">
+                        <p className="font-bold underline">Opere in corso di esecuzione:</p>
+                        <div className="whitespace-pre-line italic">{doc.worksInProgress}</div>
+                    </div>
+                )}
+
+                {doc.testerRequests && (
+                    <div className="mt-4">
+                        <p className="font-bold underline">Richieste del Collaudatore:</p>
+                        <div className="whitespace-pre-line">{doc.testerRequests}</div>
+                    </div>
+                )}
+
+                {doc.testerInvitations && (
+                    <div className="mt-4">
+                        <p className="font-bold underline">Inviti del Collaudatore:</p>
+                        <div className="whitespace-pre-line">{doc.testerInvitations}</div>
+                    </div>
+                )}
+
+                {doc.commonParts && (
+                    <div className="mt-4">
+                        <div className="whitespace-pre-line font-bold italic">{doc.commonParts}</div>
+                    </div>
+                )}
+
+                <div className="mt-4"><p className="font-bold underline">Osservazioni:</p><p className="whitespace-pre-line">{doc.observations || "..."}</p></div>
             </div>
         </div>
         <div className="mt-12 text-right text-sm">
