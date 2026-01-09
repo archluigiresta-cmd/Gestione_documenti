@@ -18,51 +18,51 @@
           size: auto;
         }
         
+        /* Reset totale per la stampa */
         html, body {
           background: #fff !important;
           color: #000 !important;
           height: auto !important;
+          min-height: 0 !important;
           overflow: visible !important;
+          position: static !important;
         }
 
         .no-print { display: none !important; }
-        .print-only { display: block !important; }
+        
+        /* Forza la visualizzazione del solo container di anteprima */
+        #root, main, div {
+          height: auto !important;
+          overflow: visible !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          position: static !important;
+          box-shadow: none !important;
+          border: none !important;
+        }
+
+        #document-preview-container {
+            display: block !important;
+            width: 100% !important;
+            max-width: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: #fff !important;
+        }
+
         .font-serif-print { font-family: 'Noto Serif', serif !important; }
         
-        /* Forza sfondo bianco ovunque */
         * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
           background-color: transparent !important;
-          box-shadow: none !important;
-        }
-        
-        #root main {
-            margin-left: 0 !important;
-            padding: 0 !important;
-            overflow: visible !important;
-            height: auto !important;
-        }
-        
-        #document-preview-container {
-            background-color: #fff !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            width: 100% !important;
-            max-width: none !important;
         }
       }
 
       .font-serif-print { font-family: 'Noto Serif', serif; }
       
-      /* Hide scrollbars for subnavs */
-      .scrollbar-hide::-webkit-scrollbar {
-        display: none;
-      }
-      .scrollbar-hide {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
   <script type="importmap">
 {

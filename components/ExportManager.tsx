@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
 import { DocumentPreview } from './DocumentPreview';
@@ -35,10 +34,12 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
   if (!currentDoc) return <div className="p-8 text-center text-slate-500">Nessun documento disponibile.</div>;
 
   const handlePrint = () => { 
-    // Isolo l'esecuzione della stampa per non bloccare il thread di React (risoluzione INP issue)
-    setTimeout(() => {
+    // Isolamento ottimizzato per la stampa tramite requestAnimationFrame per risolvere INP issues
+    requestAnimationFrame(() => {
+      setTimeout(() => {
         window.print();
-    }, 100);
+      }, 50);
+    });
   };
 
   const handleDownloadWord = () => {
