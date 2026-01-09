@@ -83,25 +83,25 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   const getNominationPremise = () => {
     const ta = project.subjects.testerAppointment;
     const tester = project.subjects.tester.contact;
+    const authority = ta.nominationAuthority || project.entity || '...';
+    
     const types = [];
     if (ta.isStatic) types.push("collaudo statico");
     if (ta.isAdmin) types.push("tecnico-amministrativo");
     if (ta.isFunctional) types.push("funzionale");
     const rolesStr = types.length > 0 ? types.join(" e ") : "...";
 
-    // LOGICA DINAMICA: Contratto mostrato solo se popolato
-    const hasContractData = (ta.contractRepNumber && ta.contractRepNumber.trim() !== '') || 
-                           (ta.contractDate && ta.contractDate.trim() !== '') || 
-                           (ta.contractProtocol && ta.contractProtocol.trim() !== '');
+    // Costruzione dinamica della parte relativa al contratto: niente puntini se i campi sono vuoti
+    const contractItems = [];
+    if (ta.contractRepNumber) contractItems.push(`rep. n. ${ta.contractRepNumber}`);
+    if (ta.contractDate) contractItems.push(`del ${formatShortDate(ta.contractDate)}`);
+    if (ta.contractProtocol) contractItems.push(`prot. n. ${ta.contractProtocol}`);
     
-    const contractPart = hasContractData 
-        ? `, e successivo contratto/convenzione, rep. n. ${ta.contractRepNumber || '...'} del ${formatShortDate(ta.contractDate)}${ta.contractProtocol ? `, prot. n. ${ta.contractProtocol}` : ''},` 
+    const contractPart = contractItems.length > 0 
+        ? `, e successivo contratto/convenzione, ${contractItems.join(' ')}` 
         : '';
 
-    // Soggetto emittente richiamato dinamicamente
-    const authority = ta.nominationAuthority || project.entity || '...';
-
-    return `con ${ta.nominationType || 'provvedimento'} del ${authority} n. ${ta.nominationNumber || '...'} del ${formatShortDate(ta.nominationDate)}${contractPart} il predetto ${authority} ha affidato, ai sensi dell’art. 116 del D. Lgs. 36/2023, allo scrivente ${tester.title || ''} ${tester.name || '...'} (C.F. ${tester.vat || '...'}), iscritto all’Albo degli ${tester.professionalOrder || '...'} al n. ${tester.registrationNumber || '...'}, l’incarico professionale di ${rolesStr} relativo all’intervento di “${project.projectName || '...'}”, CUP: ${project.cup || '...'};`;
+    return `con ${ta.nominationType || 'provvedimento'} del ${authority} n. ${ta.nominationNumber || '...'} del ${formatShortDate(ta.nominationDate)}${contractPart}, il predetto ${authority} ha affidato, ai sensi dell’art. 116 del D. Lgs. 36/2023, allo scrivente ${tester.title || ''} ${tester.name || '...'} (C.F. ${tester.vat || '...'}), iscritto all’Albo degli ${tester.professionalOrder || '...'} al n. ${tester.registrationNumber || '...'}, l’incarico professionale di ${rolesStr} relativo all’intervento di “${project.projectName || '...'}”, CUP: ${project.cup || '...'};`;
   };
 
   if (type === 'LETTERA_CONVOCAZIONE') {
@@ -206,38 +206,34 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                 <p className="font-bold mb-1">Osservazioni e valutazioni:</p>
                 <p className="whitespace-pre-line">{doc.observations || "..."}</p>
                 <p className="mt-6 italic">La visita si conclude alle ore __________.</p>
-                <p className="mt-4 font-bold text-center">L.C.S.</p>
+                <p className="mt-4 font-bold text-left">L.C.S.</p>
             </div>
         </div>
 
-        {/* FIRME: Spazio flessibile senza limiti per i nomi */}
-        <div className="mt-8 text-xs space-y-6 print:mt-6">
-            <div className="flex flex-wrap items-end gap-2">
-                <span className="flex-none font-medium">Il Collaudatore:</span>
+        {/* FIRME: Avvicinate a L.C.S. e con layout flessibile per gestire nomi lunghi e riferimenti su più righe */}
+        <div className="mt-4 text-xs space-y-4 print:mt-4">
+            <div className="flex flex-wrap items-end gap-x-2 gap-y-1 py-1 border-b border-black">
+                <span className="font-medium whitespace-nowrap">Il Collaudatore:</span>
                 <span className="font-bold">{formatNameWithTitle(project.subjects.tester.contact)}</span>
-                <div className="flex-1 border-b border-black mb-1 min-w-[50px]"></div>
             </div>
             {doc.attendees && doc.attendees.split('\n').filter(l => l.trim()).map((present, idx) => {
                 const parts = present.split(':');
                 const label = parts[0];
                 const name = parts[1]?.trim() || '';
                 return (
-                    <div key={idx} className="flex flex-wrap items-end gap-2">
-                        <span className="flex-none font-medium">{label}:</span>
+                    <div key={idx} className="flex flex-wrap items-end gap-x-2 gap-y-1 py-1 border-b border-black">
+                        <span className="font-medium whitespace-nowrap">{label}:</span>
                         <span className="font-bold">{name}</span>
-                        <div className="flex-1 border-b border-black mb-1 min-w-[50px]"></div>
                     </div>
                 );
             })}
             {!doc.attendees && (
                 <>
-                    <div className="flex flex-wrap items-end gap-2">
-                        <span className="flex-none font-medium">Per l'Ufficio di Direzione Lavori:</span>
-                        <div className="flex-1 border-b border-black mb-1 min-w-[50px]"></div>
+                    <div className="flex flex-wrap items-end gap-x-2 gap-y-1 py-1 border-b border-black min-h-[1.5rem]">
+                        <span className="font-medium whitespace-nowrap">Per l'Ufficio di Direzione Lavori:</span>
                     </div>
-                    <div className="flex flex-wrap items-end gap-2">
-                        <span className="flex-none font-medium">Per l'Impresa:</span>
-                        <div className="flex-1 border-b border-black mb-1 min-w-[50px]"></div>
+                    <div className="flex flex-wrap items-end gap-x-2 gap-y-1 py-1 border-b border-black min-h-[1.5rem]">
+                        <span className="font-medium whitespace-nowrap">Per l'Impresa:</span>
                     </div>
                 </>
             )}

@@ -15,53 +15,55 @@
       @media print {
         @page { 
           margin: 1.5cm; 
-          size: auto;
+          size: A4;
         }
         
-        /* Reset totale per la stampa: fondamentale per evitare pagine bianche o troncate */
+        /* Reset totale per eliminare pagine bianche e blocchi layout */
         html, body {
-          background: #fff !important;
+          background-color: #fff !important;
           color: #000 !important;
+          margin: 0 !important;
+          padding: 0 !important;
           height: auto !important;
           min-height: 0 !important;
           overflow: visible !important;
           position: static !important;
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
         }
 
         .no-print { display: none !important; }
         
-        /* Forza tutti i contenitori superiori ad essere visibili e fluire correttamente */
-        #root, #root > div, main, .flex, .flex-1, .overflow-y-auto {
-          display: block !important;
-          height: auto !important;
-          min-height: 0 !important;
-          overflow: visible !important;
-          position: static !important;
-          margin: 0 !important;
-          padding: 0 !important;
-          box-shadow: none !important;
-          border: none !important;
-          width: 100% !important;
-          transform: none !important;
+        /* Nasconde tutto tranne il contenitore del documento */
+        #root > *:not(main), main > *:not(.animate-in), .animate-in > *:not(#document-preview-container) {
+            display: none !important;
+        }
+
+        /* Forza il contenitore principale e i suoi padri a fluire senza vincoli di altezza */
+        #root, main, .animate-in, #document-preview-container {
+            display: block !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            position: static !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            box-shadow: none !important;
+            border: none !important;
         }
 
         #document-preview-container {
-            display: block !important;
-            width: 100% !important;
-            max-width: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
             background: #fff !important;
-            visibility: visible !important;
+            padding: 0.5cm !important;
         }
 
         .font-serif-print { font-family: 'Noto Serif', serif !important; }
         
         * {
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
           background-color: transparent !important;
-          color-adjust: exact !important;
+          box-shadow: none !important;
+          text-shadow: none !important;
         }
       }
 
