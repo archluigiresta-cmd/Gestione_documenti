@@ -27,6 +27,7 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
   };
 
   const handleDeliveryDateChange = (date: string) => {
+      if (!date) return;
       const days = project.contract.durationDays || 0;
       const d = new Date(date);
       d.setDate(d.getDate() + days);
@@ -49,11 +50,11 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
          <div className="bg-white p-10 rounded-3xl shadow-sm border border-slate-100 grid grid-cols-1 md:grid-cols-3 gap-8 animate-in fade-in">
             <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Calendar className="w-3 h-3"/> Data Consegna</label>
-                <input type="date" className="w-full p-4 border border-slate-200 rounded-2xl bg-slate-50" value={project.executionPhase.deliveryDate || ''} onChange={(e) => handleDeliveryDateChange(e.target.value)} />
+                <input type="date" className="w-full p-4 border border-slate-200 rounded-2xl bg-slate-50 font-bold outline-none focus:ring-4 focus:ring-blue-500/10" value={project.executionPhase.deliveryDate || ''} onChange={(e) => handleDeliveryDateChange(e.target.value)} />
             </div>
             <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Hourglass className="w-3 h-3"/> Giorni Contrattuali</label>
-                <input type="number" className="w-full p-4 border border-slate-200 rounded-2xl bg-slate-50" value={project.contract.durationDays} onChange={(e) => {
+                <input type="number" className="w-full p-4 border border-slate-200 rounded-2xl bg-slate-50 font-bold outline-none focus:ring-4 focus:ring-blue-500/10" value={project.contract.durationDays} onChange={(e) => {
                     const days = parseInt(e.target.value) || 0;
                     const d = new Date(project.executionPhase.deliveryDate);
                     d.setDate(d.getDate() + days);
@@ -62,7 +63,7 @@ export const ExecutionManager: React.FC<ExecutionManagerProps> = ({
             </div>
             <div className="space-y-1">
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2"><Calendar className="w-3 h-3"/> Data Ultimazione</label>
-                <input type="date" className="w-full p-4 border border-slate-200 rounded-2xl bg-blue-50/50 font-bold text-blue-600" value={project.executionPhase.completionDate || ''} onChange={(e) => updateExec('completionDate', e.target.value)} />
+                <input type="date" className="w-full p-4 border border-slate-200 rounded-2xl bg-blue-50/50 font-bold text-blue-600 outline-none" value={project.executionPhase.completionDate || ''} onChange={(e) => updateExec('completionDate', e.target.value)} />
             </div>
          </div>
        )}

@@ -130,7 +130,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
         </div>
       )}
 
-      <div className="mt-24 grid grid-cols-2 gap-10">
+      <div className="mt-24 grid grid-cols-2 gap-10 no-break">
         <div className="text-center">
             <p className="font-bold text-xs uppercase mb-16">L'impresa appaltatrice</p>
             <p className="border-t border-black/20 pt-2 text-[10pt] font-bold">{project.contractor.repName}</p>
