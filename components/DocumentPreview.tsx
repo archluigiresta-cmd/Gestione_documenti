@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ProjectConstants, DocumentVariables, DocumentType, DesignerProfile } from '../types';
 
@@ -92,7 +91,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
     );
   }
 
-  // Ripristino Layout completo Verbale (versione 15.12.2025)
+  // Layout ORIGINALE Verbale (Ripristinato)
   return (
     <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
       <div className="bg-white shadow-lg p-[2cm] min-h-[29.7cm] print-page mb-8 relative flex flex-col justify-between">
@@ -120,20 +119,21 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
             <table className="w-full text-sm mb-8">
                 <tbody>
-                    <tr><td className="font-bold w-48">Ente:</td><td>{project.entity}</td></tr>
+                    <tr><td className="font-bold w-48">Ente Appaltante:</td><td>{project.entity}</td></tr>
                     <tr><td className="font-bold">CUP:</td><td>{project.cup}</td></tr>
-                    <tr><td className="font-bold">DL:</td><td>{formatNameWithTitle(project.subjects.dl.contact)}</td></tr>
-                    <tr><td className="font-bold">Impresa:</td><td>{project.contractor.mainCompany.name}</td></tr>
+                    <tr><td className="font-bold">Direttore dei Lavori:</td><td>{formatNameWithTitle(project.subjects.dl.contact)}</td></tr>
+                    <tr><td className="font-bold">Impresa Appaltatrice:</td><td>{project.contractor.mainCompany.name}</td></tr>
                 </tbody>
             </table>
 
             <div className="text-sm text-justify space-y-4">
-                <p>L'anno {verboseDate.year}, il giorno {verboseDate.day} del mese di {verboseDate.month}, presso il luogo dei lavori...</p>
-                <div className="italic pl-4 whitespace-pre-line font-bold">Presenti: {doc.attendees || "..."}</div>
+                <p>
+                  L’anno {verboseDate.year}, il giorno {verboseDate.day} del mese di {verboseDate.month}, alle ore {doc.time}, in {project.location}, presso il cantiere dei lavori in oggetto, sono presenti:
+                </p>
+                <div className="italic pl-4 whitespace-pre-line font-bold">{doc.attendees || "..."}</div>
                 
                 <div className="mt-4"><p className="font-bold underline">Premesso che:</p><p className="whitespace-pre-line">{doc.premis || "..."}</p></div>
 
-                {/* RIPRISTINO SEZIONE LAVORI */}
                 <div className="mt-4">
                     <p className="font-bold underline">{doc.worksIntroText || "Lavorazioni eseguite:"}</p>
                     <ul className="list-disc pl-8 mt-1">
@@ -172,8 +172,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             </div>
         </div>
         <div className="mt-12 text-right text-sm">
-            <p>Il Collaudatore / DL</p>
+            <p>Il Collaudatore</p>
             <p className="mt-12 font-bold">{formatNameWithTitle(project.subjects.tester.contact)}</p>
+            <div className="border-b border-black w-48 ml-auto mt-2"></div>
         </div>
       </div>
     </div>
