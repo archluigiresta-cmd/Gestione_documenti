@@ -18,7 +18,7 @@
           size: A4;
         }
         
-        /* Reset totale per eliminare pagine bianche e blocchi layout */
+        /* Reset totale per la stampa */
         html, body {
           background-color: #fff !important;
           color: #000 !important;
@@ -28,18 +28,12 @@
           min-height: 0 !important;
           overflow: visible !important;
           position: static !important;
-          -webkit-print-color-adjust: exact !important;
-          print-color-adjust: exact !important;
+          width: 100% !important;
         }
 
         .no-print { display: none !important; }
         
-        /* Nasconde tutto tranne il contenitore del documento */
-        #root > *:not(main), main > *:not(.animate-in), .animate-in > *:not(#document-preview-container) {
-            display: none !important;
-        }
-
-        /* Forza il contenitore principale e i suoi padri a fluire senza vincoli di altezza */
+        /* Forza la visibilità del solo documento senza scroll */
         #root, main, .animate-in, #document-preview-container {
             display: block !important;
             height: auto !important;
@@ -51,19 +45,21 @@
             width: 100% !important;
             box-shadow: none !important;
             border: none !important;
+            transform: none !important;
         }
 
         #document-preview-container {
             background: #fff !important;
-            padding: 0.5cm !important;
+            padding: 0 !important; /* Margini gestiti da @page */
+            box-sizing: border-box !important;
         }
 
         .font-serif-print { font-family: 'Noto Serif', serif !important; }
         
         * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
           background-color: transparent !important;
-          box-shadow: none !important;
-          text-shadow: none !important;
         }
       }
 

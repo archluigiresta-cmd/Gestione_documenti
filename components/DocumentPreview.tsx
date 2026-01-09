@@ -91,7 +91,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
     if (ta.isFunctional) types.push("funzionale");
     const rolesStr = types.length > 0 ? types.join(" e ") : "...";
 
-    // Costruzione dinamica della parte relativa al contratto: niente puntini se i campi sono vuoti
     const contractItems = [];
     if (ta.contractRepNumber) contractItems.push(`rep. n. ${ta.contractRepNumber}`);
     if (ta.contractDate) contractItems.push(`del ${formatShortDate(ta.contractDate)}`);
@@ -210,30 +209,28 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             </div>
         </div>
 
-        {/* FIRME: Avvicinate a L.C.S. e con layout flessibile per gestire nomi lunghi e riferimenti su più righe */}
-        <div className="mt-4 text-xs space-y-4 print:mt-4">
-            <div className="flex flex-wrap items-end gap-x-2 gap-y-1 py-1 border-b border-black">
-                <span className="font-medium whitespace-nowrap">Il Collaudatore:</span>
-                <span className="font-bold">{formatNameWithTitle(project.subjects.tester.contact)}</span>
+        {/* FIRME: Avvicinate a L.C.S. e con layout block per evitare overflow laterale */}
+        <div className="mt-2 text-xs space-y-3 print:mt-2">
+            <div className="block border-b border-black pb-1 leading-tight">
+                <span className="font-medium">Il Collaudatore:</span> <span className="font-bold">{formatNameWithTitle(project.subjects.tester.contact)}</span>
             </div>
             {doc.attendees && doc.attendees.split('\n').filter(l => l.trim()).map((present, idx) => {
                 const parts = present.split(':');
                 const label = parts[0];
                 const name = parts[1]?.trim() || '';
                 return (
-                    <div key={idx} className="flex flex-wrap items-end gap-x-2 gap-y-1 py-1 border-b border-black">
-                        <span className="font-medium whitespace-nowrap">{label}:</span>
-                        <span className="font-bold">{name}</span>
+                    <div key={idx} className="block border-b border-black pb-1 leading-tight">
+                        <span className="font-medium">{label}:</span> <span className="font-bold">{name}</span>
                     </div>
                 );
             })}
             {!doc.attendees && (
                 <>
-                    <div className="flex flex-wrap items-end gap-x-2 gap-y-1 py-1 border-b border-black min-h-[1.5rem]">
-                        <span className="font-medium whitespace-nowrap">Per l'Ufficio di Direzione Lavori:</span>
+                    <div className="block border-b border-black pb-1 leading-tight min-h-[1.2rem]">
+                        <span className="font-medium">Per l'Ufficio di Direzione Lavori:</span>
                     </div>
-                    <div className="flex flex-wrap items-end gap-x-2 gap-y-1 py-1 border-b border-black min-h-[1.5rem]">
-                        <span className="font-medium whitespace-nowrap">Per l'Impresa:</span>
+                    <div className="block border-b border-black pb-1 leading-tight min-h-[1.2rem]">
+                        <span className="font-medium">Per l'Impresa:</span>
                     </div>
                 </>
             )}
