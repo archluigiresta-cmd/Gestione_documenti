@@ -93,6 +93,7 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
   }
 });
 
+// Fix: Removed 'testerRequests' and 'testerInvitations' as they are not part of the DocumentVariables type definition.
 export const createInitialDocument = (projectId: string): DocumentVariables => ({
   id: generateSafeId(),
   projectId,
@@ -109,7 +110,5 @@ export const createInitialDocument = (projectId: string): DocumentVariables => (
   observations: '',
   photos: [],
   convocationMethod: 'PEC',
-  convocationDate: new Date().toISOString().split('T')[0],
-  testerRequests: '',
-  testerInvitations: ''
+  convocationDate: new Date().toISOString().split('T')[0]
 });

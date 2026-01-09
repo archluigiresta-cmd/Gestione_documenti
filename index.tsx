@@ -1,5 +1,5 @@
 
-import React, { ReactNode, ErrorInfo, Component } from 'react';
+import React, { Component, ReactNode, ErrorInfo } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
@@ -17,13 +17,15 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-// Fix: Directly extend Component with explicit generics for Props and State to ensure 'this.state' and 'this.props' are correctly typed and inherited.
+// Fix: Explicitly extend Component from React and ensure the constructor properly initializes state to avoid typing issues with 'this.props'.
 class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  // Fix: Explicitly declare and initialize state as a class property to ensure TypeScript correctly recognizes it as a member of the class.
-  state: ErrorBoundaryState = {
-    hasError: false,
-    error: null
-  };
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = {
+      hasError: false,
+      error: null
+    };
+  }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     // Update state so the next render will show the fallback UI.
@@ -36,9 +38,8 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 
   render() {
-    // Fix: Access state through 'this.state' which is now correctly resolved by the compiler.
     if (this.state.hasError) {
-      // Fallback UI
+      // Fallback UI for critical errors
       return (
         <div className="min-h-screen flex items-center justify-center bg-red-50 p-4">
           <div className="bg-white p-8 rounded-lg shadow-xl max-w-lg w-full border-l-4 border-red-500">
@@ -60,7 +61,8 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
         </div>
       );
     }
-    // Fix: Access props through 'this.props' which is now correctly resolved by inheriting from Component.
+    
+    // Fix: Accessing children from 'this.props' which is now correctly inherited from Component.
     return this.props.children;
   }
 }

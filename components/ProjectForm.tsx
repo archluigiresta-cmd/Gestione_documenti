@@ -183,6 +183,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, handleChange, su
                                         <InputField label="N. Atto" path="subjects.testerAppointment.nominationNumber" />
                                         <InputField label="Data Atto" path="subjects.testerAppointment.nominationDate" type="date" />
                                         <InputField label="Rep. N." path="subjects.testerAppointment.contractRepNumber" />
+                                        <InputField label="Data Contr./Conv." path="subjects.testerAppointment.contractDate" type="date" />
                                         <InputField label="Prot. N." path="subjects.testerAppointment.protocolNumber" />
                                         <InputField label="Dirigente Responsabile" path="subjects.testerAppointment.departmentManager" />
                                     </div>

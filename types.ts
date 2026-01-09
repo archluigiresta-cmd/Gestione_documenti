@@ -150,22 +150,17 @@ export interface DocumentVariables {
   date: string; 
   time: string;
   attendees: string;
-  attendeesList?: string[]; // IDs or names of subjects from constants
+  attendeesList?: string[]; 
   premis: string;
   worksExecuted: string[];
   worksInProgress?: string;
   upcomingWorks?: string;
   observations: string;
   photos: PhotoAttachment[];
-  convocationDetails?: string;
   convocationMethod?: string;
   convocationDate?: string;
-  testerRequests?: string;
-  testerInvitations?: string;
-  rupConvocationDate?: string;
 }
 
-// Add missing User and related types used throughout the application
 export type UserStatus = 'active' | 'pending' | 'suspended';
 
 export interface User {
