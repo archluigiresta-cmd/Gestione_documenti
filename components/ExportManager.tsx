@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
 import { DocumentPreview } from './DocumentPreview';
-import { Printer, FileCheck, FileDown, Search, FileText, Calendar, ChevronRight, Trash2, Pencil, Mail } from 'lucide-react';
+import { Printer, FileCheck, FileDown, Search, FileText, Calendar, ChevronRight, Trash2, Pencil, Mail, FileType } from 'lucide-react';
 
 interface ExportManagerProps {
   project: ProjectConstants;
@@ -34,12 +34,60 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
   if (!currentDoc) return <div className="p-8 text-center text-slate-500">Nessun documento disponibile.</div>;
 
   const handlePrint = () => { 
-    // Isolamento ottimizzato per la stampa tramite requestAnimationFrame per risolvere INP issues
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        window.print();
-      }, 50);
-    });
+    const element = document.getElementById('document-preview-container');
+    if (!element) return;
+
+    // Crea una nuova finestra per la stampa isolata
+    const printWindow = window.open('', '_blank', 'width=1000,height=800');
+    if (!printWindow) {
+        alert("Per favore, abilita i popup per stampare il documento.");
+        return;
+    }
+
+    const content = element.innerHTML;
+    
+    // Inserisce il contenuto con un CSS dedicato e minimale
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>${effectiveDocType} - N. ${currentDoc.visitNumber}</title>
+          <link href="https://cdn.tailwindcss.com" rel="stylesheet">
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap');
+            @page { size: A4; margin: 2cm; }
+            body { 
+                background: white !important; 
+                margin: 0; 
+                padding: 0; 
+                font-family: 'Noto Serif', serif !important;
+            }
+            #print-container { width: 100%; }
+            /* Forza la visibilità degli elementi per la stampa */
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            .print-only { display: block !important; }
+            /* Rimuove ombre e bordi esterni che servono solo a video */
+            .shadow-lg, .border { box-shadow: none !important; border-color: transparent !important; }
+            .border-b, .border-black { border-color: black !important; border-bottom-width: 1px !important; }
+          </style>
+        </head>
+        <body class="p-0">
+          <div id="print-container">
+            ${content}
+          </div>
+          <script>
+            // Aspetta il caricamento di stili e immagini (logo) prima di stampare
+            window.onload = () => {
+              setTimeout(() => {
+                window.print();
+                // Opzionale: chiude la finestra dopo la stampa
+                // window.close();
+              }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const handleDownloadWord = () => {
@@ -52,11 +100,12 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
         <meta charset="utf-8">
         <style>
           @page { size: A4; margin: 2.0cm; mso-header: h1; mso-footer: f1; }
-          body { font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.2; text-align: justify; }
+          body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.2; text-align: justify; }
           .text-center { text-align: center; }
           .font-bold { font-weight: bold; }
           .uppercase { text-transform: uppercase; }
           table { width: 100%; border-collapse: collapse; }
+          .border-b { border-bottom: 1pt solid black; }
         </style>
       </head>
       <body>${content}</body>
@@ -119,8 +168,8 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
                     N. {doc.visitNumber}
                   </span>
                   <div className="flex items-center gap-1">
-                    {onEdit && <button onClick={(e) => { e.stopPropagation(); onEdit(doc.id); }} className="p-1 text-slate-400 hover:text-blue-600 opacity-0 group-hover:opacity-100"><Pencil className="w-3.5 h-3.5"/></button>}
-                    {onDeleteDocument && <button onClick={(e) => { e.stopPropagation(); onDeleteDocument(doc.id); }} className="p-1 text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100"><Trash2 className="w-3.5 h-3.5"/></button>}
+                    {onEdit && <button onClick={(e) => { e.stopPropagation(); onEdit(doc.id); }} title="Modifica" className="p-1 text-slate-400 hover:text-blue-600 opacity-0 group-hover:opacity-100"><Pencil className="w-3.5 h-3.5"/></button>}
+                    {onDeleteDocument && <button onClick={(e) => { e.stopPropagation(); onDeleteDocument(doc.id); }} title="Elimina" className="p-1 text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100"><Trash2 className="w-3.5 h-3.5"/></button>}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
@@ -159,15 +208,15 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
             </div>
             <div className="flex gap-2">
               <button onClick={handleDownloadWord} className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all shadow-sm">
-                <FileDown className="w-4 h-4 text-blue-600" /> Word
+                <FileDown className="w-4 h-4 text-blue-600" /> Word (.doc)
               </button>
               <button onClick={handlePrint} className="bg-slate-900 hover:bg-black text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all shadow-md">
-                <Printer className="w-4 h-4" /> Stampa
+                <Printer className="w-4 h-4" /> Stampa / PDF
               </button>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto bg-slate-100 rounded-xl p-8 border border-slate-200 shadow-inner print:bg-white print:p-0 print:border-none print:shadow-none print:overflow-visible">
+          <div className="flex-1 overflow-y-auto bg-slate-200 rounded-xl p-8 border border-slate-300 shadow-inner">
             <div className="flex justify-center min-h-full">
               <DocumentPreview project={project} doc={currentDoc} type={effectiveDocType} allDocuments={documents} />
             </div>

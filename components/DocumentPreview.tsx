@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
 
@@ -106,7 +105,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
   if (type === 'LETTERA_CONVOCAZIONE') {
     return (
-      <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm] bg-white p-[2cm] print:p-0">
+      <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm] bg-white p-[2cm]">
         <div className="text-center mb-12">
             {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2.5cm', margin: '0 auto 10px' }} alt="Logo" />}
             <p className="uppercase font-bold text-base tracking-widest">{project.entity}</p>
@@ -121,14 +120,18 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
         </div>
         <div className="mb-12 text-sm"><p className="font-bold">OGGETTO: {project.projectName}</p><p className="font-bold">CUP: {project.cup} - CONVOCAZIONE VISITA N. {doc.visitNumber}</p></div>
         <div className="text-justify text-sm space-y-4"><p>Si comunica che la visita di collaudo n. {doc.visitNumber} si terrà il giorno:</p><p className="font-bold text-center text-lg">{formatShortDate(doc.date)} alle ore {doc.time}</p><p>presso il cantiere in {project.location}.</p></div>
-        <div className="mt-24 text-right text-sm"><p>Il Collaudatore</p><p className="mt-12 font-bold">{formatNameWithTitle(project.subjects.tester.contact)}</p><div className="border-b border-black w-48 ml-auto mt-2"></div></div>
+        <div className="mt-24 text-right text-sm">
+            <p>Il Collaudatore</p>
+            <p className="mt-12 font-normal">{formatNameWithTitle(project.subjects.tester.contact)}</p>
+            <div className="border-b border-black w-48 ml-auto mt-1"></div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm] print:w-full print:max-w-none">
-      <div className="bg-white shadow-lg p-[1.5cm] mb-8 border border-slate-100 print:shadow-none print:border-none print:m-0 print:p-0 overflow-visible">
+    <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
+      <div className="bg-white shadow-lg p-[1.5cm] mb-8 border border-slate-100 overflow-visible">
         <div className="text-center mb-8">
             {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2.5cm', margin: '0 auto 10px' }} alt="Logo" />}
             <p className="uppercase font-bold text-sm tracking-widest m-0">{project.entity}</p>
@@ -210,10 +213,10 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             </div>
         </div>
 
-        {/* FIRME: Accostate a LCS e nomi senza grassetto per un look più professionale. Layout block per evitare overflow laterale. */}
-        <div className="mt-2 text-xs space-y-3 print:mt-2">
+        {/* FIRME: Senza grassetto nei nomi e nomi distanziati dalla linea di base per chiarezza */}
+        <div className="mt-4 text-xs space-y-4">
             <div className="block border-b border-black pb-1 leading-tight w-full">
-                <span className="font-medium italic">Il Collaudatore:</span> <span className="font-normal">{formatNameWithTitle(project.subjects.tester.contact)}</span>
+                <span className="font-medium italic text-slate-700">Il Collaudatore:</span> <span className="font-normal">{formatNameWithTitle(project.subjects.tester.contact)}</span>
             </div>
             {doc.attendees && doc.attendees.split('\n').filter(l => l.trim()).map((present, idx) => {
                 const parts = present.split(':');
@@ -221,17 +224,17 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                 const name = parts[1]?.trim() || '';
                 return (
                     <div key={idx} className="block border-b border-black pb-1 leading-tight w-full">
-                        <span className="font-medium italic">{label}:</span> <span className="font-normal">{name}</span>
+                        <span className="font-medium italic text-slate-700">{label}:</span> <span className="font-normal">{name}</span>
                     </div>
                 );
             })}
             {!doc.attendees && (
                 <>
                     <div className="block border-b border-black pb-1 leading-tight min-h-[1.2rem] w-full">
-                        <span className="font-medium italic">Per l'Ufficio di Direzione Lavori:</span>
+                        <span className="font-medium italic text-slate-700">Per l'Ufficio di Direzione Lavori:</span>
                     </div>
                     <div className="block border-b border-black pb-1 leading-tight min-h-[1.2rem] w-full">
-                        <span className="font-medium italic">Per l'Impresa:</span>
+                        <span className="font-medium italic text-slate-700">Per l'Impresa:</span>
                     </div>
                 </>
             )}
