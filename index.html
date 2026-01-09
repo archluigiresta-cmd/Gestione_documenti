@@ -18,7 +18,7 @@
           size: auto;
         }
         
-        /* Reset totale per la stampa */
+        /* Reset totale per la stampa: fondamentale per evitare pagine bianche o troncate */
         html, body {
           background: #fff !important;
           color: #000 !important;
@@ -30,15 +30,19 @@
 
         .no-print { display: none !important; }
         
-        /* Forza la visualizzazione del solo container di anteprima */
-        #root, main, div {
+        /* Forza tutti i contenitori superiori ad essere visibili e fluire correttamente */
+        #root, #root > div, main, .flex, .flex-1, .overflow-y-auto {
+          display: block !important;
           height: auto !important;
+          min-height: 0 !important;
           overflow: visible !important;
+          position: static !important;
           margin: 0 !important;
           padding: 0 !important;
-          position: static !important;
           box-shadow: none !important;
           border: none !important;
+          width: 100% !important;
+          transform: none !important;
         }
 
         #document-preview-container {
@@ -48,6 +52,7 @@
             padding: 0 !important;
             margin: 0 !important;
             background: #fff !important;
+            visibility: visible !important;
         }
 
         .font-serif-print { font-family: 'Noto Serif', serif !important; }
@@ -56,6 +61,7 @@
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
           background-color: transparent !important;
+          color-adjust: exact !important;
         }
       }
 

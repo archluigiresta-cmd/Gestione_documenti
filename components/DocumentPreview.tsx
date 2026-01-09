@@ -89,13 +89,16 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
     if (ta.isFunctional) types.push("funzionale");
     const rolesStr = types.length > 0 ? types.join(" e ") : "...";
 
-    // LOGICA DINAMICA: Controlla se esistono dati contratto
-    const hasContractData = ta.contractRepNumber || ta.contractDate || ta.contractProtocol;
+    // LOGICA DINAMICA: Contratto mostrato solo se popolato
+    const hasContractData = (ta.contractRepNumber && ta.contractRepNumber.trim() !== '') || 
+                           (ta.contractDate && ta.contractDate.trim() !== '') || 
+                           (ta.contractProtocol && ta.contractProtocol.trim() !== '');
+    
     const contractPart = hasContractData 
         ? `, e successivo contratto/convenzione, rep. n. ${ta.contractRepNumber || '...'} del ${formatShortDate(ta.contractDate)}${ta.contractProtocol ? `, prot. n. ${ta.contractProtocol}` : ''},` 
         : '';
 
-    // Uso dell'autorità di nomina senza parentesi
+    // Soggetto emittente richiamato dinamicamente
     const authority = ta.nominationAuthority || project.entity || '...';
 
     return `con ${ta.nominationType || 'provvedimento'} del ${authority} n. ${ta.nominationNumber || '...'} del ${formatShortDate(ta.nominationDate)}${contractPart} il predetto ${authority} ha affidato, ai sensi dell’art. 116 del D. Lgs. 36/2023, allo scrivente ${tester.title || ''} ${tester.name || '...'} (C.F. ${tester.vat || '...'}), iscritto all’Albo degli ${tester.professionalOrder || '...'} al n. ${tester.registrationNumber || '...'}, l’incarico professionale di ${rolesStr} relativo all’intervento di “${project.projectName || '...'}”, CUP: ${project.cup || '...'};`;
@@ -198,25 +201,44 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             {doc.testerRequests && <div className="space-y-1"><p className="font-bold">Richieste del Collaudatore:</p><div className="whitespace-pre-line pl-4">{doc.testerRequests}</div></div>}
             {doc.testerInvitations && <div className="space-y-1"><p className="font-bold">Inviti del Collaudatore:</p><div className="whitespace-pre-line pl-4">{doc.testerInvitations}</div></div>}
             {doc.commonParts && <div className="mt-4 italic whitespace-pre-line">{doc.commonParts}</div>}
-            <div className="mt-6"><p className="font-bold mb-1">Osservazioni e valutazioni:</p><p className="whitespace-pre-line">{doc.observations || "..."}</p><p className="mt-4 italic">La visita si conclude alle ore __________.</p><p className="mt-2">L.C.S.</p></div>
+            
+            <div className="mt-8">
+                <p className="font-bold mb-1">Osservazioni e valutazioni:</p>
+                <p className="whitespace-pre-line">{doc.observations || "..."}</p>
+                <p className="mt-6 italic">La visita si conclude alle ore __________.</p>
+                <p className="mt-4 font-bold text-center">L.C.S.</p>
+            </div>
         </div>
 
-        {/* FIRME: Spazio dinamico per i nomi senza troncamento */}
-        <div className="mt-20 text-xs space-y-8 print:mt-10">
-            <div className="flex items-end gap-2">
-                <span className="shrink-0 whitespace-nowrap">Il Collaudatore: <span className="font-bold">{formatNameWithTitle(project.subjects.tester.contact)}</span></span>
-                <div className="flex-1 border-b border-black mb-1"></div>
+        {/* FIRME: Spazio flessibile senza limiti per i nomi */}
+        <div className="mt-8 text-xs space-y-6 print:mt-6">
+            <div className="flex flex-wrap items-end gap-2">
+                <span className="flex-none font-medium">Il Collaudatore:</span>
+                <span className="font-bold">{formatNameWithTitle(project.subjects.tester.contact)}</span>
+                <div className="flex-1 border-b border-black mb-1 min-w-[50px]"></div>
             </div>
-            {doc.attendees && doc.attendees.split('\n').filter(l => l.trim()).map((present, idx) => (
-                <div key={idx} className="flex items-end gap-2">
-                    <span className="shrink-0">{present.split(':')[0]}: <span className="font-bold">{present.split(':')[1]?.trim() || ''}</span></span>
-                    <div className="flex-1 border-b border-black mb-1"></div>
-                </div>
-            ))}
+            {doc.attendees && doc.attendees.split('\n').filter(l => l.trim()).map((present, idx) => {
+                const parts = present.split(':');
+                const label = parts[0];
+                const name = parts[1]?.trim() || '';
+                return (
+                    <div key={idx} className="flex flex-wrap items-end gap-2">
+                        <span className="flex-none font-medium">{label}:</span>
+                        <span className="font-bold">{name}</span>
+                        <div className="flex-1 border-b border-black mb-1 min-w-[50px]"></div>
+                    </div>
+                );
+            })}
             {!doc.attendees && (
                 <>
-                    <div className="flex items-end gap-2"><span className="shrink-0 whitespace-nowrap">Per l'Ufficio di Direzione Lavori:</span><div className="flex-1 border-b border-black mb-1"></div></div>
-                    <div className="flex items-end gap-2"><span className="shrink-0 whitespace-nowrap">Per l'Impresa:</span><div className="flex-1 border-b border-black mb-1"></div></div>
+                    <div className="flex flex-wrap items-end gap-2">
+                        <span className="flex-none font-medium">Per l'Ufficio di Direzione Lavori:</span>
+                        <div className="flex-1 border-b border-black mb-1 min-w-[50px]"></div>
+                    </div>
+                    <div className="flex flex-wrap items-end gap-2">
+                        <span className="flex-none font-medium">Per l'Impresa:</span>
+                        <div className="flex-1 border-b border-black mb-1 min-w-[50px]"></div>
+                    </div>
                 </>
             )}
         </div>
