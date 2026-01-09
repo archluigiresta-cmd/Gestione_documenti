@@ -21,13 +21,11 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
   onDeleteDocument,
   onEdit
 }) => {
-  // Impostata "convocazione" come scheda predefinita (la prima)
   const [activeTab, setActiveTab] = useState<'convocazione' | 'verbali'>('convocazione');
   const currentDoc = documents.find(d => d.id === currentDocId) || documents[0];
   const [docType, setDocType] = useState<DocumentType>('VERBALE_COLLAUDO');
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Sincronizza il tipo documento basato sulla scheda attiva
   const effectiveDocType = activeTab === 'convocazione' ? 'LETTERA_CONVOCAZIONE' : docType;
 
   const filteredDocs = documents
@@ -36,7 +34,12 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
 
   if (!currentDoc) return <div className="p-8 text-center text-slate-500">Nessun documento disponibile.</div>;
 
-  const handlePrint = () => { window.print(); };
+  const handlePrint = () => { 
+    // Isolo l'esecuzione della stampa per non bloccare il thread di React (risoluzione INP issue)
+    setTimeout(() => {
+        window.print();
+    }, 100);
+  };
 
   const handleDownloadWord = () => {
     const element = document.getElementById('document-preview-container');
@@ -69,7 +72,6 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
   return (
     <div className="flex flex-col h-[calc(100vh-6rem)] no-print">
       
-      {/* BARRA SUPERIORE SCHEDE - Ordine invertito come richiesto */}
       <div className="flex bg-white border border-slate-200 rounded-xl mb-4 p-1 shadow-sm">
         <button 
           onClick={() => setActiveTab('convocazione')}
@@ -87,7 +89,6 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
 
       <div className="flex flex-1 gap-6 overflow-hidden">
         
-        {/* SIDEBAR ARCHIVIO */}
         <div className="w-80 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden shrink-0">
           <div className="p-4 border-b border-slate-100 bg-slate-50">
             <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-3 text-sm">
@@ -131,7 +132,6 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
           </div>
         </div>
 
-        {/* AREA ANTEPRIMA */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4 flex items-center justify-between gap-4 shrink-0">
             <div className="flex items-center gap-4">

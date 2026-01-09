@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
 
@@ -88,9 +89,15 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
     if (ta.isAdmin) types.push("tecnico-amministrativo");
     if (ta.isFunctional) types.push("funzionale");
     const rolesStr = types.length > 0 ? types.join(" e ") : "...";
-    
-    // RIMOSSA PARENTESI INTORNO AD AUTORITÀ EMITTENTE
-    return `con ${ta.nominationType || 'provvedimento'} del ${ta.nominationAuthority || '...'} n. ${ta.nominationNumber || '...'} del ${formatShortDate(ta.nominationDate)} e successivo contratto/convenzione, rep. n. ${ta.contractRepNumber || '...'} del ${formatShortDate(ta.contractDate)}, prot. n. ${ta.contractProtocol || '...'}, il ${project.entity || '...'} ha affidato, ai sensi dell’art. 116 del D. Lgs. 36/2023, allo scrivente ${tester.title || ''} ${tester.name || '...'} (C.F. ${tester.vat || '...'}), iscritto all’Albo degli ${tester.professionalOrder || '...'} al n. ${tester.registrationNumber || '...'}, l’incarico professionale di ${rolesStr} relativo all’intervento di “${project.projectName || '...'}”, CUP: ${project.cup || '...'};`;
+
+    const hasContractData = ta.contractRepNumber || ta.contractDate || ta.contractProtocol;
+    const contractPart = hasContractData 
+        ? ` e successivo contratto/convenzione, rep. n. ${ta.contractRepNumber || '...'} del ${formatShortDate(ta.contractDate)}${ta.contractProtocol ? `, prot. n. ${ta.contractProtocol}` : ''},` 
+        : '';
+
+    const authority = ta.nominationAuthority || project.entity || '...';
+
+    return `con ${ta.nominationType || 'provvedimento'} del ${authority} n. ${ta.nominationNumber || '...'} del ${formatShortDate(ta.nominationDate)}${contractPart} il predetto ${authority} ha affidato, ai sensi dell’art. 116 del D. Lgs. 36/2023, allo scrivente ${tester.title || ''} ${tester.name || '...'} (C.F. ${tester.vat || '...'}), iscritto all’Albo degli ${tester.professionalOrder || '...'} al n. ${tester.registrationNumber || '...'}, l’incarico professionale di ${rolesStr} relativo all’intervento di “${project.projectName || '...'}”, CUP: ${project.cup || '...'};`;
   };
 
   if (type === 'LETTERA_CONVOCAZIONE') {
@@ -116,7 +123,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   }
 
   return (
-    <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm] print:w-full">
+    <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm] print:w-full print:max-w-none">
       <div className="bg-white shadow-lg p-[1.5cm] mb-8 border border-slate-100 print:shadow-none print:border-none print:m-0 print:p-0 overflow-visible">
         <div className="text-center mb-8">
             {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2.5cm', margin: '0 auto 10px' }} alt="Logo" />}
@@ -194,17 +201,20 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
         </div>
 
         <div className="mt-20 text-xs space-y-8 print:mt-10">
-            <div className="flex items-end"><span className="w-64">Il Collaudatore: <span className="font-bold">{formatNameWithTitle(project.subjects.tester.contact)}</span></span><div className="flex-1 border-b border-black mb-1"></div></div>
+            <div className="flex items-end gap-2">
+                <span className="shrink-0">Il Collaudatore: <span className="font-bold">{formatNameWithTitle(project.subjects.tester.contact)}</span></span>
+                <div className="flex-1 border-b border-black mb-1"></div>
+            </div>
             {doc.attendees && doc.attendees.split('\n').filter(l => l.trim()).map((present, idx) => (
-                <div key={idx} className="flex items-end">
-                    <span className="w-64 truncate">{present.split(':')[0]}: {present.split(':')[1]?.trim() || ''}</span>
+                <div key={idx} className="flex items-end gap-2">
+                    <span className="shrink-0">{present.split(':')[0]}: {present.split(':')[1]?.trim() || ''}</span>
                     <div className="flex-1 border-b border-black mb-1"></div>
                 </div>
             ))}
             {!doc.attendees && (
                 <>
-                    <div className="flex items-end"><span className="w-64">Per l'Ufficio di Direzione Lavori:</span><div className="flex-1 border-b border-black mb-1"></div></div>
-                    <div className="flex items-end"><span className="w-64">Per l'Impresa:</span><div className="flex-1 border-b border-black mb-1"></div></div>
+                    <div className="flex items-end gap-2"><span className="shrink-0">Per l'Ufficio di Direzione Lavori:</span><div className="flex-1 border-b border-black mb-1"></div></div>
+                    <div className="flex items-end gap-2"><span className="shrink-0">Per l'Impresa:</span><div className="flex-1 border-b border-black mb-1"></div></div>
                 </>
             )}
         </div>
