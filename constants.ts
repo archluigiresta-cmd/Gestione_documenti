@@ -1,114 +1,161 @@
 
-import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData } from './types';
 
-export const generateSafeId = () => crypto.randomUUID();
+import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData, ContactInfo, DesignerProfile } from './types';
 
-const createEmptyContact = (name = '') => ({ 
-  name, title: '', address: '', email: '', pec: '', phone: '', mobile: '', 
-  vat: '', professionalOrder: '', registrationNumber: '', cf: '' 
+const emptyContact: ContactInfo = { name: '', title: '', email: '', pec: '', phone: '', professionalOrder: '', registrationNumber: '' };
+const emptyAppointment = { type: 'Determina', number: '', date: '' };
+
+const createEmptySubject = (): SubjectProfile => ({
+    contact: { ...emptyContact },
+    appointment: { ...emptyAppointment }
 });
 
-const createEmptyAppointment = () => ({ 
-  type: 'Determina Dirigenziale', number: '', date: '', authority: '', 
-  protocolNumber: '', protocolDate: '', departmentManager: '' 
-});
-
-const createEmptySubject = (name = '', roleDesc: string = ''): SubjectProfile => ({
-  contact: createEmptyContact(name),
-  appointment: createEmptyAppointment(),
-  roleDescription: roleDesc
+const createEmptyDesignerProfile = (): DesignerProfile => ({
+    ...createEmptySubject(),
+    designLevels: [],
+    roles: [],
+    isLegalEntity: false,
+    operatingDesigners: []
 });
 
 const createEmptyDesignPhase = (): DesignPhaseData => ({
-  deliveryDate: '',
-  economicFramework: '',
-  approvalType: 'Determinazione Dirigenziale',
-  approvalNumber: '',
-  approvalDate: '',
-  localFolderLink: ''
+    deliveryProtocol: '',
+    deliveryDate: '',
+    economicFramework: '',
+    approvalType: 'Delibera/Determina',
+    approvalNumber: '',
+    approvalDate: '',
+    localFolderLink: ''
 });
 
 export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
-  id: generateSafeId(),
-  ownerId,
+  id: crypto.randomUUID(),
+  ownerId: ownerId, 
   lastModified: Date.now(),
-  entity: '',
-  entityProvince: '',
+  displayOrder: 0, // Initial order, will be overwritten by logic
+  entity: 'PROVINCIA DI TARANTO', 
+  entityProvince: '', 
+  headerLogo: '', // NEW
   projectName: '',
   location: '',
   cup: '',
   cig: '',
-  notes: '',
+  generalNotes: '',
+  
   contract: {
     repNumber: '',
     date: '',
-    regNumber: '',
+    regPlace: '',
     regDate: '',
+    regNumber: '',
     regSeries: '',
-    totalAmount: '0,00',
-    designAmount: '0,00',
-    executionAmount: '0,00',
-    securityCosts: '0,00',
-    durationDays: 0
+    totalAmount: '',
+    securityCosts: '',
+    durationDays: 0,
+    deadline: ''
   },
-  designPhases: {
-    docfap: createEmptyDesignPhase(),
-    dip: createEmptyDesignPhase(),
-    pfte: createEmptyDesignPhase(),
-    executive: createEmptyDesignPhase()
+
+  designPhase: {
+      docfap: createEmptyDesignPhase(),
+      dip: createEmptyDesignPhase(),
+      pfte: createEmptyDesignPhase(),
+      executive: createEmptyDesignPhase()
   },
+
   subjects: {
-    rup: createEmptySubject('', 'R.U.P.'),
+    rup: createEmptySubject(),
     designers: [],
-    csp: createEmptySubject('', 'C.S.P.'),
-    verifier: createEmptySubject('', 'Verificatore'),
-    dl: createEmptySubject('', 'Direttore dei Lavori'),
+    csp: createEmptyDesignerProfile(),
+    verifier: createEmptyDesignerProfile(),
+    dl: createEmptyDesignerProfile(),
     dlOffice: [],
-    cse: createEmptySubject('', 'C.S.E.'),
-    tester: createEmptySubject('', 'Collaudatore'),
-    testerAppointment: {
+    cse: createEmptyDesignerProfile(),
+    tester: { 
+        contact: { ...emptyContact, title: 'Arch.' },
+        appointment: { ...emptyAppointment }
+    },
+    testerAppointment: { 
         nominationType: 'Determina Dirigenziale',
-        nominationAuthority: '',
+        nominationAuthority: '', // NEW
         nominationNumber: '',
         nominationDate: '',
-        contractRepNumber: '',
-        contractDate: '',
-        protocolNumber: '',
-        departmentManager: ''
+        contractRepNumber: '', // NEW: Rep. Convenzione
+        contractDate: '', // NEW
+        contractProtocol: '', // NEW: Prot. n.
+        isStatic: true,
+        isAdmin: true,
+        isFunctional: false
     }
   },
-  contractor: {
-    name: '',
-    address: '',
-    vat: '',
-    pec: '',
-    repName: '',
-    repTitle: 'Sig.',
-    repRole: 'Legale Rappresentante'
+
+  tenderPhase: {
+    verificationMinutesDate: '',
+    validationMinutesDate: ''
   },
+
+  contractor: {
+    type: 'single',
+    mainCompany: { 
+        ...emptyContact, 
+        role: 'Legale Rappresentante', // Default role for rep
+        repTitle: 'Sig.'
+    },
+    mandants: [],
+    executors: [],
+    subcontractors: []
+  },
+
   executionPhase: {
     deliveryDate: '',
+    deliveryType: 'ordinary',
+    suspensions: [],
+    resumptions: [],
+    sals: [],
+    variants: [],
+    testerVisitSummaries: [], // NEW
     completionDate: '',
-    sals: []
+    
+    handoverDocs: {
+        projectApprovalType: 'Determina',
+        projectApprovalNumber: '',
+        projectApprovalDate: '',
+        ainopProtocol: '',
+        ainopDate: '',
+        municipalityProtocol: '',
+        municipalityDate: '',
+        hasWasteNotes: false,
+        hasUpdatedPOS: false,
+        hasUpdatedSchedule: false,
+        hasPreliminaryNotification: false,
+        preliminaryNotifNumber: '',
+        preliminaryNotifDate: '',
+        hasOtherDocs: false,
+        otherDocsDescription: ''
+    }
   }
 });
 
-// Fix: Removed 'testerRequests' and 'testerInvitations' as they are not part of the DocumentVariables type definition.
 export const createInitialDocument = (projectId: string): DocumentVariables => ({
-  id: generateSafeId(),
+  id: crypto.randomUUID(),
   projectId,
-  type: 'VERBALE_COLLAUDO',
   createdAt: Date.now(),
   visitNumber: 1,
   date: new Date().toISOString().split('T')[0],
-  time: '10:00',
-  attendees: '',
-  attendeesList: [],
+  time: '09:00',
+  convocationMethod: 'PEC',
+  convocationDate: '',
+  convocationDetails: '',
+  attendees: '', 
   premis: '',
   worksExecuted: [],
-  worksInProgress: '',
+  worksInProgress: '', 
+  upcomingWorks: '', // NEW
+  
+  worksIntroText: '', // NEW
+  testerRequests: '', // NEW
+  testerInvitations: '', // NEW
+  commonParts: '', // NEW
+
   observations: '',
-  photos: [],
-  convocationMethod: 'PEC',
-  convocationDate: new Date().toISOString().split('T')[0]
+  photos: []
 });

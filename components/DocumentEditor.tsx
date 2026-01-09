@@ -14,18 +14,30 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ data, onChange }
   const [workInput, setWorkInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Helper to safely get API Key without crashing if process is undefined
+  const getApiKey = () => {
+    try {
+      if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+        return process.env.API_KEY;
+      }
+    } catch (e) {
+      console.warn("Process env not available");
+    }
+    return null;
+  };
+
   // Gemini Integration for polishing text
   const polishText = async (field: 'premis' | 'observations') => {
-    // Check if API_KEY is available (handled by environment, but check existence)
-    if (!process.env.API_KEY) {
+    const apiKey = getApiKey();
+    
+    if (!apiKey) {
       alert("API Key mancante o non accessibile. Impossibile usare l'IA.");
       return;
     }
     
     setIsGenerating(true);
     try {
-      // Always use process.env.API_KEY directly when initializing the @google/genai client instance
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const ai = new GoogleGenAI({ apiKey });
       const prompt = `
         Agisci come un esperto Collaudatore di Opere Pubbliche italiano.
         Riscrivi il seguente testo in un linguaggio tecnico, formale e burocratico appropriato per un Verbale di Collaudo.
@@ -35,13 +47,11 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ data, onChange }
         "${data[field]}"
       `;
 
-      // Use gemini-3-flash-preview for basic text tasks like proofreading and formal rewrite
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-2.5-flash',
         contents: prompt,
       });
 
-      // Directly access .text property from GenerateContentResponse
       if (response.text) {
         onChange({ ...data, [field]: response.text.trim() });
       }
