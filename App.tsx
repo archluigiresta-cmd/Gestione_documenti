@@ -26,13 +26,13 @@ const App: React.FC = () => {
         setRecoveryStatus('Connessione al database...');
         await db.ensureAdminExists();
         
-        setRecoveryStatus('Recupero progetti precedenti...');
+        setRecoveryStatus('Recupero progetti storici...');
         const recovered = await db.recoveryOldData();
         if (recovered > 0) {
-            console.log(`App Init: Recuperati ${recovered} elementi storici.`);
+            console.log(`Recuperati ${recovered} progetti.`);
         }
       } catch (err: any) {
-        console.error("App: Inizializzazione fallita", err);
+        console.error("Inizializzazione fallita", err);
       } finally {
         setIsLoading(false);
       }
@@ -53,18 +53,14 @@ const App: React.FC = () => {
     try {
       const list = await db.getProjectsForUser(currentUser.id, currentUser.email);
       setProjects(list.sort((a, b) => b.lastModified - a.lastModified));
-    } catch (e) {
-      console.error("Errore caricamento progetti", e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const loadDocuments = async (projectId: string) => {
     try {
       const docs = await db.getDocumentsByProject(projectId);
       setDocuments(docs.sort((a, b) => a.visitNumber - b.visitNumber));
-    } catch (e) {
-      console.error("Errore caricamento documenti", e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   const handleNewProject = async () => {
@@ -92,10 +88,10 @@ const App: React.FC = () => {
 
   if (isLoading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-950 text-white font-sans">
-      <div className="w-16 h-16 border-4 border-zinc-800 border-t-blue-500 rounded-2xl animate-spin mb-8 shadow-2xl shadow-blue-500/20"></div>
+      <div className="w-20 h-20 border-4 border-zinc-800 border-t-blue-500 rounded-[2rem] animate-spin mb-8 shadow-2xl shadow-blue-500/20"></div>
       <div className="text-center">
-        <h2 className="text-sm font-black uppercase tracking-[0.3em] text-white/90 mb-2">Inizializzazione Sistema</h2>
-        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-500 animate-pulse">{recoveryStatus || 'Verifica dati...'}</p>
+        <h2 className="text-lg font-black uppercase tracking-[0.4em] text-white/90 mb-2">EdilApp Secure Boot</h2>
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-500 animate-pulse">{recoveryStatus || 'Verifica integrità dati...'}</p>
       </div>
     </div>
   );
@@ -108,7 +104,7 @@ const App: React.FC = () => {
       currentUser={currentUser}
       onSelectProject={setCurrentProject}
       onNewProject={handleNewProject}
-      onDeleteProject={async (id) => { if(confirm("Sei sicuro di voler eliminare definitivamente questo appalto?")) { await db.deleteProject(id); loadProjects(); } }}
+      onDeleteProject={async (id) => { if(confirm("Eliminare definitivamente l'appalto?")) { await db.deleteProject(id); loadProjects(); } }}
     />
   );
 
@@ -123,7 +119,7 @@ const App: React.FC = () => {
         onLogout={() => { setCurrentUser(null); setCurrentProject(null); }}
       />
       
-      <main className="flex-1 ml-64 p-8 overflow-y-auto">
+      <main className="flex-1 ml-64 p-8 overflow-y-auto bg-zinc-50/50">
         <div className="max-w-6xl mx-auto">
           {['general', 'subjects', 'design', 'contractor'].includes(activeTab) && (
             <ProjectForm 
