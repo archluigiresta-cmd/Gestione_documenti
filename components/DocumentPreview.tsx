@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
 
@@ -47,7 +48,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       return `${titlePrefix}${contact.name}`;
   };
 
-  // Rendering dinamico dell'Impresa (ATI, Consorzio, Singola)
   const renderContractorInfo = () => {
       const { contractor } = project;
       const main = contractor.mainCompany;
@@ -78,6 +78,20 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
   const summaryIndex = (doc.visitNumber > 0 ? doc.visitNumber : 1) - 1;
   const currentSummary = project.executionPhase?.testerVisitSummaries?.[summaryIndex];
+
+  // FUNZIONE PER GENERARE LA PREMESSA DI NOMINA AUTOMATICA
+  const getNominationPremise = () => {
+    const ta = project.subjects.testerAppointment;
+    const tester = project.subjects.tester.contact;
+    
+    const types = [];
+    if (ta.isStatic) types.push("collaudo statico");
+    if (ta.isAdmin) types.push("tecnico-amministrativo");
+    if (ta.isFunctional) types.push("funzionale");
+    const rolesStr = types.length > 0 ? types.join(" e ") : "...";
+
+    return `con ${ta.nominationType || 'Determina Dirigenziale'} del (${ta.nominationAuthority || '...'}) n. ${ta.nominationNumber || '...'} del ${formatShortDate(ta.nominationDate)} e successivo contratto/convenzione, rep. n. ${ta.contractRepNumber || '...'} del ${formatShortDate(ta.contractDate)}, prot. n. ${ta.contractProtocol || '...'}, il ${project.entity || '...'} ha affidato, ai sensi dell’art. 116 del D. Lgs. 36/2023, allo scrivente ${tester.title || ''} ${tester.name || '...'} (C.F. ${tester.vat || '...'}), iscritto all’Albo degli ${tester.professionalOrder || '...'} al n. ${tester.registrationNumber || '...'}, l’incarico professionale di ${rolesStr} relativo all’intervento di “${project.projectName || '...'}”, CUP: ${project.cup || '...'};`;
+  };
 
   if (type === 'LETTERA_CONVOCAZIONE') {
     return (
@@ -121,14 +135,12 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
     <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
       <div className="bg-white shadow-lg p-[1.5cm] print-page mb-8 border border-slate-100 print:border-none">
         
-        {/* INTESTAZIONE CON LOGO */}
         <div className="text-center mb-8">
             {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2.5cm', margin: '0 auto 10px' }} alt="Logo" />}
             <p className="uppercase font-bold text-sm tracking-widest m-0">{project.entity}</p>
             {project.entityProvince && <p className="text-xs m-0">({project.entityProvince})</p>}
         </div>
 
-        {/* TITOLO E OGGETTO */}
         <div className="mb-10 text-center px-4">
             <p className="text-xs uppercase mb-4 leading-relaxed">
                 lavori di: “{project.projectName}”
@@ -136,7 +148,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             <h2 className="font-bold text-base uppercase tracking-tight">{getDocumentTitle()}</h2>
         </div>
 
-        {/* DATI GENERALI STILE PDF */}
         <table className="w-full text-xs mb-10 border-collapse">
             <tbody>
                 <tr className="align-top">
@@ -166,7 +177,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             </tbody>
         </table>
 
-        {/* CORPO NARRATIVO SENZA GRASSETTI NON RICHIESTI */}
         <div className="text-xs text-justify space-y-6">
             <p>
               Il giorno {verboseDate.day} del mese di {verboseDate.month} {verboseDate.year}, alle ore {doc.time}, presso il luogo dei lavori in {project.location}, ha avvio la {doc.visitNumber}° visita di collaudo in corso d’opera {doc.convocationDetails || 'convocata nelle forme di rito'}.
@@ -182,7 +192,18 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             <div className="space-y-2">
                 <p className="font-bold">Premesso che:</p>
                 <div className="whitespace-pre-line text-justify">
-                    {doc.premis || "Nessuna premessa specifica inserita."}
+                    <ul className="list-disc pl-5 space-y-2">
+                        {/* PRIMO PUNTO AUTOMATIZZATO PER COLLAUDO */}
+                        {type === 'VERBALE_COLLAUDO' && (
+                            <li>{getNominationPremise()}</li>
+                        )}
+                        {/* ALTRE PREMESSE MANUALI */}
+                        {doc.premis ? (
+                            <li>{doc.premis}</li>
+                        ) : (
+                            type !== 'VERBALE_COLLAUDO' && <p className="italic">Nessuna premessa specifica inserita.</p>
+                        )}
+                    </ul>
                 </div>
             </div>
 
@@ -247,7 +268,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             </div>
         </div>
 
-        {/* FIRME IN FILA A SINISTRA STILE PDF */}
         <div className="mt-20 text-xs space-y-8">
             <div className="flex items-end">
                 <span className="w-64">Il Collaudatore: <span className="font-bold">{formatNameWithTitle(project.subjects.tester.contact)}</span></span>
