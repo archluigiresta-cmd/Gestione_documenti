@@ -6,21 +6,27 @@ export interface ContactInfo {
   email?: string;
   pec?: string;
   phone?: string;
+  mobile?: string;
   vat?: string;
   professionalOrder?: string;
   registrationNumber?: string;
+  cf?: string;
 }
 
 export interface Appointment {
-  type: string; // Es: Determina, Delibera, Incarico
+  type: string; 
   number: string;
   date: string;
+  authority?: string;
+  protocolNumber?: string;
+  protocolDate?: string;
+  departmentManager?: string;
 }
 
 export interface SubjectProfile {
   contact: ContactInfo;
   appointment: Appointment;
-  roleDescription?: string; // Per i progettisti: "Architettonico", "Strutturale", ecc.
+  roleDescription?: string;
 }
 
 export interface DesignPhaseData {
@@ -29,6 +35,7 @@ export interface DesignPhaseData {
   approvalType: string;
   approvalNumber: string;
   approvalDate: string;
+  localFolderLink?: string;
 }
 
 export interface SALData {
@@ -40,7 +47,6 @@ export interface SALData {
   netAmount: string;
   paymentCertificateDate?: string;
   paymentCertificateAmount?: string;
-  // Fix: Added missing properties used in ExecutionManager component
   localFolderLink?: string;
   notes?: string;
 }
@@ -50,14 +56,21 @@ export interface ProjectConstants {
   ownerId: string;
   lastModified: number;
   entity: string;
+  entityProvince?: string;
   projectName: string;
   location: string;
   cup: string;
   cig?: string;
+  notes?: string;
   contract: {
     repNumber: string;
     date: string;
+    regNumber?: string;
+    regDate?: string;
+    regSeries?: string;
     totalAmount: string;
+    designAmount?: string;
+    executionAmount?: string;
     securityCosts: string;
     durationDays: number;
   };
@@ -76,21 +89,36 @@ export interface ProjectConstants {
     dlOffice: SubjectProfile[];
     cse: SubjectProfile;
     tester: SubjectProfile;
+    testerAppointment: {
+        nominationType: string;
+        nominationAuthority: string;
+        nominationNumber: string;
+        nominationDate: string;
+        contractRepNumber: string;
+        contractDate: string;
+        protocolNumber: string;
+        departmentManager: string;
+    };
   };
   contractor: {
     name: string;
+    address?: string;
     vat: string;
     pec: string;
     repName: string;
+    repTitle?: string;
+    repRole?: string;
   };
   executionPhase: {
     deliveryDate: string;
     completionDate: string;
     sals: SALData[];
+    ainopReport?: string;
+    ainopProtocol?: string;
+    ainopDate?: string;
   };
 }
 
-// Fix: Expanded DocumentType with missing values used in ExportManager filters
 export type DocumentType = 
   | 'VERBALE_COLLAUDO'
   | 'VERBALE_CONSEGNA'
@@ -102,6 +130,8 @@ export type DocumentType =
   | 'REL_COLLAUDO_TECN_AMM'
   | 'REL_COLLAUDO_STATICO'
   | 'REL_COLLAUDO_FUNZ_IMP'
+  | 'CERTIFICATO_ULTIMAZIONE'
+  | 'REL_CONTO_FINALE'
   | 'CERTIFICATO_REGOLARE_ESECUZIONE';
 
 export interface PhotoAttachment {
@@ -116,25 +146,26 @@ export interface DocumentVariables {
   type: DocumentType;
   createdAt: number;
   visitNumber: number;
-  date: string;
+  docDate?: string; 
+  date: string; 
   time: string;
   attendees: string;
+  attendeesList?: string[]; // IDs or names of subjects from constants
   premis: string;
   worksExecuted: string[];
   worksInProgress?: string;
+  upcomingWorks?: string;
   observations: string;
   photos: PhotoAttachment[];
-  // Fix: Added missing properties used in DocumentEditor, TestingManager, and DocumentPreview
   convocationDetails?: string;
   convocationMethod?: string;
   convocationDate?: string;
-  worksIntroText?: string;
-  upcomingWorks?: string;
   testerRequests?: string;
   testerInvitations?: string;
-  commonParts?: string;
+  rupConvocationDate?: string;
 }
 
+// Add missing User and related types used throughout the application
 export type UserStatus = 'active' | 'pending' | 'suspended';
 
 export interface User {
@@ -146,7 +177,6 @@ export interface User {
   status: UserStatus;
 }
 
-// Fix: Exported PermissionRole for use in ProjectSharing component
 export type PermissionRole = 'viewer' | 'editor' | 'admin';
 
 export interface ProjectPermission {
@@ -162,5 +192,5 @@ export interface BackupData {
   users: User[];
   projects: ProjectConstants[];
   documents: DocumentVariables[];
-  permissions: ProjectPermission[];
+  permissions?: ProjectPermission[];
 }

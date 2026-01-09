@@ -3,10 +3,18 @@ import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData } 
 
 export const generateSafeId = () => crypto.randomUUID();
 
-const createEmptyContact = () => ({ name: '', title: '', address: '', email: '', pec: '', phone: '', vat: '', professionalOrder: '', registrationNumber: '' });
-const createEmptyAppointment = () => ({ type: 'Determina', number: '', date: '' });
-const createEmptySubject = (roleDesc: string = ''): SubjectProfile => ({
-  contact: createEmptyContact(),
+const createEmptyContact = (name = '') => ({ 
+  name, title: '', address: '', email: '', pec: '', phone: '', mobile: '', 
+  vat: '', professionalOrder: '', registrationNumber: '', cf: '' 
+});
+
+const createEmptyAppointment = () => ({ 
+  type: 'Determina Dirigenziale', number: '', date: '', authority: '', 
+  protocolNumber: '', protocolDate: '', departmentManager: '' 
+});
+
+const createEmptySubject = (name = '', roleDesc: string = ''): SubjectProfile => ({
+  contact: createEmptyContact(name),
   appointment: createEmptyAppointment(),
   roleDescription: roleDesc
 });
@@ -14,25 +22,33 @@ const createEmptySubject = (roleDesc: string = ''): SubjectProfile => ({
 const createEmptyDesignPhase = (): DesignPhaseData => ({
   deliveryDate: '',
   economicFramework: '',
-  approvalType: 'Determina Dirigenziale',
+  approvalType: 'Determinazione Dirigenziale',
   approvalNumber: '',
-  approvalDate: ''
+  approvalDate: '',
+  localFolderLink: ''
 });
 
 export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
   id: generateSafeId(),
   ownerId,
   lastModified: Date.now(),
-  entity: 'PROVINCIA DI TARANTO',
+  entity: '',
+  entityProvince: '',
   projectName: '',
   location: '',
   cup: '',
   cig: '',
+  notes: '',
   contract: {
     repNumber: '',
     date: '',
-    totalAmount: '',
-    securityCosts: '',
+    regNumber: '',
+    regDate: '',
+    regSeries: '',
+    totalAmount: '0,00',
+    designAmount: '0,00',
+    executionAmount: '0,00',
+    securityCosts: '0,00',
     durationDays: 0
   },
   designPhases: {
@@ -42,20 +58,33 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
     executive: createEmptyDesignPhase()
   },
   subjects: {
-    rup: createEmptySubject('RUP'),
+    rup: createEmptySubject('', 'R.U.P.'),
     designers: [],
-    csp: createEmptySubject('CSP'),
-    verifier: createEmptySubject('Verificatore'),
-    dl: createEmptySubject('Direttore dei Lavori'),
+    csp: createEmptySubject('', 'C.S.P.'),
+    verifier: createEmptySubject('', 'Verificatore'),
+    dl: createEmptySubject('', 'Direttore dei Lavori'),
     dlOffice: [],
-    cse: createEmptySubject('CSE'),
-    tester: createEmptySubject('Collaudatore')
+    cse: createEmptySubject('', 'C.S.E.'),
+    tester: createEmptySubject('', 'Collaudatore'),
+    testerAppointment: {
+        nominationType: 'Determina Dirigenziale',
+        nominationAuthority: '',
+        nominationNumber: '',
+        nominationDate: '',
+        contractRepNumber: '',
+        contractDate: '',
+        protocolNumber: '',
+        departmentManager: ''
+    }
   },
   contractor: {
     name: '',
+    address: '',
     vat: '',
     pec: '',
-    repName: ''
+    repName: '',
+    repTitle: 'Sig.',
+    repRole: 'Legale Rappresentante'
   },
   executionPhase: {
     deliveryDate: '',
@@ -71,11 +100,16 @@ export const createInitialDocument = (projectId: string): DocumentVariables => (
   createdAt: Date.now(),
   visitNumber: 1,
   date: new Date().toISOString().split('T')[0],
-  time: '09:00',
+  time: '10:00',
   attendees: '',
+  attendeesList: [],
   premis: '',
   worksExecuted: [],
   worksInProgress: '',
   observations: '',
-  photos: []
+  photos: [],
+  convocationMethod: 'PEC',
+  convocationDate: new Date().toISOString().split('T')[0],
+  testerRequests: '',
+  testerInvitations: ''
 });

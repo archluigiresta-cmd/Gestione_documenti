@@ -1,5 +1,5 @@
 
-import React, { ReactNode, ErrorInfo } from 'react';
+import React, { ReactNode, ErrorInfo, Component } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
@@ -17,13 +17,13 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-// Fix: Explicitly using React.Component to ensure generic type parameters are correctly applied to the instance
-class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    // Fix: State initialization is now correctly scoped to the React.Component instance
-    this.state = { hasError: false, error: null };
-  }
+// Fix: Directly extend Component with explicit generics for Props and State to ensure 'this.state' and 'this.props' are correctly typed and inherited.
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  // Fix: Explicitly declare and initialize state as a class property to ensure TypeScript correctly recognizes it as a member of the class.
+  state: ErrorBoundaryState = {
+    hasError: false,
+    error: null
+  };
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     // Update state so the next render will show the fallback UI.
@@ -31,12 +31,12 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // You can also log the error to an error reporting service
+    // Log the error to an error reporting service
     console.error("Uncaught error:", error, errorInfo);
   }
 
   render() {
-    // Fix: Correctly access state from the Component instance
+    // Fix: Access state through 'this.state' which is now correctly resolved by the compiler.
     if (this.state.hasError) {
       // Fallback UI
       return (
@@ -60,7 +60,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
         </div>
       );
     }
-    // Fix: Correctly access props from the Component instance
+    // Fix: Access props through 'this.props' which is now correctly resolved by inheriting from Component.
     return this.props.children;
   }
 }

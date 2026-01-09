@@ -1,10 +1,9 @@
 
 import React, { useState } from 'react';
 import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
-import { GoogleGenAI } from '@google/genai';
 import { 
-  Plus, Trash2, Wand2, Loader2, Save, Gavel, Mail, Users, 
-  MessageSquare, AlertCircle, ClipboardList, Clock, Calendar
+  Plus, Trash2, Gavel, Mail, Users, 
+  ClipboardList, Clock, Calendar, FileText, Send, UserCheck, Check
 } from 'lucide-react';
 
 interface TestingManagerProps {
@@ -13,7 +12,6 @@ interface TestingManagerProps {
   onSaveDocument: (doc: DocumentVariables) => void;
   onDeleteDocument: (id: string) => void;
   onCreateDocument: (type: DocumentType) => void;
-  onUpdateProject: (path: string, value: any) => void;
 }
 
 export const TestingManager: React.FC<TestingManagerProps> = ({
@@ -21,7 +19,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
 }) => {
   const [activeSubTab, setActiveSubTab] = useState('dati');
   const [selectedDocId, setSelectedDocId] = useState(documents.find(d => d.type === 'VERBALE_COLLAUDO')?.id || '');
-  const [isAiLoading, setIsAiLoading] = useState(false);
 
   const currentDoc = documents.find(d => d.id === selectedDocId);
 
@@ -30,22 +27,26 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
     onSaveDocument({ ...currentDoc, [field]: value });
   };
 
-  const polishWithAi = async (field: keyof DocumentVariables) => {
-    if (!currentDoc || !currentDoc[field]) return;
-    setIsAiLoading(true);
-    try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-      const prompt = `Agisci come un Collaudatore esperto. Riscrivi in un linguaggio burocratico e formale impeccabile (italiano tecnico lavori pubblici) questo appunto: "${currentDoc[field]}". Sii conciso ma professionale.`;
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
-      });
-      if (response.text) updateDoc(field, response.text.trim());
-    } catch (e) {
-      alert("Errore durante l'ottimizzazione IA.");
-    } finally {
-      setIsAiLoading(false);
-    }
+  // Elenco soggetti pronti per il flag
+  const subjectsToFlag = [
+    { id: 'rup', label: `RUP: ${project.subjects.rup.contact.name}`, title: project.subjects.rup.contact.title },
+    { id: 'dl', label: `DL: ${project.subjects.dl.contact.name}`, title: project.subjects.dl.contact.title },
+    { id: 'cse', label: `CSE: ${project.subjects.cse.contact.name}`, title: project.subjects.cse.contact.title },
+    { id: 'impresa', label: `Impresa: ${project.contractor.repName}`, title: project.contractor.repTitle }
+  ];
+
+  const toggleAttendee = (label: string) => {
+    if (!currentDoc) return;
+    const currentList = currentDoc.attendeesList || [];
+    const newList = currentList.includes(label) 
+      ? currentList.filter(l => l !== label) 
+      : [...currentList, label];
+    
+    onSaveDocument({ 
+        ...currentDoc, 
+        attendeesList: newList,
+        attendees: newList.join(',\n') // Genera automaticamente il testo per la stampa
+    });
   };
 
   return (
@@ -54,139 +55,124 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
         <div className="flex items-center gap-6">
           <div className="p-3 bg-blue-100 text-blue-600 rounded-2xl"><Gavel className="w-6 h-6"/></div>
           <div>
-             <h2 className="text-xl font-bold text-slate-800">Gestione Collaudo</h2>
+             <h2 className="text-xl font-bold text-slate-800">Sopralluoghi e Collaudi</h2>
              <select 
-                className="mt-1 p-2 border-none bg-slate-50 rounded-lg text-sm font-bold text-blue-700 focus:ring-0"
+                className="mt-2 p-2 border border-slate-200 bg-slate-50 rounded-lg text-xs font-bold text-blue-700 outline-none"
                 value={selectedDocId}
                 onChange={e => setSelectedDocId(e.target.value)}
              >
                 <option value="">-- Seleziona Verbale --</option>
                 {documents.filter(d => d.type === 'VERBALE_COLLAUDO').map(d => (
-                  <option key={d.id} value={d.id}>Verbale N. {d.visitNumber} - {new Date(d.date).toLocaleDateString()}</option>
+                  <option key={d.id} value={d.id}>Verbale N. {d.visitNumber} del {new Date(d.date).toLocaleDateString()}</option>
                 ))}
              </select>
           </div>
         </div>
         <button 
-          onClick={() => onCreateDocument('VERBALE_COLLAUDO')}
-          className="bg-slate-900 text-white px-5 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-black transition-all active:scale-95 shadow-lg shadow-black/10"
+            onClick={() => onCreateDocument('VERBALE_COLLAUDO')}
+            className="bg-slate-900 text-white px-5 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-black transition-all text-xs shadow-lg"
         >
-          <Plus className="w-4 h-4"/> Nuovo Atto
+            <Plus className="w-4 h-4"/> Nuovo Sopralluogo
         </button>
       </div>
 
       {currentDoc ? (
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden min-h-[600px] flex flex-col">
-          <div className="flex border-b border-slate-100 overflow-x-auto bg-slate-50/50">
-             {[
-               { id: 'dati', label: 'Dati', icon: Clock },
-               { id: 'presenti', label: 'Presenti', icon: Users },
-               { id: 'lavori', label: 'Lavori', icon: ClipboardList },
-               { id: 'valutazioni', label: 'Valutazioni', icon: MessageSquare }
-             ].map(tab => (
-               <button
-                 key={tab.id}
-                 onClick={() => setActiveSubTab(tab.id)}
-                 className={`px-8 py-5 text-xs font-black uppercase tracking-widest flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
-                   activeSubTab === tab.id ? 'bg-white border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600'
-                 }`}
-               >
-                 <tab.icon className="w-4 h-4"/> {tab.label}
-               </button>
-             ))}
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden min-h-[500px] flex flex-col">
+          <div className="flex border-b border-slate-100 bg-slate-50/50">
+                <button onClick={() => setActiveSubTab('dati')} className={`px-8 py-5 text-xs font-black uppercase tracking-widest flex items-center gap-2 border-b-2 transition-all ${activeSubTab === 'dati' ? 'bg-white border-blue-600 text-blue-600' : 'text-slate-400'}`}><Clock className="w-4 h-4"/> Convocazione</button>
+                <button onClick={() => setActiveSubTab('presenti')} className={`px-8 py-5 text-xs font-black uppercase tracking-widest flex items-center gap-2 border-b-2 transition-all ${activeSubTab === 'presenti' ? 'bg-white border-blue-600 text-blue-600' : 'text-slate-400'}`}><Users className="w-4 h-4"/> Presenti</button>
+                <button onClick={() => setActiveSubTab('operazioni')} className={`px-8 py-5 text-xs font-black uppercase tracking-widest flex items-center gap-2 border-b-2 transition-all ${activeSubTab === 'operazioni' ? 'bg-white border-blue-600 text-blue-600' : 'text-slate-400'}`}><ClipboardList className="w-4 h-4"/> Operazioni</button>
           </div>
 
           <div className="p-10 flex-1">
              {activeSubTab === 'dati' && (
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  <div className="space-y-1">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Data Sopralluogo</label>
-                     <input type="date" className="w-full p-4 border border-slate-200 rounded-2xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={currentDoc.date} onChange={e => updateDoc('date', e.target.value)} />
-                  </div>
-                  <div className="space-y-1">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ora Inizio</label>
-                     <input type="time" className="w-full p-4 border border-slate-200 rounded-2xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={currentDoc.time} onChange={e => updateDoc('time', e.target.value)} />
-                  </div>
-                  <div className="space-y-1">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Numero Atto</label>
-                     <input type="number" className="w-full p-4 border border-slate-200 rounded-2xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={currentDoc.visitNumber} onChange={e => updateDoc('visitNumber', parseInt(e.target.value)||0)} />
-                  </div>
-                  <div className="md:col-span-3 space-y-1 mt-4">
-                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dettagli Convocazione</label>
-                     <textarea className="w-full p-4 border border-slate-200 rounded-2xl bg-slate-50 h-24 text-sm" value={currentDoc.convocationDetails} onChange={e => updateDoc('convocationDetails', e.target.value)} placeholder="Es. PEC inviata in data..."/>
-                  </div>
+               <div className="space-y-10">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Metodo Convocazione</label>
+                            <select 
+                                className="w-full p-4 border border-slate-200 rounded-2xl bg-slate-50 focus:bg-white outline-none font-bold text-slate-700"
+                                value={currentDoc.convocationMethod || ''}
+                                onChange={e => updateDoc('convocationMethod', e.target.value)}
+                            >
+                                <option value="PEC">PEC</option>
+                                <option value="E-mail">E-mail</option>
+                                <option value="Brevi vie">Comunicazione Brevi vie</option>
+                                <option value="Ordine di Servizio">Ordine di Servizio</option>
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Data Invio Nota</label>
+                            <input type="date" className="w-full p-4 border border-slate-200 rounded-2xl bg-slate-50" value={currentDoc.convocationDate || ''} onChange={e => updateDoc('convocationDate', e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">N. Visita</label>
+                            <input type="number" className="w-full p-4 border border-slate-200 rounded-2xl bg-slate-50" value={currentDoc.visitNumber} onChange={e => updateDoc('visitNumber', parseInt(e.target.value))} />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-slate-100">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Data del Sopralluogo</label>
+                            <input type="date" className="w-full p-4 border border-slate-200 rounded-2xl bg-slate-50 font-bold" value={currentDoc.date} onChange={e => updateDoc('date', e.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Ora Inizio</label>
+                            <input type="time" className="w-full p-4 border border-slate-200 rounded-2xl bg-slate-50 font-bold" value={currentDoc.time} onChange={e => updateDoc('time', e.target.value)} />
+                        </div>
+                    </div>
                </div>
              )}
 
              {activeSubTab === 'presenti' && (
-               <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-bold text-slate-800">Elenco Partecipanti</h3>
-                    <button onClick={() => polishWithAi('attendees')} className="text-xs bg-purple-50 text-purple-600 px-3 py-1.5 rounded-xl border border-purple-100 font-bold flex items-center gap-2 hover:bg-purple-100 disabled:opacity-50">
-                      {isAiLoading ? <Loader2 className="w-3 h-3 animate-spin"/> : <Wand2 className="w-3 h-3"/>} Formalizza con IA
-                    </button>
-                  </div>
-                  <textarea 
-                    className="w-full p-6 border border-slate-200 rounded-3xl h-64 text-sm font-mono leading-relaxed bg-slate-50/50"
-                    placeholder="Elenchi i presenti al sopralluogo..."
-                    value={currentDoc.attendees}
-                    onChange={e => updateDoc('attendees', e.target.value)}
-                  />
-               </div>
+                <div className="space-y-10">
+                    <div>
+                        <h4 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2"><UserCheck className="w-4 h-4 text-blue-500"/> Seleziona i presenti all'incontro</h4>
+                        <div className="flex flex-wrap gap-3">
+                            {subjectsToFlag.map(s => (
+                                <button 
+                                    key={s.id}
+                                    onClick={() => toggleAttendee(`${s.title} ${s.label}`)}
+                                    className={`px-6 py-3 rounded-2xl border text-sm font-bold flex items-center gap-2 transition-all ${
+                                        (currentDoc.attendeesList || []).includes(`${s.title} ${s.label}`)
+                                            ? 'bg-blue-600 text-white border-blue-600 shadow-lg'
+                                            : 'bg-white text-slate-600 border-slate-100 hover:border-blue-200'
+                                    }`}
+                                >
+                                    {(currentDoc.attendeesList || []).includes(`${s.title} ${s.label}`) ? <Check className="w-4 h-4"/> : <Plus className="w-4 h-4"/>}
+                                    {s.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                    <div className="pt-8 border-t border-slate-100">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3 block">Anteprima Elenco (Modificabile manualmente)</label>
+                        <textarea 
+                            className="w-full p-6 border border-slate-200 rounded-3xl h-48 text-sm font-medium bg-slate-50/50 focus:bg-white outline-none transition-all"
+                            value={currentDoc.attendees}
+                            onChange={e => updateDoc('attendees', e.target.value)}
+                        />
+                    </div>
+                </div>
              )}
 
-             {activeSubTab === 'lavori' && (
-               <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-bold text-slate-800">Lavorazioni Accertate</h3>
-                    <button onClick={() => polishWithAi('worksInProgress')} className="text-xs bg-purple-50 text-purple-600 px-3 py-1.5 rounded-xl border border-purple-100 font-bold flex items-center gap-2 hover:bg-purple-100">
-                      <Wand2 className="w-3 h-3"/> Ottimizza Descrizioni
-                    </button>
-                  </div>
-                  <textarea 
-                    className="w-full p-6 border border-slate-200 rounded-3xl h-80 text-sm leading-relaxed bg-slate-50/50"
-                    placeholder="Descriva lo stato dei lavori rilevato durante la visita..."
-                    value={currentDoc.worksInProgress}
-                    onChange={e => updateDoc('worksInProgress', e.target.value)}
-                  />
-               </div>
+             {activeSubTab === 'operazioni' && (
+                <div className="space-y-6">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Operazioni effettuate durante la visita</label>
+                    <textarea 
+                        className="w-full p-6 border border-slate-200 rounded-3xl h-80 text-sm bg-slate-50/50" 
+                        placeholder="Descrivi le verifiche, i saggi e le operazioni svolte..."
+                        value={currentDoc.observations} 
+                        onChange={e => updateDoc('observations', e.target.value)} 
+                    />
+                </div>
              )}
-
-             {activeSubTab === 'valutazioni' && (
-               <div className="space-y-6">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-bold text-slate-800">Conclusioni e Osservazioni</h3>
-                  </div>
-                  <textarea 
-                    className="w-full p-6 border border-slate-200 rounded-3xl h-80 text-sm leading-relaxed bg-slate-50/50"
-                    placeholder="Inserisca le valutazioni tecniche conclusive del collaudatore..."
-                    value={currentDoc.observations}
-                    onChange={e => updateDoc('observations', e.target.value)}
-                  />
-               </div>
-             )}
-          </div>
-          
-          <div className="p-6 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
-             <div className="flex items-center gap-2 text-xs font-bold text-green-600">
-                <Save className="w-4 h-4"/> Salvataggio locale attivo
-             </div>
-             <div className="flex gap-4">
-                <button onClick={() => setSelectedDocId('')} className="px-4 py-2 text-sm font-bold text-slate-400 hover:text-slate-600">Chiudi</button>
-                <button 
-                  onClick={() => alert("Funzione esportazione PDF/Word attiva nel tab Esportazione")}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-xl font-bold text-sm shadow-lg shadow-blue-500/20"
-                >
-                  Anteprima Stampa
-                </button>
-             </div>
           </div>
         </div>
       ) : (
         <div className="bg-white rounded-3xl border-2 border-dashed border-slate-200 py-32 flex flex-col items-center justify-center text-center">
-           <ClipboardList className="w-16 h-16 text-slate-200 mb-4"/>
-           <h3 className="text-xl font-bold text-slate-400 uppercase tracking-widest">Nessun Atto Selezionato</h3>
-           <p className="text-slate-300 mt-2">Seleziona un verbale esistente o creane uno nuovo per iniziare la redazione.</p>
+           <FileText className="w-16 h-16 text-slate-200 mb-4"/>
+           <h3 className="text-xl font-bold text-slate-400 uppercase tracking-widest">Nessun Sopralluogo</h3>
+           <p className="text-slate-300 mt-2">Crea un nuovo verbale per iniziare a inserire i dati.</p>
         </div>
       )}
     </div>
