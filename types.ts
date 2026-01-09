@@ -1,5 +1,4 @@
 
-
 export interface ContactInfo {
   name: string; // Nome e Cognome o Ragione Sociale
   title?: string; // Arch., Ing., Geom.
@@ -32,31 +31,28 @@ export interface DesignerProfile extends SubjectProfile {
   roles: string[]; // NEW: ['Architettonico', 'Strutturale', ...] (Multiselect)
   isLegalEntity: boolean; // NEW: True if RTP or Engineering Society
   operatingDesigners: ContactInfo[]; // NEW: List of actual people doing the work if Entity
-  // specificRole: string; // DEPRECATED in favor of roles[]
 }
 
-// Struttura per ATI / Imprese
 export type CompanyType = 'single' | 'ati' | 'consortium';
 
 export interface ContractorStructure {
   type: CompanyType;
-  mainCompany: ContactInfo; // Impresa Singola, Capogruppo ATI, o Consorzio
-  mandants: ContactInfo[]; // Solo per ATI: Imprese Mandanti
-  executors: ContactInfo[]; // Solo per Consorzi: Imprese Esecutrici
-  subcontractors: ContactInfo[]; // Subappaltatori con anagrafica completa
+  mainCompany: ContactInfo; 
+  mandants: ContactInfo[]; 
+  executors: ContactInfo[]; 
+  subcontractors: ContactInfo[]; 
 }
 
 export interface DesignPhaseData {
-  deliveryProtocol: string; // NEW: Protocollo Consegna
+  deliveryProtocol: string; 
   deliveryDate: string;
-  economicFramework: string; // Quadro Economico
-  approvalType: string; // Tipo atto approvazione
+  economicFramework: string; 
+  approvalType: string; 
   approvalNumber: string;
   approvalDate: string;
-  localFolderLink: string; // Path cartella locale (NEW)
+  localFolderLink: string; 
 }
 
-// --- AUTH & PERMISSIONS ---
 export type PermissionRole = 'viewer' | 'editor' | 'admin';
 export type UserStatus = 'active' | 'pending' | 'suspended';
 
@@ -65,14 +61,14 @@ export interface User {
   email: string;
   password: string; 
   name: string;
-  isSystemAdmin?: boolean; // Super Admin flag
-  status: UserStatus; // Approval status
+  isSystemAdmin?: boolean; 
+  status: UserStatus; 
 }
 
 export interface ProjectPermission {
-  id: string; // unique key
+  id: string; 
   projectId: string;
-  userEmail: string; // using email to link even if user doesn't exist yet
+  userEmail: string; 
   role: PermissionRole;
 }
 
@@ -91,10 +87,10 @@ export interface SALData {
     date: string;
     periodFrom: string;
     periodTo: string;
-    netAmount: string; // Importo Lavori
+    netAmount: string; 
     paymentCertificateDate: string;
-    paymentCertificateAmount: string; // Importo Certificato Pagamento
-    localFolderLink: string; // Path cartella locale
+    paymentCertificateAmount: string; 
+    localFolderLink: string; 
     notes: string;
 }
 
@@ -102,27 +98,24 @@ export interface TesterVisitSummary {
     id: string;
     startDate: string;
     endDate: string;
-    works: string[]; // Elenco sintetico lavorazioni
+    works: string[]; 
     notes: string;
 }
 
-// --------------------------
-
 export interface ProjectConstants {
   id: string; 
-  ownerId: string; // ID dell'utente proprietario
+  ownerId: string; 
   lastModified: number; 
-  displayOrder: number; // NEW: Custom sort order
-  entity: string; // Ente Appaltante
-  entityProvince?: string; // Provincia dell'Ente
-  headerLogo?: string; // NEW: Logo Intestazione (Base64)
+  displayOrder: number; 
+  entity: string; 
+  entityProvince?: string; 
+  headerLogo?: string; 
   projectName: string;
   location: string;
   cup: string; 
   cig?: string; 
-  generalNotes: string; // Note generali progetto (NEW)
+  generalNotes: string; 
   
-  // 1. Dati Generali (Contratto)
   contract: {
     repNumber: string;
     date: string;
@@ -133,67 +126,55 @@ export interface ProjectConstants {
     totalAmount: string;
     securityCosts: string;
     durationDays: number;
-    deadline: string; // Scadenza calcolata
+    deadline: string; 
   };
 
-  // 1-BIS. Progettazione (Ex Fase Progettuale)
   designPhase: {
-    docfap: DesignPhaseData; // Documento fattibilità alternative
-    dip: DesignPhaseData;    // Documento indirizzo progettazione
-    pfte: DesignPhaseData;   // Progetto fattibilità tecnico economica
-    executive: DesignPhaseData; // Progetto Esecutivo
+    docfap: DesignPhaseData; 
+    dip: DesignPhaseData;    
+    pfte: DesignPhaseData;   
+    executive: DesignPhaseData; 
   };
 
-  // 2. Soggetti Responsabili
   subjects: {
-    rup: SubjectProfile; // Resp. Unico Progetto
-    designers: DesignerProfile[]; // Progettisti multipli
-    csp: DesignerProfile; // Coord. Sicurezza Progettazione - UPDATED
-    verifier: DesignerProfile; // Verificatore - UPDATED
-    dl: DesignerProfile; // Direttore Lavori - UPDATED
-    dlOffice: SubjectProfile[]; // Ufficio Direzione Lavori
-    cse: DesignerProfile; // Coord. Sicurezza Esecuzione - UPDATED
-    tester: SubjectProfile; // Collaudatore
+    rup: SubjectProfile; 
+    designers: DesignerProfile[]; 
+    csp: DesignerProfile; 
+    verifier: DesignerProfile; 
+    dl: DesignerProfile; 
+    dlOffice: SubjectProfile[]; 
+    cse: DesignerProfile; 
+    tester: SubjectProfile; 
     testerAppointment: { 
         nominationType: string;
-        nominationAuthority: string; // NEW: Es. "Dirigente del Settore Tecnico"
+        nominationAuthority: string; 
         nominationNumber: string;
         nominationDate: string;
-        contractRepNumber: string; // NEW: Rep. Convenzione
-        contractDate: string; // NEW
-        contractProtocol: string; // NEW: Prot. n.
+        contractRepNumber: string; 
+        contractDate: string; 
+        contractProtocol: string; 
         isStatic: boolean;
         isAdmin: boolean;
         isFunctional: boolean;
     }
   };
 
-  // 3. Gara (Ex Fase Gara)
   tenderPhase: {
-    verificationMinutesDate: string; // Verbale Verifica Progetto
-    validationMinutesDate: string; // Verbale Validazione Progetto
+    verificationMinutesDate: string; 
+    validationMinutesDate: string; 
   };
 
-  // 4. Impresa
   contractor: ContractorStructure;
 
-  // 5. Esecuzione (Ex Fase Esecuzione)
   executionPhase: {
-    deliveryDate: string; // Consegna Lavori
+    deliveryDate: string; 
     deliveryType: 'ordinary' | 'anticipated';
-    
     suspensions: { id: string; date: string; reason: string; minutesNumber?: string }[];
     resumptions: { id: string; date: string; minutesNumber?: string }[];
-    
-    sals: SALData[]; // Stati Avanzamento Lavori (UPDATED)
-    
-    variants: { id: string; date: string; approvalAct: string }[]; // Varianti
-    
-    testerVisitSummaries: TesterVisitSummary[]; // NEW: Riepilogo lavori per visite collaudo
-    
-    completionDate: string; // Certificato Ultimazione
-    
-    // Documenti consegnati
+    sals: SALData[]; 
+    variants: { id: string; date: string; approvalAct: string }[]; 
+    testerVisitSummaries: TesterVisitSummary[]; 
+    completionDate: string; 
     handoverDocs: {
         projectApprovalType: string;
         projectApprovalNumber: string;
@@ -222,48 +203,37 @@ export interface PhotoAttachment {
 }
 
 export type DocumentType = 
-  | 'VERBALE_COLLAUDO' // Label: Verbale Visita di Collaudo
+  | 'VERBALE_COLLAUDO' 
+  | 'LETTERA_CONVOCAZIONE'
   | 'VERBALE_CONSEGNA' 
   | 'SOSPENSIONE_LAVORI' 
   | 'RIPRESA_LAVORI' 
   | 'SAL' 
-  | 'RELAZIONE_FINALE' // Label: Relazione sul Conto Finale
-  | 'RELAZIONE_COLLAUDO' // New
-  | 'CERTIFICATO_ULTIMAZIONE' // New
+  | 'RELAZIONE_FINALE' 
+  | 'RELAZIONE_COLLAUDO' 
+  | 'CERTIFICATO_ULTIMAZIONE' 
   | 'CERTIFICATO_REGOLARE_ESECUZIONE';
 
-// Il "Verbale" o "Giornale"
 export interface DocumentVariables {
   id: string;
   projectId: string; 
   createdAt: number; 
-  visitNumber: number; // Numero progressivo verbale
-  
-  // Dati Sopralluogo (Collaudo)
+  visitNumber: number; 
   date: string;
   time: string;
-  
-  // Convocation structured data
-  convocationMethod: string; // New: PEC, Email, ecc.
-  convocationDate: string;   // New: Data invio
-  convocationDetails: string; // Legacy/Fallback text
-  
+  convocationMethod: string; 
+  convocationDate: string;   
+  convocationDetails: string; 
   attendees: string; 
-  
-  // Contenuto
-  premis: string; // Premesse
-  worksExecuted: string[]; // Lavori (Giornale Lavori)
-  worksInProgress: string; // Lavorazioni in corso al momento della visita
-  upcomingWorks: string; // NEW: Prossime attività previste
-  
-  // NEW FIELDS FOR COLLAUDO
-  worksIntroText: string; // NEW: Frase introduttiva modificabile
-  testerRequests: string; // Richieste del Collaudatore
-  testerInvitations: string; // Inviti del Collaudatore
-  commonParts: string; // Parti Comuni (Chiusura)
-
-  observations: string; // Valutazioni collaudatore
-  
+  premis: string; 
+  worksExecuted: string[]; 
+  worksInProgress: string; 
+  upcomingWorks: string; 
+  worksIntroText: string; 
+  testerRequests: string; 
+  testerInvitations: string; 
+  commonParts: string; 
+  observations: string; 
   photos: PhotoAttachment[];
 }
 
