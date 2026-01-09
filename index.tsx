@@ -1,5 +1,5 @@
 
-import React, { ReactNode, ErrorInfo, Component } from 'react';
+import React, { ReactNode, ErrorInfo } from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 
@@ -17,11 +17,11 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-// Fix: Changed inheritance to use Component directly from named imports to ensure generic type application and fix state/props access errors
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+// Fix: Explicitly using React.Component to ensure generic type parameters are correctly applied to the instance
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    // Fix: Explicitly initialize state on the instance
+    // Fix: State initialization is now correctly scoped to the React.Component instance
     this.state = { hasError: false, error: null };
   }
 

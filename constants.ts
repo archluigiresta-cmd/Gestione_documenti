@@ -1,165 +1,81 @@
 
-import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData, ContactInfo, DesignerProfile } from './types';
+import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData } from './types';
 
-export const generateSafeId = () => {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    try {
-      return crypto.randomUUID();
-    } catch (e) {
-      // Fallback if randomUUID fails
-    }
-  }
-  return Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
-};
+export const generateSafeId = () => crypto.randomUUID();
 
-const emptyContact: ContactInfo = { name: '', title: '', email: '', pec: '', phone: '', professionalOrder: '', registrationNumber: '' };
-const emptyAppointment = { type: 'Determina', number: '', date: '' };
-
-const createEmptySubject = (): SubjectProfile => ({
-    contact: { ...emptyContact },
-    appointment: { ...emptyAppointment }
-});
-
-const createEmptyDesignerProfile = (): DesignerProfile => ({
-    ...createEmptySubject(),
-    designLevels: [],
-    roles: [],
-    isLegalEntity: false,
-    operatingDesigners: []
+const createEmptyContact = () => ({ name: '', title: '', address: '', email: '', pec: '', phone: '', vat: '', professionalOrder: '', registrationNumber: '' });
+const createEmptyAppointment = () => ({ type: 'Determina', number: '', date: '' });
+const createEmptySubject = (roleDesc: string = ''): SubjectProfile => ({
+  contact: createEmptyContact(),
+  appointment: createEmptyAppointment(),
+  roleDescription: roleDesc
 });
 
 const createEmptyDesignPhase = (): DesignPhaseData => ({
-    deliveryProtocol: '',
-    deliveryDate: '',
-    economicFramework: '',
-    approvalType: 'Delibera/Determina',
-    approvalNumber: '',
-    approvalDate: '',
-    localFolderLink: ''
+  deliveryDate: '',
+  economicFramework: '',
+  approvalType: 'Determina Dirigenziale',
+  approvalNumber: '',
+  approvalDate: ''
 });
 
 export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
   id: generateSafeId(),
-  ownerId: ownerId, 
+  ownerId,
   lastModified: Date.now(),
-  displayOrder: 0,
-  entity: 'PROVINCIA DI TARANTO', 
-  entityProvince: '', 
-  headerLogo: '',
+  entity: 'PROVINCIA DI TARANTO',
   projectName: '',
   location: '',
   cup: '',
   cig: '',
-  generalNotes: '',
-  
   contract: {
     repNumber: '',
     date: '',
-    regPlace: '',
-    regDate: '',
-    regNumber: '',
-    regSeries: '',
     totalAmount: '',
     securityCosts: '',
-    durationDays: 0,
-    deadline: ''
+    durationDays: 0
   },
-
-  designPhase: {
-      docfap: createEmptyDesignPhase(),
-      dip: createEmptyDesignPhase(),
-      pfte: createEmptyDesignPhase(),
-      executive: createEmptyDesignPhase()
+  designPhases: {
+    docfap: createEmptyDesignPhase(),
+    dip: createEmptyDesignPhase(),
+    pfte: createEmptyDesignPhase(),
+    executive: createEmptyDesignPhase()
   },
-
   subjects: {
-    rup: createEmptySubject(),
+    rup: createEmptySubject('RUP'),
     designers: [],
-    csp: createEmptyDesignerProfile(),
-    verifier: createEmptyDesignerProfile(),
-    dl: createEmptyDesignerProfile(),
+    csp: createEmptySubject('CSP'),
+    verifier: createEmptySubject('Verificatore'),
+    dl: createEmptySubject('Direttore dei Lavori'),
     dlOffice: [],
-    cse: createEmptyDesignerProfile(),
-    tester: { 
-        contact: { ...emptyContact, title: 'Arch.' },
-        appointment: { ...emptyAppointment }
-    },
-    testerAppointment: { 
-        nominationType: 'Determina Dirigenziale',
-        nominationAuthority: '',
-        nominationNumber: '',
-        nominationDate: '',
-        contractRepNumber: '', 
-        contractDate: '', 
-        contractProtocol: '', 
-        testerFee: '',
-        isStatic: true,
-        isAdmin: true,
-        isFunctional: false
-    }
+    cse: createEmptySubject('CSE'),
+    tester: createEmptySubject('Collaudatore')
   },
-
   contractor: {
-    type: 'single',
-    mainCompany: { 
-        ...emptyContact, 
-        role: 'Legale Rappresentante',
-        repTitle: 'Sig.'
-    },
-    mandants: [],
-    executors: [],
-    subcontractors: []
+    name: '',
+    vat: '',
+    pec: '',
+    repName: ''
   },
-
   executionPhase: {
     deliveryDate: '',
-    deliveryType: 'ordinary',
-    suspensions: [],
-    resumptions: [],
-    sals: [],
-    variants: [],
     completionDate: '',
-    
-    handoverDocs: {
-        projectApprovalType: 'Determina',
-        projectApprovalNumber: '',
-        projectApprovalDate: '',
-        ainopProtocol: '',
-        ainopDate: '',
-        municipalityProtocol: '',
-        municipalityDate: '',
-        hasWasteNotes: false,
-        hasUpdatedPOS: false,
-        hasUpdatedSchedule: false,
-        hasPreliminaryNotification: false,
-        preliminaryNotifNumber: '',
-        preliminaryNotifDate: '',
-        hasOtherDocs: false,
-        otherDocsDescription: ''
-    }
+    sals: []
   }
 });
 
 export const createInitialDocument = (projectId: string): DocumentVariables => ({
   id: generateSafeId(),
   projectId,
-  type: 'VERBALE_COLLAUDO', 
+  type: 'VERBALE_COLLAUDO',
   createdAt: Date.now(),
   visitNumber: 1,
   date: new Date().toISOString().split('T')[0],
   time: '09:00',
-  convocationMethod: 'PEC',
-  convocationDate: '',
-  convocationDetails: '',
-  attendees: '', 
+  attendees: '',
   premis: '',
   worksExecuted: [],
-  worksInProgress: '', 
-  upcomingWorks: '', 
-  worksIntroText: '', 
-  testerRequests: '', 
-  testerInvitations: '', 
-  commonParts: '', 
+  worksInProgress: '',
   observations: '',
   photos: []
 });

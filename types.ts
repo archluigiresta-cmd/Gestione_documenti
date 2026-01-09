@@ -7,24 +7,12 @@ export interface ContactInfo {
   pec?: string;
   phone?: string;
   vat?: string;
-  repName?: string;
-  repRole?: string;
-  repTitle?: string;
   professionalOrder?: string;
   registrationNumber?: string;
-  role?: string;
 }
 
-export interface PhotoAttachment {
-  id: string;
-  url: string;
-  description: string;
-  file?: File;
-}
-
-// Fix: Added missing types for project management subjects and design phases.
 export interface Appointment {
-  type: string;
+  type: string; // Es: Determina, Delibera, Incarico
   number: string;
   date: string;
 }
@@ -32,23 +20,15 @@ export interface Appointment {
 export interface SubjectProfile {
   contact: ContactInfo;
   appointment: Appointment;
-}
-
-export interface DesignerProfile extends SubjectProfile {
-  designLevels: string[];
-  roles: string[];
-  isLegalEntity: boolean;
-  operatingDesigners: ContactInfo[];
+  roleDescription?: string; // Per i progettisti: "Architettonico", "Strutturale", ecc.
 }
 
 export interface DesignPhaseData {
-  deliveryProtocol: string;
   deliveryDate: string;
   economicFramework: string;
   approvalType: string;
   approvalNumber: string;
   approvalDate: string;
-  localFolderLink: string;
 }
 
 export interface SALData {
@@ -60,36 +40,28 @@ export interface SALData {
   netAmount: string;
   paymentCertificateDate?: string;
   paymentCertificateAmount?: string;
-  localFolderLink: string;
-  notes: string;
+  // Fix: Added missing properties used in ExecutionManager component
+  localFolderLink?: string;
+  notes?: string;
 }
 
 export interface ProjectConstants {
   id: string;
   ownerId: string;
   lastModified: number;
-  displayOrder: number;
   entity: string;
-  entityProvince?: string;
-  headerLogo?: string;
   projectName: string;
   location: string;
   cup: string;
   cig?: string;
-  generalNotes: string;
   contract: {
     repNumber: string;
     date: string;
-    regPlace?: string;
-    regDate?: string;
-    regNumber?: string;
-    regSeries?: string;
     totalAmount: string;
     securityCosts: string;
     durationDays: number;
-    deadline?: string;
   };
-  designPhase: {
+  designPhases: {
     docfap: DesignPhaseData;
     dip: DesignPhaseData;
     pfte: DesignPhaseData;
@@ -97,74 +69,46 @@ export interface ProjectConstants {
   };
   subjects: {
     rup: SubjectProfile;
-    dl: DesignerProfile;
-    cse: DesignerProfile;
+    designers: SubjectProfile[];
+    csp: SubjectProfile;
+    verifier: SubjectProfile;
+    dl: SubjectProfile;
+    dlOffice: SubjectProfile[];
+    cse: SubjectProfile;
     tester: SubjectProfile;
-    designers: DesignerProfile[];
-    csp: DesignerProfile;
-    verifier: DesignerProfile;
-    dlOffice: DesignerProfile[];
-    testerAppointment: {
-      nominationType: string;
-      nominationAuthority: string;
-      nominationNumber: string;
-      nominationDate: string;
-      contractRepNumber: string;
-      contractDate: string;
-      contractProtocol: string;
-      testerFee: string;
-      isStatic: boolean;
-      isAdmin: boolean;
-      isFunctional: boolean;
-    };
   };
   contractor: {
-    type: string;
-    mainCompany: ContactInfo;
-    mandants: ContactInfo[];
-    executors: ContactInfo[];
-    subcontractors: ContactInfo[];
+    name: string;
+    vat: string;
+    pec: string;
+    repName: string;
   };
   executionPhase: {
     deliveryDate: string;
-    deliveryType?: string;
-    suspensions: any[];
-    resumptions: any[];
-    sals: SALData[];
-    variants: any[];
     completionDate: string;
-    handoverDocs: {
-      projectApprovalType: string;
-      projectApprovalNumber: string;
-      projectApprovalDate: string;
-      ainopProtocol: string;
-      ainopDate: string;
-      municipalityProtocol: string;
-      municipalityDate: string;
-      hasWasteNotes: boolean;
-      hasUpdatedPOS: boolean;
-      hasUpdatedSchedule: boolean;
-      hasPreliminaryNotification: boolean;
-      preliminaryNotifNumber: string;
-      preliminaryNotifDate: string;
-      hasOtherDocs: boolean;
-      otherDocsDescription: string;
-    };
+    sals: SALData[];
   };
 }
 
+// Fix: Expanded DocumentType with missing values used in ExportManager filters
 export type DocumentType = 
   | 'VERBALE_COLLAUDO'
+  | 'VERBALE_CONSEGNA'
+  | 'SOSPENSIONE_LAVORI'
+  | 'RIPRESA_LAVORI'
+  | 'LET_RICHIESTA_AUT_COLLAUDO'
   | 'LET_CONVOCAZIONE_COLLAUDO'
   | 'NULLAOSTA_COLLAUDO'
-  | 'LET_RICHIESTA_AUT_COLLAUDO'
   | 'REL_COLLAUDO_TECN_AMM'
   | 'REL_COLLAUDO_STATICO'
   | 'REL_COLLAUDO_FUNZ_IMP'
-  | 'CERTIFICATO_REGOLARE_ESECUZIONE'
-  | 'VERBALE_CONSEGNA'
-  | 'SOSPENSIONE_LAVORI'
-  | 'RIPRESA_LAVORI';
+  | 'CERTIFICATO_REGOLARE_ESECUZIONE';
+
+export interface PhotoAttachment {
+  id: string;
+  url: string;
+  description: string;
+}
 
 export interface DocumentVariables {
   id: string;
@@ -174,23 +118,23 @@ export interface DocumentVariables {
   visitNumber: number;
   date: string;
   time: string;
-  convocationMethod: string;
-  convocationDate: string;
-  convocationDetails: string;
   attendees: string;
   premis: string;
   worksExecuted: string[];
   worksInProgress?: string;
-  upcomingWorks?: string;
-  worksIntroText?: string;
-  testerRequests: string;
-  testerInvitations: string;
-  commonParts?: string;
   observations: string;
   photos: PhotoAttachment[];
+  // Fix: Added missing properties used in DocumentEditor, TestingManager, and DocumentPreview
+  convocationDetails?: string;
+  convocationMethod?: string;
+  convocationDate?: string;
+  worksIntroText?: string;
+  upcomingWorks?: string;
+  testerRequests?: string;
+  testerInvitations?: string;
+  commonParts?: string;
 }
 
-// Fix: Added missing types for User, Auth and Backup management.
 export type UserStatus = 'active' | 'pending' | 'suspended';
 
 export interface User {
@@ -202,6 +146,7 @@ export interface User {
   status: UserStatus;
 }
 
+// Fix: Exported PermissionRole for use in ProjectSharing component
 export type PermissionRole = 'viewer' | 'editor' | 'admin';
 
 export interface ProjectPermission {
