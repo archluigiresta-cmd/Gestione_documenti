@@ -209,9 +209,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             </div>
         </div>
 
-        {/* FIRME: Accostate a LCS e nomi senza grassetto per un look più professionale */}
+        {/* FIRME: Accostate a LCS e nomi senza grassetto per un look più professionale. Layout block per evitare overflow laterale. */}
         <div className="mt-2 text-xs space-y-3 print:mt-2">
-            <div className="block border-b border-black pb-1 leading-tight">
+            <div className="block border-b border-black pb-1 leading-tight w-full">
                 <span className="font-medium italic">Il Collaudatore:</span> <span className="font-normal">{formatNameWithTitle(project.subjects.tester.contact)}</span>
             </div>
             {doc.attendees && doc.attendees.split('\n').filter(l => l.trim()).map((present, idx) => {
@@ -219,17 +219,17 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                 const label = parts[0];
                 const name = parts[1]?.trim() || '';
                 return (
-                    <div key={idx} className="block border-b border-black pb-1 leading-tight">
+                    <div key={idx} className="block border-b border-black pb-1 leading-tight w-full">
                         <span className="font-medium italic">{label}:</span> <span className="font-normal">{name}</span>
                     </div>
                 );
             })}
             {!doc.attendees && (
                 <>
-                    <div className="block border-b border-black pb-1 leading-tight min-h-[1.2rem]">
+                    <div className="block border-b border-black pb-1 leading-tight min-h-[1.2rem] w-full">
                         <span className="font-medium italic">Per l'Ufficio di Direzione Lavori:</span>
                     </div>
-                    <div className="block border-b border-black pb-1 leading-tight min-h-[1.2rem]">
+                    <div className="block border-b border-black pb-1 leading-tight min-h-[1.2rem] w-full">
                         <span className="font-medium italic">Per l'Impresa:</span>
                     </div>
                 </>

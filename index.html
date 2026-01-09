@@ -18,55 +18,55 @@
           size: A4;
         }
         
-        /* Reset totale del layout per la stampa */
+        /* Reset totale per la stampa: fondamentale per evitare pagine bianche */
         html, body {
           background-color: #fff !important;
+          color: #000 !important;
+          height: auto !important;
+          min-height: 0 !important;
+          overflow: visible !important;
+          position: static !important;
           margin: 0 !important;
           padding: 0 !important;
-          height: auto !important;
-          overflow: visible !important;
         }
 
-        /* Nasconde tutto ciò che non è il documento da stampare */
-        body > *:not(#root), 
-        #root > *:not(main), 
-        main > *:not(div), 
-        .no-print { 
-          display: none !important; 
-        }
-
-        /* Forza il contenitore del documento a essere l'unico visibile e ad occupare tutto lo spazio */
-        #document-preview-container {
-            display: block !important;
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
-            width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            visibility: visible !important;
-            background: #fff !important;
-            height: auto !important;
-            overflow: visible !important;
-        }
-
-        /* Assicura che tutti i genitori non blocchino il flusso del documento */
-        #root, main, div {
+        .no-print { display: none !important; }
+        
+        /* Forza tutti i contenitori superiori ad essere block e fluire senza vincoli */
+        #root, main, .animate-in {
           display: block !important;
           height: auto !important;
+          min-height: 0 !important;
           overflow: visible !important;
           position: static !important;
           margin: 0 !important;
           padding: 0 !important;
           box-shadow: none !important;
           border: none !important;
+          width: 100% !important;
+          transform: none !important;
+        }
+
+        #document-preview-container {
+            display: block !important;
+            width: 100% !important;
+            max-width: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: #fff !important;
+            visibility: visible !important;
+            position: relative !important;
+            box-shadow: none !important;
+            border: none !important;
         }
 
         .font-serif-print { font-family: 'Noto Serif', serif !important; }
         
+        /* Assicura la stampa dei colori di sfondo (es. linee di firma) */
         * {
           -webkit-print-color-adjust: exact !important;
           print-color-adjust: exact !important;
+          background-color: transparent !important;
         }
       }
 
