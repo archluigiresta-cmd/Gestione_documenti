@@ -8,15 +8,61 @@
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap');
       
-      /* Print styles to ensure the preview looks like the Word doc */
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+
       @media print {
-        @page { margin: 2cm; }
-        body { -webkit-print-color-adjust: exact; }
+        @page { 
+          margin: 1.5cm; 
+          size: auto;
+        }
+        
+        html, body {
+          background: #fff !important;
+          color: #000 !important;
+          height: auto !important;
+          overflow: visible !important;
+        }
+
         .no-print { display: none !important; }
         .print-only { display: block !important; }
-        .print-serif { font-family: 'Noto Serif', serif; }
+        .font-serif-print { font-family: 'Noto Serif', serif !important; }
+        
+        /* Forza sfondo bianco ovunque */
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+          background-color: transparent !important;
+          box-shadow: none !important;
+        }
+        
+        #root main {
+            margin-left: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+            height: auto !important;
+        }
+        
+        #document-preview-container {
+            background-color: #fff !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: none !important;
+        }
       }
+
       .font-serif-print { font-family: 'Noto Serif', serif; }
+      
+      /* Hide scrollbars for subnavs */
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
+      }
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
     </style>
   <script type="importmap">
 {

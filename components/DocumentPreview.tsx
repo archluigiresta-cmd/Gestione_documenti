@@ -25,7 +25,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       } catch { return { day: '...', month: '...', year: '...' }; }
   })();
   
-  // LOGICA TITOLO DINAMICO PER COLLAUDO
   const getDynamicTestingTitle = () => {
     const ta = project.subjects.testerAppointment;
     const types = [];
@@ -81,9 +80,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       return <p className="uppercase">{main.name} {main.address ? `- ${main.address}` : ''} {main.vat ? `- P.IVA ${main.vat}` : ''}</p>;
   };
 
-  const summaryIndex = (doc.visitNumber > 0 ? doc.visitNumber : 1) - 1;
-  const currentSummary = project.executionPhase?.testerVisitSummaries?.[summaryIndex];
-
   const getNominationPremise = () => {
     const ta = project.subjects.testerAppointment;
     const tester = project.subjects.tester.contact;
@@ -92,12 +88,14 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
     if (ta.isAdmin) types.push("tecnico-amministrativo");
     if (ta.isFunctional) types.push("funzionale");
     const rolesStr = types.length > 0 ? types.join(" e ") : "...";
-    return `con ${ta.nominationType || 'provvedimento'} del (${ta.nominationAuthority || '...'}) n. ${ta.nominationNumber || '...'} del ${formatShortDate(ta.nominationDate)} e successivo contratto/convenzione, rep. n. ${ta.contractRepNumber || '...'} del ${formatShortDate(ta.contractDate)}, prot. n. ${ta.contractProtocol || '...'}, il ${project.entity || '...'} ha affidato, ai sensi dell’art. 116 del D. Lgs. 36/2023, allo scrivente ${tester.title || ''} ${tester.name || '...'} (C.F. ${tester.vat || '...'}), iscritto all’Albo degli ${tester.professionalOrder || '...'} al n. ${tester.registrationNumber || '...'}, l’incarico professionale di ${rolesStr} relativo all’intervento di “${project.projectName || '...'}”, CUP: ${project.cup || '...'};`;
+    
+    // RIMOSSA PARENTESI INTORNO AD AUTORITÀ EMITTENTE
+    return `con ${ta.nominationType || 'provvedimento'} del ${ta.nominationAuthority || '...'} n. ${ta.nominationNumber || '...'} del ${formatShortDate(ta.nominationDate)} e successivo contratto/convenzione, rep. n. ${ta.contractRepNumber || '...'} del ${formatShortDate(ta.contractDate)}, prot. n. ${ta.contractProtocol || '...'}, il ${project.entity || '...'} ha affidato, ai sensi dell’art. 116 del D. Lgs. 36/2023, allo scrivente ${tester.title || ''} ${tester.name || '...'} (C.F. ${tester.vat || '...'}), iscritto all’Albo degli ${tester.professionalOrder || '...'} al n. ${tester.registrationNumber || '...'}, l’incarico professionale di ${rolesStr} relativo all’intervento di “${project.projectName || '...'}”, CUP: ${project.cup || '...'};`;
   };
 
   if (type === 'LETTERA_CONVOCAZIONE') {
     return (
-      <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm] bg-white p-[2cm] shadow-lg">
+      <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm] bg-white p-[2cm] print:p-0">
         <div className="text-center mb-12">
             {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2.5cm', margin: '0 auto 10px' }} alt="Logo" />}
             <p className="uppercase font-bold text-base tracking-widest">{project.entity}</p>
@@ -118,8 +116,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   }
 
   return (
-    <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
-      <div className="bg-white shadow-lg p-[1.5cm] print-page mb-8 border border-slate-100 print:border-none overflow-hidden h-auto">
+    <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm] print:w-full">
+      <div className="bg-white shadow-lg p-[1.5cm] mb-8 border border-slate-100 print:shadow-none print:border-none print:m-0 print:p-0 overflow-visible">
         <div className="text-center mb-8">
             {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2.5cm', margin: '0 auto 10px' }} alt="Logo" />}
             <p className="uppercase font-bold text-sm tracking-widest m-0">{project.entity}</p>
@@ -179,8 +177,8 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             </div>
             <div className="space-y-2">
                 <p>{doc.worksIntroText || "Durante il presente sopralluogo si prende atto che sono state effettuate le seguenti lavorazioni:"}</p>
-                {currentSummary && currentSummary.works.length > 0 ? (
-                    <ul className="list-decimal pl-10 space-y-1">{currentSummary.works.map((w, i) => <li key={i}>{w}</li>)}</ul>
+                {project.executionPhase?.testerVisitSummaries?.[doc.visitNumber-1]?.works && project.executionPhase.testerVisitSummaries[doc.visitNumber-1].works.length > 0 ? (
+                    <ul className="list-decimal pl-10 space-y-1">{project.executionPhase.testerVisitSummaries[doc.visitNumber-1].works.map((w, i) => <li key={i}>{w}</li>)}</ul>
                 ) : <p className="italic pl-4">Nessuna lavorazione specifica riportata nel riepilogo del periodo.</p>}
             </div>
             {doc.worksInProgress && (
@@ -195,11 +193,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             <div className="mt-6"><p className="font-bold mb-1">Osservazioni e valutazioni:</p><p className="whitespace-pre-line">{doc.observations || "..."}</p><p className="mt-4 italic">La visita si conclude alle ore __________.</p><p className="mt-2">L.C.S.</p></div>
         </div>
 
-        <div className="mt-20 text-xs space-y-8">
+        <div className="mt-20 text-xs space-y-8 print:mt-10">
             <div className="flex items-end"><span className="w-64">Il Collaudatore: <span className="font-bold">{formatNameWithTitle(project.subjects.tester.contact)}</span></span><div className="flex-1 border-b border-black mb-1"></div></div>
             {doc.attendees && doc.attendees.split('\n').filter(l => l.trim()).map((present, idx) => (
                 <div key={idx} className="flex items-end">
-                    <span className="w-64">{present.split(':')[0]}: {present.split(':')[1]?.trim() || ''}</span>
+                    <span className="w-64 truncate">{present.split(':')[0]}: {present.split(':')[1]?.trim() || ''}</span>
                     <div className="flex-1 border-b border-black mb-1"></div>
                 </div>
             ))}

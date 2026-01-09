@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ProjectConstants, ContactInfo, SubjectProfile, AppointmentData, CompanyType, DesignerProfile, DesignPhaseData } from '../types';
-// Add FileCheck2 to the imports
-import { Save, User, Users, Mail, ShieldCheck, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote, ChevronDown, ImagePlus, X, BriefcaseBusiness, Network, Hammer, Gavel, FileCheck2 } from 'lucide-react';
-
-// --- HELPER COMPONENTS ---
+import { Save, User, Users, Mail, ShieldCheck, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote, ChevronDown, ImagePlus, X, BriefcaseBusiness, Network, Hammer, Gavel, FileCheck2, UserCheck, ShieldAlert } from 'lucide-react';
 
 const TITLES = ["Arch.", "Ing.", "Geom.", "Dott.", "Dott. Agr.", "Geol.", "Per. Ind.", "Sig."];
 
@@ -14,7 +11,7 @@ interface SubNavProps {
 }
 
 const SubNav: React.FC<SubNavProps> = ({ items, activeTab, onTabChange }) => (
-    <div className="flex border-b border-slate-200 mb-6 gap-2 overflow-x-auto pb-2">
+    <div className="flex border-b border-slate-200 mb-6 gap-2 overflow-x-auto pb-2 scrollbar-hide">
       {items.map(item => (
         <button
           key={item.id}
@@ -137,14 +134,9 @@ const ContactCard: React.FC<ContactCardProps> = ({
             </div>
             
             <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Email</label>
+                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">PEC / Email</label>
                 <input disabled={readOnly} type="email" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                    value={contact.email || ''} onChange={e => onChange(`${path}.email`, e.target.value)} />
-            </div>
-            <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">PEC</label>
-                <input disabled={readOnly} type="email" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                    value={contact.pec || ''} onChange={e => onChange(`${path}.pec`, e.target.value)} />
+                    value={contact.pec || contact.email || ''} onChange={e => onChange(`${path}.pec`, e.target.value)} />
             </div>
 
             {!isCompany && (
@@ -169,7 +161,7 @@ const ContactCard: React.FC<ContactCardProps> = ({
             </div>
 
             {showRepInfo && (
-                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100">
+                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100 mt-2">
                     <div>
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Rappresentante Legale (Nome)</label>
                         <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" value={contact.repName || ''} onChange={e => onChange(`${path}.repName`, e.target.value)} />
@@ -240,12 +232,8 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
   return (
     <div className="max-w-5xl mx-auto pb-20">
       <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-slate-800">
-              {section === 'general' && 'Dati Generali'}
-              {section === 'design' && 'Progettazione'}
-              {section === 'subjects' && 'Soggetti Responsabili'}
-              {section === 'tender' && 'Gara'}
-              {section === 'contractor' && 'Impresa'}
+          <h2 className="text-2xl font-bold text-slate-800 capitalize">
+              {section === 'general' ? 'Dati Generali' : section === 'design' ? 'Progettazione' : section === 'subjects' ? 'Soggetti Responsabili' : section === 'tender' ? 'Fase di Gara' : 'Impresa Appaltatrice'}
           </h2>
           <div className="flex items-center gap-2">
              {readOnly ? <span className="text-xs text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100 flex items-center gap-1"><Lock className="w-3 h-3"/> Solo Lettura</span> : <span className="text-xs text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-100 flex items-center gap-1"><Save className="w-3 h-3"/> Auto-save</span>}
@@ -327,22 +315,116 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
             <SubNav activeTab={subTab} onTabChange={setSubTab} items={[
                 { id: 'rup', label: 'RUP', icon: User },
                 { id: 'designers', label: 'Progettisti', icon: PencilRuler },
+                { id: 'csp', label: 'CSP', icon: ShieldCheck },
+                { id: 'verifier', label: 'Verificatore', icon: UserCheck },
                 { id: 'dl', label: 'D.L.', icon: HardHat },
+                { id: 'dlOffice', label: 'Ufficio D.L.', icon: Users },
+                { id: 'cse', label: 'CSE', icon: ShieldAlert },
                 { id: 'tester', label: 'Collaudatore', icon: Stamp },
             ]} />
+            
             {subTab === 'rup' && <ContactCard label="Responsabile Unico del Progetto" path="subjects.rup.contact" contact={data.subjects.rup.contact} readOnly={readOnly} onChange={handleChange} />}
+            
+            {subTab === 'designers' && (
+                <div className="space-y-6">
+                    {(data.subjects.designers || []).map((designer, idx) => (
+                        <div key={idx} className="relative group">
+                             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-4">
+                                <div className="flex justify-between items-center mb-6 border-b pb-3">
+                                    <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                                        <PencilRuler className="w-5 h-5 text-blue-500"/> Progettista {idx+1}
+                                    </h4>
+                                    {!readOnly && <button onClick={() => {
+                                        const list = [...data.subjects.designers];
+                                        list.splice(idx, 1);
+                                        handleChange('subjects.designers', list);
+                                    }} className="text-red-500 hover:bg-red-50 p-1.5 rounded"><Trash2 className="w-4 h-4"/></button>}
+                                </div>
+                                
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="md:col-span-2">
+                                        <label className="flex items-center gap-2 cursor-pointer mb-2">
+                                            <input type="checkbox" checked={designer.isLegalEntity} onChange={e => {
+                                                const list = [...data.subjects.designers];
+                                                list[idx].isLegalEntity = e.target.checked;
+                                                handleChange('subjects.designers', list);
+                                            }} />
+                                            <span className="text-sm font-bold text-slate-700">RTP / Società di Ingegneria (Entità Legale)</span>
+                                        </label>
+                                    </div>
+                                    <div className="md:col-span-2">
+                                        <label className="text-xs font-bold text-slate-500 uppercase">Ragione Sociale / Nome</label>
+                                        <input type="text" className="w-full p-2 border border-slate-300 rounded mt-1" value={designer.contact.name || ''} onChange={e => {
+                                            const list = [...data.subjects.designers];
+                                            list[idx].contact.name = e.target.value;
+                                            handleChange('subjects.designers', list);
+                                        }} />
+                                    </div>
+                                    {designer.isLegalEntity && (
+                                        <div className="md:col-span-2 bg-slate-50 p-4 rounded-lg border">
+                                            <p className="text-xs font-bold text-slate-500 uppercase mb-3">Tecnici Operativi / Incaricati</p>
+                                            {(designer.operatingDesigners || []).map((op, oIdx) => (
+                                                <div key={oIdx} className="flex gap-2 mb-2">
+                                                    <input type="text" placeholder="Nome Tecnico" className="flex-1 p-2 border border-slate-300 rounded text-sm" value={op.name} onChange={e => {
+                                                        const list = [...data.subjects.designers];
+                                                        list[idx].operatingDesigners[oIdx].name = e.target.value;
+                                                        handleChange('subjects.designers', list);
+                                                    }} />
+                                                    <button onClick={() => {
+                                                        const list = [...data.subjects.designers];
+                                                        list[idx].operatingDesigners.splice(oIdx, 1);
+                                                        handleChange('subjects.designers', list);
+                                                    }} className="text-slate-400 hover:text-red-500"><X className="w-4 h-4"/></button>
+                                                </div>
+                                            ))}
+                                            <button onClick={() => {
+                                                const list = [...data.subjects.designers];
+                                                list[idx].operatingDesigners = [...(list[idx].operatingDesigners || []), { name: '' }];
+                                                handleChange('subjects.designers', list);
+                                            }} className="text-xs text-blue-600 font-bold hover:underline">+ Aggiungi Tecnico</button>
+                                        </div>
+                                    )}
+                                </div>
+                             </div>
+                        </div>
+                    ))}
+                    {!readOnly && <button onClick={() => handleChange('subjects.designers', [...(data.subjects.designers || []), { contact: { name: '' }, isLegalEntity: false, operatingDesigners: [] }])} className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2"><Plus className="w-5 h-5"/> Aggiungi Progettista / RTP</button>}
+                </div>
+            )}
+
+            {subTab === 'csp' && <ContactCard label="Coordinatore Sicurezza Progettazione (CSP)" path="subjects.csp.contact" contact={data.subjects.csp.contact} readOnly={readOnly} onChange={handleChange} />}
+            {subTab === 'verifier' && <ContactCard label="Soggetto Verificatore Progetto" path="subjects.verifier.contact" contact={data.subjects.verifier.contact} readOnly={readOnly} onChange={handleChange} />}
             {subTab === 'dl' && <ContactCard label="Direttore dei Lavori" path="subjects.dl.contact" contact={data.subjects.dl.contact} readOnly={readOnly} onChange={handleChange} isCompany={data.subjects.dl.isLegalEntity} showRepInfo={data.subjects.dl.isLegalEntity} />}
+            
+            {subTab === 'dlOffice' && (
+                <div className="space-y-4">
+                    {(data.subjects.dlOffice || []).map((member, idx) => (
+                        <div key={idx} className="relative group">
+                            <ContactCard label={`Membro Ufficio DL ${idx+1}`} path={`subjects.dlOffice.${idx}.contact`} contact={member.contact} readOnly={readOnly} onChange={handleChange} showRepInfo={true} roleLabel="Qualifica (es. Ispettore di Cantiere)" />
+                            {!readOnly && <button onClick={() => {
+                                const list = [...data.subjects.dlOffice];
+                                list.splice(idx, 1);
+                                handleChange('subjects.dlOffice', list);
+                            }} className="absolute top-4 right-4 text-red-400 hover:text-red-600"><Trash2 className="w-5 h-5"/></button>}
+                        </div>
+                    ))}
+                    {!readOnly && <button onClick={() => handleChange('subjects.dlOffice', [...(data.subjects.dlOffice || []), { contact: { name: '', role: '' } }])} className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2"><Plus className="w-5 h-5"/> Aggiungi Membro Ufficio DL</button>}
+                </div>
+            )}
+
+            {subTab === 'cse' && <ContactCard label="Coordinatore Sicurezza Esecuzione (CSE)" path="subjects.cse.contact" contact={data.subjects.cse.contact} readOnly={readOnly} onChange={handleChange} />}
+
             {subTab === 'tester' && (
                 <div className="space-y-6">
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                        <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 border-b pb-3"><Stamp className="w-5 h-5 text-blue-500"/> Nomina Collaudatore</h4>
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                            <div className="md:col-span-2">
-                               <label className="text-xs font-bold text-slate-500 uppercase">Soggetto Emittente Atto (es. Dirigente Settore...)</label>
+                               <label className="text-xs font-bold text-slate-500 uppercase">Soggetto Emittente Atto (es. Commissario Straordinario / Dirigente...)</label>
                                <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded mt-1" value={data.subjects.testerAppointment.nominationAuthority || ''} onChange={e => handleChange('subjects.testerAppointment.nominationAuthority', e.target.value)} />
                            </div>
                            <div>
-                               <label className="text-xs font-bold text-slate-500 uppercase">Tipo Atto (es. Determina Dirigenziale)</label>
+                               <label className="text-xs font-bold text-slate-500 uppercase">Tipo Atto (es. Decreto / Determina Dirigenziale)</label>
                                <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded mt-1" value={data.subjects.testerAppointment.nominationType || ''} onChange={e => handleChange('subjects.testerAppointment.nominationType', e.target.value)} />
                            </div>
                            <div>
@@ -397,7 +479,6 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
             <SubNav activeTab={subTab} onTabChange={setSubTab} items={[
                 { id: 'main', label: 'Capogruppo', icon: BriefcaseBusiness },
                 { id: 'structure', label: data.contractor.type === 'consortium' ? 'Consorziate' : 'Mandanti', icon: Network },
-                { id: 'subcontractors', label: 'Subappalti', icon: Hammer },
             ]} />
             {subTab === 'main' && (
                 <div className="space-y-6">
