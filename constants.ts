@@ -1,5 +1,4 @@
 
-
 import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData, ContactInfo, DesignerProfile } from './types';
 
 const emptyContact: ContactInfo = { name: '', title: '', email: '', pec: '', phone: '', professionalOrder: '', registrationNumber: '' };
@@ -142,6 +141,7 @@ export const createInitialDocument = (projectId: string): DocumentVariables => (
   visitNumber: 1,
   date: new Date().toISOString().split('T')[0],
   time: '09:00',
+  endTime: '',
   convocationMethod: 'PEC',
   convocationDate: '',
   convocationDetails: '',

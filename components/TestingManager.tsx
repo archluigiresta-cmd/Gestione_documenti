@@ -398,7 +398,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
           {step === 'info' && (
               <div className="animate-in fade-in slide-in-from-right-4">
                   <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4">Dettagli Temporali del Sopralluogo</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                       <div>
                           <label className="block text-sm font-bold text-slate-700 mb-2">Data Visita</label>
                           <input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
@@ -409,7 +409,12 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                           <input disabled={readOnly} type="time" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
                             value={currentDoc.time} onChange={e => handleUpdate({...currentDoc, time: e.target.value})} />
                       </div>
-                      <div className="md:col-span-2">
+                      <div>
+                          <label className="block text-sm font-bold text-slate-700 mb-2">Ora Fine</label>
+                          <input disabled={readOnly} type="time" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none disabled:bg-slate-100"
+                            value={currentDoc.endTime || ''} onChange={e => handleUpdate({...currentDoc, endTime: e.target.value})} />
+                      </div>
+                      <div className="md:col-span-3">
                           <label className="block text-sm font-bold text-slate-700 mb-2">Numero Progressivo Verbale</label>
                           <div className="flex items-center gap-4">
                             <input disabled={readOnly} type="number" className="w-32 p-3 border border-slate-300 rounded-lg bg-slate-50 font-mono text-center text-lg disabled:text-slate-400"

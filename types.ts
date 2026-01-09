@@ -220,7 +220,8 @@ export interface DocumentVariables {
   createdAt: number; 
   visitNumber: number; 
   date: string;
-  time: string;
+  time: string; // Ora Inizio
+  endTime: string; // Ora Fine
   convocationMethod: string; 
   convocationDate: string;   
   convocationDetails: string; 

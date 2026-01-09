@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
 
@@ -204,7 +205,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             <div className="mt-8 text-left">
                 <p className="font-bold mb-1">Osservazioni e valutazioni:</p>
                 <p className="whitespace-pre-line">{doc.observations || "..."}</p>
-                <p className="mt-6 italic">La visita si conclude alle ore __________.</p>
+                <p className="mt-6 italic">La visita si conclude alle ore {doc.endTime || '__________'}.</p>
                 <p className="mt-4 font-bold">L.C.S.</p>
             </div>
         </div>

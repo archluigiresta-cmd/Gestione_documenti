@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { DocumentVariables, PhotoAttachment } from '../types';
 import { Plus, Trash2, Wand2, Loader2, Calendar, Clock, Hash, ImagePlus, X, Mail, UserCheck } from 'lucide-react';
@@ -123,10 +124,10 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ data, onChange }
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-1">
-              <Calendar className="w-4 h-4" /> Data Sopralluogo
+              <Calendar className="w-4 h-4" /> Data
             </label>
             <input
               type="date"
@@ -137,13 +138,24 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ data, onChange }
           </div>
           <div>
             <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-1">
-              <Clock className="w-4 h-4" /> Ora Inizio
+              <Clock className="w-4 h-4" /> Inizio
             </label>
             <input
               type="time"
               className="w-full p-3 border border-slate-300 rounded-lg"
               value={data.time}
               onChange={(e) => onChange({ ...data, time: e.target.value })}
+            />
+          </div>
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-1">
+              <Clock className="w-4 h-4" /> Fine
+            </label>
+            <input
+              type="time"
+              className="w-full p-3 border border-slate-300 rounded-lg"
+              value={data.endTime || ''}
+              onChange={(e) => onChange({ ...data, endTime: e.target.value })}
             />
           </div>
           <div>
@@ -158,7 +170,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ data, onChange }
               title="Puoi modificare manualmente il numero se necessario"
             />
           </div>
-          <div className="md:col-span-3">
+          <div className="md:col-span-4">
              <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-1">
                <Mail className="w-4 h-4" /> Dettagli Convocazione
              </label>
@@ -169,7 +181,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ data, onChange }
                onChange={(e) => onChange({ ...data, convocationDetails: e.target.value })}
              />
           </div>
-          <div className="md:col-span-3">
+          <div className="md:col-span-4">
              <label className="flex items-center gap-2 text-sm font-medium text-slate-700 mb-1">
                <UserCheck className="w-4 h-4" /> Soggetti Presenti
              </label>
