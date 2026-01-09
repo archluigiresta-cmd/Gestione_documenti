@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ProjectConstants, DocumentVariables, DocumentType, DesignerProfile } from '../types';
+import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
 
 interface DocumentPreviewProps {
   project: ProjectConstants;
@@ -48,184 +48,191 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       return `${titlePrefix}${contact.name}`;
   };
 
-  // Layout specifico per LETTERA_CONVOCAZIONE
+  // Recupero del riepilogo lavori associato a questo verbale (mappato per numero visita)
+  const summaryIndex = (doc.visitNumber > 0 ? doc.visitNumber : 1) - 1;
+  const currentSummary = project.executionPhase?.testerVisitSummaries?.[summaryIndex];
+
+  // Layout Lettera Convocazione (semplificato)
   if (type === 'LETTERA_CONVOCAZIONE') {
     return (
       <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm] bg-white p-[2cm] shadow-lg min-h-[29.7cm]">
-        <div id="h1" className="text-center mb-12 border-b border-black pb-4">
-            {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2cm', margin: '0 auto 10px' }} alt="Logo" />}
+        <div className="text-center mb-12">
             <p className="uppercase font-bold text-base tracking-widest">{project.entity}</p>
         </div>
-
         <div className="flex justify-between mb-12 text-sm">
-            <div className="text-left">
-                <p className="font-bold">Al RUP:</p>
-                <p>{formatNameWithTitle(project.subjects.rup.contact)}</p>
-                <p className="font-bold mt-4">Alla D.L.:</p>
-                <p>{formatNameWithTitle(project.subjects.dl.contact)}</p>
-                <p className="font-bold mt-4">All'Impresa:</p>
-                <p>{project.contractor.mainCompany.name}</p>
+            <div className="text-left space-y-4">
+                <p>Al RUP: {formatNameWithTitle(project.subjects.rup.contact)}</p>
+                <p>Alla D.L.: {formatNameWithTitle(project.subjects.dl.contact)}</p>
+                <p>All'Impresa: {project.contractor.mainCompany.name}</p>
             </div>
             <div className="text-right">
                 <p>Data, {new Date().toLocaleDateString('it-IT')}</p>
-                <p>Prot. n. __________</p>
             </div>
         </div>
-
-        <div className="mb-12">
+        <div className="mb-12 text-sm">
             <p className="font-bold">OGGETTO: {project.projectName}</p>
-            <p className="font-bold">CUP: {project.cup} - CONVOCAZIONE VISITA DI COLLAUDO N. {doc.visitNumber}</p>
+            <p className="font-bold">CUP: {project.cup} - CONVOCAZIONE VISITA N. {doc.visitNumber}</p>
         </div>
-
         <div className="text-justify text-sm space-y-4">
-            <p>Con la presente, in qualità di Collaudatore dell'intervento in oggetto, si comunica che la visita di collaudo n. {doc.visitNumber} si terrà il giorno:</p>
-            <p className="font-bold text-center text-lg">{formatShortDate(doc.date)} alle ore {doc.time}</p>
-            <p>presso il cantiere sito in {project.location}. Si prega di assicurare la presenza dei tecnici incaricati e del rappresentante dell'impresa, con la documentazione aggiornata.</p>
+            <p>Si comunica che la visita di collaudo n. {doc.visitNumber} si terrà il giorno:</p>
+            <p className="font-bold text-center">{formatShortDate(doc.date)} alle ore {doc.time}</p>
+            <p>presso il cantiere in {project.location}.</p>
         </div>
-
-        <div className="mt-24 text-right">
+        <div className="mt-24 text-right text-sm">
             <p>Il Collaudatore</p>
-            <p className="mt-12 font-bold">{formatNameWithTitle(project.subjects.tester.contact)}</p>
-            <div className="border-b border-black w-48 ml-auto mt-2"></div>
+            <p className="mt-12">{formatNameWithTitle(project.subjects.tester.contact)}</p>
         </div>
       </div>
     );
   }
 
-  // Layout VERBALE Sobrio (Ispirato al PDF allegato)
+  // Layout VERBALE SOBRIO (Tutti i dati, nessuna sottolineatura, stile PDF)
   return (
     <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
       <div className="bg-white shadow-lg p-[1.5cm] min-h-[29.7cm] print-page mb-8 relative flex flex-col justify-between">
         <div>
-            {/* INTESTAZIONE ENTE */}
+            {/* INTESTAZIONE */}
             <div className="text-center mb-8">
                 <p className="uppercase font-bold text-sm tracking-widest m-0">{project.entity}</p>
-                {project.entityProvince && <p className="text-xs m-0">({project.entityProvince})</p>}
             </div>
 
-            {/* OGGETTO E TITOLO VERBALE */}
+            {/* TITOLO E OGGETTO */}
             <div className="mb-10 text-center px-4">
-                <p className="text-xs font-bold uppercase mb-4 leading-relaxed">
-                    lavori di: <br/> “{project.projectName}”
+                <p className="text-xs uppercase mb-4 leading-relaxed">
+                    lavori di: “{project.projectName}”
                 </p>
                 <h2 className="font-bold text-base uppercase tracking-tight">{getDocumentTitle()}</h2>
             </div>
 
-            {/* TABELLA DATI GENERALI (Stile PDF: Etichetta sinistra, Valore destra) */}
+            {/* TABELLA DATI GENERALI (Stile PDF) */}
             <table className="w-full text-xs mb-10 border-collapse">
                 <tbody>
                     <tr className="align-top">
-                        <td className="font-bold w-48 py-1">Impresa:</td>
-                        <td className="py-1 uppercase">{project.contractor.mainCompany.name} - {project.contractor.mainCompany.address} - P.IVA {project.contractor.mainCompany.vat}</td>
+                        <td className="w-48 py-1 font-bold">Impresa:</td>
+                        <td className="py-1 uppercase">{project.contractor.mainCompany.name} - {project.contractor.mainCompany.address}</td>
                     </tr>
                     <tr className="align-top">
-                        <td className="font-bold py-1">Contratto d'appalto:</td>
+                        <td className="py-1 font-bold">Contratto d'appalto:</td>
                         <td className="py-1">stipulato in data {formatShortDate(project.contract.date)}, Rep. N. {project.contract.repNumber}</td>
                     </tr>
                     <tr className="align-top">
-                        <td className="font-bold py-1">Importo Contrattuale:</td>
-                        <td className="py-1">{project.contract.totalAmount} (di cui {project.contract.securityCosts} per oneri sicurezza)</td>
+                        <td className="py-1 font-bold">Importo Contrattuale:</td>
+                        <td className="py-1">Euro {project.contract.totalAmount} (di cui Euro {project.contract.securityCosts} per oneri sicurezza)</td>
                     </tr>
                     <tr className="align-top">
-                        <td className="font-bold py-1">CUP:</td>
-                        <td className="py-1">{project.cup}</td>
+                        <td className="py-1 font-bold">Scadenza contrattuale:</td>
+                        <td className="py-1">{formatShortDate(project.executionPhase?.completionDate)}</td>
                     </tr>
                     <tr className="align-top">
-                        <td className="font-bold py-1">RUP:</td>
+                        <td className="py-1 font-bold">RUP:</td>
                         <td className="py-1">{formatNameWithTitle(project.subjects.rup.contact)}</td>
                     </tr>
                     <tr className="align-top">
-                        <td className="font-bold py-1">Direttore dei Lavori:</td>
+                        <td className="py-1 font-bold">Direttore dei Lavori:</td>
                         <td className="py-1">{formatNameWithTitle(project.subjects.dl.contact)}</td>
                     </tr>
                 </tbody>
             </table>
 
-            {/* CORPO NARRATIVO */}
-            <div className="text-xs text-justify space-y-4">
+            {/* CORPO DEL VERBALE */}
+            <div className="text-xs text-justify space-y-6">
                 <p>
                   Il giorno {verboseDate.day} del mese di {verboseDate.month} {verboseDate.year}, alle ore {doc.time}, presso il luogo dei lavori in {project.location}, ha avvio la {doc.visitNumber}° visita di collaudo in corso d’opera {doc.convocationDetails || 'convocata nelle forme di rito'}.
                 </p>
                 
                 <div>
-                    <p className="mb-2">Sono presenti, oltre al sottoscritto Collaudatore, {formatNameWithTitle(project.subjects.tester.contact)}:</p>
-                    <div className="pl-4 whitespace-pre-line font-bold italic">{doc.attendees || "..."}</div>
+                    <p className="mb-2">Sono presenti, oltre al sottoscritto Collaudatore {formatNameWithTitle(project.subjects.tester.contact)}:</p>
+                    <div className="pl-4 whitespace-pre-line italic font-bold">{doc.attendees || "..."}</div>
                 </div>
                 
-                <div className="mt-6">
+                <div>
                     <p className="font-bold mb-2">Premesso che:</p>
                     <p className="whitespace-pre-line">{doc.premis || "..."}</p>
                 </div>
 
-                {/* SEZIONE LAVORAZIONI ESEGUITE */}
-                <div className="mt-6">
-                    <p className="font-bold mb-2">{doc.worksIntroText || "Durante il sopralluogo si prende atto delle seguenti lavorazioni eseguite:"}</p>
-                    <ul className="list-decimal pl-10 space-y-1">
-                        {doc.worksExecuted.map((w, i) => <li key={i}>{w}</li>)}
-                    </ul>
+                {/* RIEPILOGO LAVORAZIONI DEL PERIODO (Dati dalla maschera collaudo) */}
+                <div>
+                    <p className="font-bold mb-2">{doc.worksIntroText || "Lavorazioni eseguite nel periodo:"}</p>
+                    {currentSummary && currentSummary.works.length > 0 ? (
+                        <ul className="list-decimal pl-8 space-y-1">
+                            {currentSummary.works.map((w, i) => <li key={i}>{w}</li>)}
+                        </ul>
+                    ) : (
+                        <p className="italic pl-4">Nessuna lavorazione specifica riportata nel riepilogo del periodo.</p>
+                    )}
                 </div>
 
-                {/* OPERE IN CORSO */}
+                {/* OPERE IN CORSO (Dati dalla maschera collaudo) */}
                 {doc.worksInProgress && (
-                    <div className="mt-6">
+                    <div>
                         <p className="font-bold mb-1">Opere in corso di esecuzione:</p>
-                        <div className="whitespace-pre-line italic pl-4">{doc.worksInProgress}</div>
+                        <div className="whitespace-pre-line pl-4">
+                            {doc.worksInProgress.split('\n').map((line, i) => (
+                                <p key={i}>- {line}</p>
+                            ))}
+                        </div>
                     </div>
                 )}
 
-                {/* PROSSIME ATTIVITA - Campo che mancava prima */}
+                {/* PROSSIME ATTIVITA (Dati dalla maschera collaudo) */}
                 {doc.upcomingWorks && (
-                    <div className="mt-6">
+                    <div>
                         <p className="font-bold mb-1">Prossime attività previste:</p>
-                        <div className="whitespace-pre-line italic pl-4">{doc.upcomingWorks}</div>
+                        <div className="whitespace-pre-line pl-4">
+                            {doc.upcomingWorks.split('\n').map((line, i) => (
+                                <p key={i}>- {line}</p>
+                            ))}
+                        </div>
                     </div>
                 )}
 
-                {/* RICHIESTE COLLAUDATORE */}
+                {/* RICHIESTE (Dati dalla maschera collaudo) */}
                 {doc.testerRequests && (
-                    <div className="mt-6">
+                    <div>
                         <p className="font-bold mb-1">Richieste del Collaudatore:</p>
                         <div className="whitespace-pre-line pl-4">{doc.testerRequests}</div>
                     </div>
                 )}
 
-                {/* INVITI COLLAUDATORE */}
+                {/* INVITI (Dati dalla maschera collaudo) */}
                 {doc.testerInvitations && (
-                    <div className="mt-6">
+                    <div>
                         <p className="font-bold mb-1">Inviti del Collaudatore:</p>
                         <div className="whitespace-pre-line pl-4">{doc.testerInvitations}</div>
                     </div>
                 )}
 
-                {/* PARTI COMUNI */}
+                {/* PARTI COMUNI (Dati dalla maschera collaudo) */}
                 {doc.commonParts && (
-                    <div className="mt-6">
-                        <div className="whitespace-pre-line italic font-bold">{doc.commonParts}</div>
+                    <div>
+                        <div className="whitespace-pre-line italic">{doc.commonParts}</div>
                     </div>
                 )}
 
-                {/* OSSERVAZIONI/VALUTAZIONI */}
-                <div className="mt-6">
+                {/* OSSERVAZIONI E CHIUSURA */}
+                <div>
                     <p className="font-bold mb-1">Osservazioni e valutazioni:</p>
-                    <p className="whitespace-pre-line pl-4">{doc.observations || "..."}</p>
+                    <p className="whitespace-pre-line">{doc.observations || "..."}</p>
+                    <p className="mt-4">La visita si conclude alle ore __________.</p>
+                    <p>L.C.S.</p>
                 </div>
             </div>
         </div>
 
-        {/* FIRME FINALI */}
+        {/* FIRME */}
         <div className="mt-16 text-xs grid grid-cols-2 gap-12">
             <div>
                 <p className="mb-12">Il Collaudatore</p>
                 <p className="font-bold uppercase">{formatNameWithTitle(project.subjects.tester.contact)}</p>
-                <div className="border-b border-black w-full mt-1"></div>
+                <div className="border-b border-black w-full"></div>
             </div>
             <div className="text-right">
                 <p className="mb-12">Per l'Ufficio di Direzione Lavori</p>
-                <div className="border-b border-black w-full mt-1"></div>
+                <div className="border-b border-black w-full"></div>
             </div>
-            <div className="col-span-2 text-center mt-8">
+            <div className="col-span-2 text-center mt-12">
                 <p className="mb-12">Per l'Impresa</p>
-                <div className="border-b border-black w-64 mx-auto mt-1"></div>
+                <div className="border-b border-black w-64 mx-auto"></div>
             </div>
         </div>
       </div>
