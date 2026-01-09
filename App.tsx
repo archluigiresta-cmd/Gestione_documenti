@@ -398,6 +398,12 @@ const App: React.FC = () => {
               documents={documents}
               currentDocId={currentDocId}
               onSelectDocument={setCurrentDocId}
+              onDeleteDocument={handleDeleteDocument}
+              onEdit={(id) => {
+                setCurrentDocId(id);
+                // Navighiamo al tab di collaudo per l'editing
+                setActiveTab('testing');
+              }}
             />
           )}
 
