@@ -3,7 +3,7 @@ import { ProjectConstants, DocumentVariables, User, UserStatus, BackupData, Proj
 import { generateSafeId } from './constants';
 
 const DB_NAME = 'EdilAppDB_v4'; 
-const DB_VERSION = 30; // Versione incrementata per forzare la sincronizzazione degli store
+const DB_VERSION = 30; 
 
 const STORES = {
   PROJECTS: 'projects',
@@ -12,7 +12,7 @@ const STORES = {
   PERMISSIONS: 'permissions'
 };
 
-const OLD_DB_NAMES = ['EdilAppDB', 'EdilAppDB_v1', 'EdilAppDB_v2', 'EdilAppDB_v3', 'EdilAppDB_Final', 'EdilAppDB_v4_temp'];
+const OLD_DB_NAMES = ['EdilAppDB', 'EdilAppDB_v1', 'EdilAppDB_v2', 'EdilAppDB_v3', 'EdilAppDB_Final', 'EdilAppDB_v4_temp', 'EdilAppDB_v4'];
 
 export const db = {
   open: (name = DB_NAME, version = DB_VERSION): Promise<IDBDatabase> => {
@@ -28,8 +28,13 @@ export const db = {
         const tx = (event.target as IDBOpenDBRequest).transaction!;
         const docStore = tx.objectStore(STORES.DOCUMENTS);
         if (!docStore.indexNames.contains('projectId')) docStore.createIndex('projectId', 'projectId', { unique: false });
+        
         const userStore = tx.objectStore(STORES.USERS);
         if (!userStore.indexNames.contains('email')) userStore.createIndex('email', 'email', { unique: true });
+
+        // Fix: Ensure permissions store has a projectId index for faster retrieval.
+        const permStore = tx.objectStore(STORES.PERMISSIONS);
+        if (!permStore.indexNames.contains('projectId')) permStore.createIndex('projectId', 'projectId', { unique: false });
       };
       request.onsuccess = (e) => resolve((e.target as IDBOpenDBRequest).result);
       request.onerror = (e) => reject(e);
@@ -41,7 +46,9 @@ export const db = {
     const currentDb = await db.open();
 
     for (const oldName of OLD_DB_NAMES) {
-      if (oldName === DB_NAME) continue; // Evita loop su se stesso
+      if (oldName === DB_NAME && DB_VERSION === 30) {
+          // Salta se è già l'attuale alla stessa versione, a meno che non vogliamo forzare
+      }
       try {
         const oldDb = await new Promise<IDBDatabase | null>((res) => {
           const req = indexedDB.open(oldName);
@@ -84,7 +91,7 @@ export const db = {
         }
         oldDb.close();
       } catch (e) {
-        console.warn(`RECOVERY: Ignorato ${oldName}`);
+        console.warn(`RECOVERY: Ignorato database ${oldName}`);
       }
     }
     return recoveredCount;
@@ -132,6 +139,38 @@ export const db = {
     });
   },
 
+  // Fix: Added getAllUsers for administrative purposes.
+  getAllUsers: async (): Promise<User[]> => {
+    const database = await db.open();
+    const store = database.transaction(STORES.USERS, 'readonly').objectStore(STORES.USERS);
+    const req = store.getAll();
+    return new Promise((resolve) => {
+      req.onsuccess = () => resolve(req.result || []);
+    });
+  },
+
+  // Fix: Added updateUserStatus for administrative tasks like approving or suspending users.
+  updateUserStatus: async (userId: string, status: UserStatus, isSystemAdmin?: boolean): Promise<void> => {
+    const database = await db.open();
+    const tx = database.transaction(STORES.USERS, 'readwrite');
+    const store = tx.objectStore(STORES.USERS);
+    const req = store.get(userId);
+    return new Promise((resolve, reject) => {
+      req.onsuccess = () => {
+        const user = req.result as User;
+        if (user) {
+          user.status = status;
+          if (isSystemAdmin !== undefined) user.isSystemAdmin = isSystemAdmin;
+          store.put(user);
+          resolve();
+        } else {
+          reject(new Error("Utente non trovato."));
+        }
+      };
+      req.onerror = () => reject(new Error("Errore durante l'aggiornamento dell'utente."));
+    });
+  },
+
   getProjectsForUser: async (userId: string, email: string): Promise<ProjectConstants[]> => {
     const database = await db.open();
     const store = database.transaction(STORES.PROJECTS, 'readonly').objectStore(STORES.PROJECTS);
@@ -139,7 +178,6 @@ export const db = {
     return new Promise((resolve) => {
       req.onsuccess = () => {
         const all = req.result as ProjectConstants[];
-        // Luigi vede tutto, indipendentemente dall'ownerId per sicurezza di recupero
         if (email === 'arch.luigiresta@gmail.com') resolve(all);
         else resolve(all.filter(p => p.ownerId === userId));
       };
@@ -155,11 +193,33 @@ export const db = {
     const database = await db.open();
     const tx = database.transaction([STORES.PROJECTS, STORES.DOCUMENTS], 'readwrite');
     tx.objectStore(STORES.PROJECTS).delete(id);
-    // Cancellazione documenti collegati
     const docStore = tx.objectStore(STORES.DOCUMENTS);
     const index = docStore.index('projectId');
     const req = index.getAllKeys(id);
     req.onsuccess = () => req.result.forEach(key => docStore.delete(key));
+  },
+
+  // Fix: Added getProjectPermissions to retrieve sharing information for a project.
+  getProjectPermissions: async (projectId: string): Promise<ProjectPermission[]> => {
+    const database = await db.open();
+    const store = database.transaction(STORES.PERMISSIONS, 'readonly').objectStore(STORES.PERMISSIONS);
+    const index = store.index('projectId');
+    const req = index.getAll(projectId);
+    return new Promise((resolve) => {
+      req.onsuccess = () => resolve(req.result || []);
+    });
+  },
+
+  // Fix: Added shareProject to record project access permissions for other users.
+  shareProject: async (permission: ProjectPermission): Promise<void> => {
+    const database = await db.open();
+    const tx = database.transaction(STORES.PERMISSIONS, 'readwrite');
+    const store = tx.objectStore(STORES.PERMISSIONS);
+    return new Promise((resolve, reject) => {
+      const req = store.put(permission);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(new Error("Errore durante il salvataggio dei permessi."));
+    });
   },
 
   getDocumentsByProject: async (projectId: string): Promise<DocumentVariables[]> => {
@@ -177,38 +237,6 @@ export const db = {
   deleteDocument: async (id: string) => {
     const database = await db.open();
     database.transaction(STORES.DOCUMENTS, 'readwrite').objectStore(STORES.DOCUMENTS).delete(id);
-  },
-
-  getProjectPermissions: async (projectId: string): Promise<ProjectPermission[]> => {
-    const database = await db.open();
-    const store = database.transaction(STORES.PERMISSIONS, 'readonly').objectStore(STORES.PERMISSIONS);
-    const req = store.getAll();
-    return new Promise((res) => req.onsuccess = () => res((req.result || []).filter((p:any) => p.projectId === projectId)));
-  },
-
-  shareProject: async (perm: ProjectPermission) => {
-    const database = await db.open();
-    database.transaction(STORES.PERMISSIONS, 'readwrite').objectStore(STORES.PERMISSIONS).put(perm);
-  },
-
-  getAllUsers: async (): Promise<User[]> => {
-    const database = await db.open();
-    const req = database.transaction(STORES.USERS, 'readonly').objectStore(STORES.USERS).getAll();
-    return new Promise(res => req.onsuccess = () => res(req.result || []));
-  },
-
-  updateUserStatus: async (userId: string, status: UserStatus, isSystemAdmin?: boolean) => {
-    const database = await db.open();
-    const store = database.transaction(STORES.USERS, 'readwrite').objectStore(STORES.USERS);
-    const req = store.get(userId);
-    req.onsuccess = () => {
-      const u = req.result;
-      if (u) {
-        u.status = status;
-        if (isSystemAdmin !== undefined) u.isSystemAdmin = isSystemAdmin;
-        store.put(u);
-      }
-    };
   },
 
   getDatabaseBackup: async (): Promise<BackupData> => {

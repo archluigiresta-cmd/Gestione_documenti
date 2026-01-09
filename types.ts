@@ -11,6 +11,13 @@ export interface ContactInfo {
   professionalOrder?: string;
   registrationNumber?: string;
   cf?: string;
+  repName?: string;
+  repTitle?: string;
+}
+
+export interface DesignerProfile {
+  name: string;
+  title?: string;
 }
 
 export interface Appointment {
@@ -27,6 +34,8 @@ export interface SubjectProfile {
   contact: ContactInfo;
   appointment: Appointment;
   roleDescription?: string;
+  isLegalEntity?: boolean;
+  operatingDesigners?: DesignerProfile[];
 }
 
 export interface DesignPhaseData {
@@ -159,6 +168,7 @@ export interface DocumentVariables {
   photos: PhotoAttachment[];
   convocationMethod?: string;
   convocationDate?: string;
+  convocationDetails?: string;
 }
 
 export type UserStatus = 'active' | 'pending' | 'suspended';

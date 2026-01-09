@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 import { User, BackupData } from '../types';
 import { db } from '../db';
 import { generateSafeId } from '../constants';
-import { Building2, KeyRound, Mail, UserPlus, ArrowRight, ShieldCheck, Info, Upload } from 'lucide-react';
+import { Building2, ArrowRight, Upload } from 'lucide-react';
 
 interface AuthScreenProps {
   onLogin: (user: User) => void;
@@ -26,15 +26,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
     try {
       if (isRegister) {
         if (!name || !email || !password) throw new Error("Compila tutti i campi.");
-        const newUser: User = {
-           id: generateSafeId(),
-           name,
-           email,
-           password, 
-           status: 'pending' 
-        };
+        const newUser: User = { id: generateSafeId(), name, email, password, status: 'pending' };
         await db.registerUser(newUser);
-        setSuccessMsg("Richiesta inviata! Attendi l'approvazione dell'amministratore.");
+        setSuccessMsg("Richiesta inviata! Attendi l'approvazione.");
         setIsRegister(false);
       } else {
         const user = await db.loginUser(email, password);
@@ -52,7 +46,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
       reader.onload = async (ev) => {
           try {
               const json = JSON.parse(ev.target?.result as string) as BackupData;
-              if (confirm(`Ripristinare backup del ${new Date(json.timestamp).toLocaleString()}? I dati correnti verranno sovrascritti.`)) {
+              if (confirm(`Ripristinare backup? I dati attuali verranno sovrascritti.`)) {
                   await db.restoreDatabaseBackup(json);
                   setSuccessMsg("Backup ripristinato! Ora puoi accedere.");
               }
@@ -64,8 +58,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Effetti di luce di sfondo per estetica accattivante */}
+    <div className="min-h-screen bg-zinc-950 flex items-center justify-center p-4 relative overflow-hidden font-sans">
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px]"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-indigo-600/10 rounded-full blur-[120px]"></div>
 

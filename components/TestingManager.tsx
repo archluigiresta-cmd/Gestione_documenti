@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
+import { ProjectConstants, DocumentVariables, DocumentType, DesignerProfile } from '../types';
 import { Plus, Gavel, Users, Clock, ClipboardList, Check, Trash2 } from 'lucide-react';
 
 interface TestingManagerProps {
@@ -31,12 +31,37 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
     onSaveDocument({ ...currentDoc, attendeesList: newList, attendees: newList.join(',\n') });
   };
 
-  const subjects = [
-    { label: `RUP: ${project.subjects.rup.contact.name}`, title: project.subjects.rup.contact.title },
-    { label: `DL: ${project.subjects.dl.contact.name}`, title: project.subjects.dl.contact.title },
-    { label: `CSE: ${project.subjects.cse.contact.name}`, title: project.subjects.cse.contact.title },
-    { label: `Impresa: ${project.contractor.repName}`, title: project.contractor.repTitle }
-  ];
+  // --- Logic for Smart Attendees Selection (L'ultima richiesta specifica) ---
+  const getSubjectName = (profile: any) => {
+      if (!profile || !profile.contact || !profile.contact.name) return '';
+      
+      // Handle Legal Entities (Società/RTP)
+      if (profile.isLegalEntity) {
+          if (profile.operatingDesigners && profile.operatingDesigners.length > 0) {
+              const names = profile.operatingDesigners.map((op: any) => {
+                  const title = op.title ? `${op.title} ` : '';
+                  return `${title}${op.name}`;
+              }).join('; ');
+              return `${names} (per ${profile.contact.name})`;
+          }
+          if (profile.contact.repName) {
+              const repTitle = profile.contact.repTitle ? `${profile.contact.repTitle} ` : '';
+              return `${repTitle}${profile.contact.repName} (Leg. Rep. ${profile.contact.name})`;
+          }
+          return profile.contact.name; 
+      }
+      
+      // Handle Individuals
+      const title = profile.contact.title ? `${profile.contact.title} ` : '';
+      return `${title}${profile.contact.name}`;
+  };
+
+  const potentialAttendees = [
+      { id: 'rup', label: 'RUP', fullText: project.subjects.rup.contact.name ? `Responsabile Unico del Progetto: ${getSubjectName(project.subjects.rup)}` : '' },
+      { id: 'dl', label: 'DL', fullText: project.subjects.dl.contact.name ? `Direttore dei Lavori: ${getSubjectName(project.subjects.dl)}` : '' },
+      { id: 'cse', label: 'CSE', fullText: project.subjects.cse.contact.name ? `Coord. Sicurezza Esecuzione: ${getSubjectName(project.subjects.cse)}` : '' },
+      { id: 'impresa', label: 'Impresa', fullText: project.contractor.name ? `Impresa Appaltatrice: ${project.contractor.repTitle || 'Sig.'} ${project.contractor.repName} (per ${project.contractor.name})` : '' }
+  ].filter(p => p.fullText !== '');
 
   return (
     <div className="space-y-6 animate-in fade-in">
@@ -90,9 +115,9 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
              {activeSubTab === 'presenti' && (
                 <div className="space-y-8">
                     <div className="flex flex-wrap gap-3">
-                        {subjects.map(s => (
-                            <button key={s.label} onClick={() => toggleAttendee(`${s.title} ${s.label}`)} className={`px-5 py-3 rounded-2xl border text-xs font-bold transition-all ${(currentDoc.attendeesList || []).includes(`${s.title} ${s.label}`) ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-slate-600 border-slate-200'}`}>
-                                {s.label}
+                        {potentialAttendees.map(p => (
+                            <button key={p.id} onClick={() => toggleAttendee(p.fullText)} className={`px-5 py-3 rounded-2xl border text-xs font-bold transition-all ${(currentDoc.attendeesList || []).includes(p.fullText) ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-slate-600 border-slate-200'}`}>
+                                {p.label}
                             </button>
                         ))}
                     </div>
