@@ -201,18 +201,18 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             {doc.testerInvitations && <div className="space-y-1"><p className="font-bold">Inviti del Collaudatore:</p><div className="whitespace-pre-line pl-4">{doc.testerInvitations}</div></div>}
             {doc.commonParts && <div className="mt-4 italic whitespace-pre-line">{doc.commonParts}</div>}
             
-            <div className="mt-8">
+            <div className="mt-8 text-left">
                 <p className="font-bold mb-1">Osservazioni e valutazioni:</p>
                 <p className="whitespace-pre-line">{doc.observations || "..."}</p>
                 <p className="mt-6 italic">La visita si conclude alle ore __________.</p>
-                <p className="mt-4 font-bold text-left">L.C.S.</p>
+                <p className="mt-4 font-bold">L.C.S.</p>
             </div>
         </div>
 
-        {/* FIRME: Avvicinate a L.C.S. e con layout block per evitare overflow laterale */}
+        {/* FIRME: Accostate a LCS e nomi senza grassetto per un look più professionale */}
         <div className="mt-2 text-xs space-y-3 print:mt-2">
             <div className="block border-b border-black pb-1 leading-tight">
-                <span className="font-medium">Il Collaudatore:</span> <span className="font-bold">{formatNameWithTitle(project.subjects.tester.contact)}</span>
+                <span className="font-medium italic">Il Collaudatore:</span> <span className="font-normal">{formatNameWithTitle(project.subjects.tester.contact)}</span>
             </div>
             {doc.attendees && doc.attendees.split('\n').filter(l => l.trim()).map((present, idx) => {
                 const parts = present.split(':');
@@ -220,17 +220,17 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                 const name = parts[1]?.trim() || '';
                 return (
                     <div key={idx} className="block border-b border-black pb-1 leading-tight">
-                        <span className="font-medium">{label}:</span> <span className="font-bold">{name}</span>
+                        <span className="font-medium italic">{label}:</span> <span className="font-normal">{name}</span>
                     </div>
                 );
             })}
             {!doc.attendees && (
                 <>
                     <div className="block border-b border-black pb-1 leading-tight min-h-[1.2rem]">
-                        <span className="font-medium">Per l'Ufficio di Direzione Lavori:</span>
+                        <span className="font-medium italic">Per l'Ufficio di Direzione Lavori:</span>
                     </div>
                     <div className="block border-b border-black pb-1 leading-tight min-h-[1.2rem]">
-                        <span className="font-medium">Per l'Impresa:</span>
+                        <span className="font-medium italic">Per l'Impresa:</span>
                     </div>
                 </>
             )}
