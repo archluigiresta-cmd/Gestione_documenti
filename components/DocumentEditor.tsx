@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { DocumentVariables, PhotoAttachment } from '../types';
 import { Plus, Trash2, Wand2, Loader2, Calendar, Clock, Hash, ImagePlus, X, Mail, UserCheck } from 'lucide-react';
@@ -37,6 +36,7 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ data, onChange }
     
     setIsGenerating(true);
     try {
+      // Create new GoogleGenAI instance right before making an API call
       const ai = new GoogleGenAI({ apiKey });
       const prompt = `
         Agisci come un esperto Collaudatore di Opere Pubbliche italiano.
@@ -47,11 +47,13 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ data, onChange }
         "${data[field]}"
       `;
 
+      // Use gemini-3-flash-preview for proofreading tasks
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
       });
 
+      // Directly access .text property
       if (response.text) {
         onChange({ ...data, [field]: response.text.trim() });
       }

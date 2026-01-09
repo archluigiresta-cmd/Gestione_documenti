@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { DocumentVariables } from '../types';
 import { Calendar, Clock, Plus, Trash2, Wand2, Loader2, Save, Activity, CalendarCheck } from 'lucide-react';
@@ -49,9 +48,12 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
     
     setIsGenerating(true);
     try {
+      // Create new GoogleGenAI instance right before making an API call
       const ai = new GoogleGenAI({ apiKey });
       const prompt = `Riscrivi in linguaggio tecnico/burocratico per verbale lavori pubblici: "${currentDoc[field]}"`;
-      const response = await ai.models.generateContent({ model: 'gemini-2.5-flash', contents: prompt });
+      // Use gemini-3-flash-preview for basic text tasks
+      const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: prompt });
+      // Directly access .text property
       if (response.text) onUpdateDocument({ ...currentDoc, [field]: response.text.trim() });
     } catch (error) {
       console.error(error);
