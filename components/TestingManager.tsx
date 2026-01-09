@@ -31,12 +31,13 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
     onSaveDocument({ ...currentDoc, attendeesList: newList, attendees: newList.join(',\n') });
   };
 
-  // --- Logic for Smart Attendees Selection (L'ultima richiesta specifica) ---
+  // --- Logic for Smart Attendees Selection (Modifica corretta dal tuo diff) ---
   const getSubjectName = (profile: any) => {
       if (!profile || !profile.contact || !profile.contact.name) return '';
       
       // Handle Legal Entities (Società/RTP)
       if (profile.isLegalEntity) {
+          // 1. Try Operating Designers (Technicians)
           if (profile.operatingDesigners && profile.operatingDesigners.length > 0) {
               const names = profile.operatingDesigners.map((op: any) => {
                   const title = op.title ? `${op.title} ` : '';
@@ -44,10 +45,12 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
               }).join('; ');
               return `${names} (per ${profile.contact.name})`;
           }
+          // 2. Fallback to Legal Rep
           if (profile.contact.repName) {
               const repTitle = profile.contact.repTitle ? `${profile.contact.repTitle} ` : '';
               return `${repTitle}${profile.contact.repName} (Leg. Rep. ${profile.contact.name})`;
           }
+          // 3. Fallback to Company Name
           return profile.contact.name; 
       }
       
@@ -57,10 +60,34 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   };
 
   const potentialAttendees = [
-      { id: 'rup', label: 'RUP', fullText: project.subjects.rup.contact.name ? `Responsabile Unico del Progetto: ${getSubjectName(project.subjects.rup)}` : '' },
-      { id: 'dl', label: 'DL', fullText: project.subjects.dl.contact.name ? `Direttore dei Lavori: ${getSubjectName(project.subjects.dl)}` : '' },
-      { id: 'cse', label: 'CSE', fullText: project.subjects.cse.contact.name ? `Coord. Sicurezza Esecuzione: ${getSubjectName(project.subjects.cse)}` : '' },
-      { id: 'impresa', label: 'Impresa', fullText: project.contractor.name ? `Impresa Appaltatrice: ${project.contractor.repTitle || 'Sig.'} ${project.contractor.repName} (per ${project.contractor.name})` : '' }
+      { 
+          id: 'rup', 
+          label: 'RUP', 
+          fullText: project.subjects.rup.contact.name 
+            ? `Responsabile Unico del Progetto: ${getSubjectName(project.subjects.rup)}`
+            : ''
+      },
+      { 
+          id: 'dl', 
+          label: 'DL', 
+          fullText: project.subjects.dl.contact.name 
+            ? `Direttore dei Lavori: ${getSubjectName(project.subjects.dl)}`
+            : ''
+      },
+      { 
+          id: 'cse', 
+          label: 'CSE', 
+          fullText: project.subjects.cse.contact.name 
+            ? `Coord. Sicurezza Esecuzione: ${getSubjectName(project.subjects.cse)}`
+            : ''
+      },
+      { 
+          id: 'impresa', 
+          label: 'Impresa', 
+          fullText: project.contractor.name 
+            ? `Impresa Appaltatrice: ${project.contractor.repTitle || 'Sig.'} ${project.contractor.repName} (per ${project.contractor.name})`
+            : '' 
+      }
   ].filter(p => p.fullText !== '');
 
   return (

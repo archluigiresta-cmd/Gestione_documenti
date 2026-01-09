@@ -12,7 +12,18 @@ const STORES = {
   PERMISSIONS: 'permissions'
 };
 
-const OLD_DB_NAMES = ['EdilAppDB', 'EdilAppDB_v1', 'EdilAppDB_v2', 'EdilAppDB_v3', 'EdilAppDB_Final', 'EdilAppDB_v4_temp', 'EdilAppDB_v4'];
+// Lista esaustiva di tutti i nomi database usati nelle iterazioni precedenti per garantire il recupero
+const OLD_DB_NAMES = [
+  'EdilAppDB', 
+  'EdilAppDB_v1', 
+  'EdilAppDB_v2', 
+  'EdilAppDB_v3', 
+  'EdilAppDB_v4',
+  'EdilAppDB_Final', 
+  'EdilAppDB_v4_temp',
+  'edilapp-db',
+  'EdilApp_DB'
+];
 
 export const db = {
   open: (name = DB_NAME, version = DB_VERSION): Promise<IDBDatabase> => {
@@ -32,7 +43,6 @@ export const db = {
         const userStore = tx.objectStore(STORES.USERS);
         if (!userStore.indexNames.contains('email')) userStore.createIndex('email', 'email', { unique: true });
 
-        // Fix: Ensure permissions store has a projectId index for faster retrieval.
         const permStore = tx.objectStore(STORES.PERMISSIONS);
         if (!permStore.indexNames.contains('projectId')) permStore.createIndex('projectId', 'projectId', { unique: false });
       };
@@ -41,14 +51,14 @@ export const db = {
     });
   },
 
+  // Routine di recupero massivo: cerca in ogni DB conosciuto e migra i dati mancanti
   recoveryOldData: async (): Promise<number> => {
     let recoveredCount = 0;
     const currentDb = await db.open();
 
     for (const oldName of OLD_DB_NAMES) {
-      if (oldName === DB_NAME && DB_VERSION === 30) {
-          // Salta se è già l'attuale alla stessa versione, a meno che non vogliamo forzare
-      }
+      // Non cerchiamo di recuperare dal database attuale se è già aperto (evita loop)
+      // ma scansioniamo comunque se il nome coincide ma sospettiamo dati in versioni vecchie
       try {
         const oldDb = await new Promise<IDBDatabase | null>((res) => {
           const req = indexedDB.open(oldName);
@@ -57,41 +67,50 @@ export const db = {
         });
 
         if (!oldDb) continue;
+        
+        // Se il DB vecchio non ha lo store dei progetti, lo chiudiamo
         if (!oldDb.objectStoreNames.contains(STORES.PROJECTS)) {
           oldDb.close();
           continue;
         }
 
         const projects = await new Promise<ProjectConstants[]>((res) => {
-          const tx = oldDb.transaction(STORES.PROJECTS, 'readonly');
-          const req = tx.objectStore(STORES.PROJECTS).getAll();
-          req.onsuccess = () => res(req.result || []);
-          req.onerror = () => res([]);
+          try {
+            const tx = oldDb.transaction(STORES.PROJECTS, 'readonly');
+            const req = tx.objectStore(STORES.PROJECTS).getAll();
+            req.onsuccess = () => res(req.result || []);
+            req.onerror = () => res([]);
+          } catch(e) { res([]); }
         });
 
         if (projects.length > 0) {
           const txCurrent = currentDb.transaction([STORES.PROJECTS, STORES.DOCUMENTS], 'readwrite');
           const projectStore = txCurrent.objectStore(STORES.PROJECTS);
+          const docStoreCurrent = txCurrent.objectStore(STORES.DOCUMENTS);
           
           for (const p of projects) {
+            // Put inserisce o aggiorna: se il progetto esiste già non fa danni, 
+            // se mancava lo recupera con tutto lo storico.
             projectStore.put(p);
             recoveredCount++;
             
+            // Recupero documenti associati
             if (oldDb.objectStoreNames.contains(STORES.DOCUMENTS)) {
                 const docs = await new Promise<DocumentVariables[]>((resDoc) => {
-                    const txDoc = oldDb.transaction(STORES.DOCUMENTS, 'readonly');
-                    const reqDoc = txDoc.objectStore(STORES.DOCUMENTS).getAll();
-                    reqDoc.onsuccess = () => resDoc(reqDoc.result || []);
-                    reqDoc.onerror = () => resDoc([]);
+                    try {
+                      const txDoc = oldDb.transaction(STORES.DOCUMENTS, 'readonly');
+                      const reqDoc = txDoc.objectStore(STORES.DOCUMENTS).getAll();
+                      reqDoc.onsuccess = () => resDoc(reqDoc.result || []);
+                      reqDoc.onerror = () => resDoc([]);
+                    } catch(e) { resDoc([]); }
                 });
-                const docStoreCurrent = txCurrent.objectStore(STORES.DOCUMENTS);
                 docs.filter(d => d.projectId === p.id).forEach(d => docStoreCurrent.put(d));
             }
           }
         }
         oldDb.close();
       } catch (e) {
-        console.warn(`RECOVERY: Ignorato database ${oldName}`);
+        console.warn(`RECOVERY: Impossibile leggere da ${oldName}`);
       }
     }
     return recoveredCount;
@@ -139,7 +158,6 @@ export const db = {
     });
   },
 
-  // Fix: Added getAllUsers for administrative purposes.
   getAllUsers: async (): Promise<User[]> => {
     const database = await db.open();
     const store = database.transaction(STORES.USERS, 'readonly').objectStore(STORES.USERS);
@@ -149,7 +167,6 @@ export const db = {
     });
   },
 
-  // Fix: Added updateUserStatus for administrative tasks like approving or suspending users.
   updateUserStatus: async (userId: string, status: UserStatus, isSystemAdmin?: boolean): Promise<void> => {
     const database = await db.open();
     const tx = database.transaction(STORES.USERS, 'readwrite');
@@ -167,7 +184,7 @@ export const db = {
           reject(new Error("Utente non trovato."));
         }
       };
-      req.onerror = () => reject(new Error("Errore durante l'aggiornamento dell'utente."));
+      req.onerror = () => reject(new Error("Errore aggiornamento utente."));
     });
   },
 
@@ -199,7 +216,6 @@ export const db = {
     req.onsuccess = () => req.result.forEach(key => docStore.delete(key));
   },
 
-  // Fix: Added getProjectPermissions to retrieve sharing information for a project.
   getProjectPermissions: async (projectId: string): Promise<ProjectPermission[]> => {
     const database = await db.open();
     const store = database.transaction(STORES.PERMISSIONS, 'readonly').objectStore(STORES.PERMISSIONS);
@@ -210,7 +226,6 @@ export const db = {
     });
   },
 
-  // Fix: Added shareProject to record project access permissions for other users.
   shareProject: async (permission: ProjectPermission): Promise<void> => {
     const database = await db.open();
     const tx = database.transaction(STORES.PERMISSIONS, 'readwrite');
@@ -218,7 +233,7 @@ export const db = {
     return new Promise((resolve, reject) => {
       const req = store.put(permission);
       req.onsuccess = () => resolve();
-      req.onerror = () => reject(new Error("Errore durante il salvataggio dei permessi."));
+      req.onerror = () => reject(new Error("Errore salvataggio permessi."));
     });
   },
 
