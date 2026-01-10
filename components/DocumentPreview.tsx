@@ -36,6 +36,20 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
     return `VERBALE DI VISITA DI ${rolesStr} IN CORSO D'OPERA N. ${doc.visitNumber}`;
   };
 
+  // Fix: Implement missing getNominationPremise function
+  const getNominationPremise = () => {
+    const ta = project.subjects.testerAppointment;
+    const tester = project.subjects.tester.contact;
+    
+    if (!ta.nominationNumber || !ta.nominationDate) return '';
+    
+    const authority = ta.nominationAuthority ? ` dal ${ta.nominationAuthority}` : '';
+    const date = formatShortDate(ta.nominationDate);
+    const typeStr = ta.nominationType || 'atto';
+    
+    return `con ${typeStr} n. ${ta.nominationNumber} in data ${date}${authority}, il sottoscritto ${formatNameWithTitle(tester)} è stato nominato Collaudatore delle opere in oggetto;`;
+  };
+
   const getDocumentTitle = () => {
       switch(type) {
           case 'LETTERA_CONVOCAZIONE': return `Convocazione ${doc.visitNumber === 1 ? 'I' : doc.visitNumber === 2 ? 'II' : doc.visitNumber === 3 ? 'III' : doc.visitNumber}° visita di Collaudo`;
@@ -65,43 +79,24 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
           return (
               <div className="space-y-1">
                 <p className="uppercase font-bold">Raggruppamento Temporaneo di Imprese:</p>
-                <p>- Mandataria: {main.name} (P.IVA {main.vat})</p>
-                {contractor.mandants.map((m, i) => (<p key={i}>- Mandante: {m.name} (P.IVA {m.vat})</p>))}
+                <p>- Mandataria: {main.name} (P.IVA {main.vat}) {main.address && `Sede: ${main.address}`}</p>
+                {contractor.mandants.map((m, i) => (
+                    <p key={i}>- Mandante: {m.name} (P.IVA {m.vat}) {m.address && `Sede: ${m.address}`}</p>
+                ))}
               </div>
           );
       } else if (contractor.type === 'consortium') {
           return (
               <div className="space-y-1">
                 <p className="uppercase font-bold">Consorzio Appaltatore:</p>
-                <p>- Consorzio: {main.name} (P.IVA {main.vat})</p>
-                {contractor.executors.map((e, i) => (<p key={i}>- Consorziata Esecutrice: {e.name} (P.IVA {e.vat})</p>))}
+                <p>- Consorzio: {main.name} (P.IVA {main.vat}) {main.address && `Sede: ${main.address}`}</p>
+                {contractor.executors.map((e, i) => (
+                    <p key={i}>- Consorziata Esecutrice: {e.name} (P.IVA {e.vat}) {e.address && `Sede: ${e.address}`}</p>
+                ))}
               </div>
           );
       }
       return <p className="uppercase">{main.name} {main.address ? `- ${main.address}` : ''} {main.vat ? `- P.IVA ${main.vat}` : ''}</p>;
-  };
-
-  const getNominationPremise = () => {
-    const ta = project.subjects.testerAppointment;
-    const tester = project.subjects.tester.contact;
-    const authority = ta.nominationAuthority || project.entity || '...';
-    
-    const types = [];
-    if (ta.isStatic) types.push("collaudo statico");
-    if (ta.isAdmin) types.push("tecnico-amministrativo");
-    if (ta.isFunctional) types.push("funzionale");
-    const rolesStr = types.length > 0 ? types.join(" e ") : "...";
-
-    const contractItems = [];
-    if (ta.contractRepNumber) contractItems.push(`rep. n. ${ta.contractRepNumber}`);
-    if (ta.contractDate) contractItems.push(`del ${formatShortDate(ta.contractDate)}`);
-    if (ta.contractProtocol) contractItems.push(`prot. n. ${ta.contractProtocol}`);
-    
-    const contractPart = contractItems.length > 0 
-        ? `, e successivo contratto/convenzione, ${contractItems.join(' ')}` 
-        : '';
-
-    return `con ${ta.nominationType || 'provvedimento'} del ${authority} n. ${ta.nominationNumber || '...'} del ${formatShortDate(ta.nominationDate)}${contractPart}, il predetto ${authority} ha affidato, ai sensi dell’art. 116 del D. Lgs. 36/2023, allo scrivente ${tester.title || ''} ${tester.name || '...'} (C.F. ${tester.vat || '...'}), iscritto all’Albo degli ${tester.professionalOrder || '...'} al n. ${tester.registrationNumber || '...'}, l’incarico professionale di ${rolesStr} relativo all’intervento di “${project.projectName || '...'}”, CUP: ${project.cup || '...'};`;
   };
 
   if (type === 'LETTERA_CONVOCAZIONE') {
@@ -112,33 +107,19 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
     return (
       <div id="document-preview-container" className="font-serif-print text-black leading-tight w-full max-w-[21cm] bg-white p-[1.5cm] min-h-[29.7cm] flex flex-col">
-        {/* HEADER: EXACT LUIGI RESTA PDF FORMAT */}
-        <div className="flex justify-between items-start mb-6">
+        {/* HEADER */}
+        <div className="flex justify-between items-start mb-16">
             <div>
-                <h1 className="text-xl font-bold uppercase tracking-wider m-0">LUIGI RESTA</h1>
+                <h1 className="text-xl font-bold uppercase tracking-wider m-0">{tester.name || 'LUIGI RESTA'}</h1>
             </div>
             <div className="text-right">
-                <p className="text-sm uppercase tracking-[0.2em] font-medium m-0">ARCHITETTO</p>
+                <p className="text-sm uppercase tracking-[0.2em] font-medium m-0">{tester.professionalOrder || 'ARCHITETTO'}</p>
             </div>
         </div>
 
-        {/* HEADER CONTACTS (PDF STYLE) */}
-        <div className="grid grid-cols-2 gap-4 mb-16 text-[10pt] text-slate-800">
-            <div className="space-y-0.5">
-                <p>Piazza Matteotti, 3</p>
-                <p>72023 Mesagne</p>
-                <p>0831.777752</p>
-            </div>
-            <div className="text-left space-y-0.5 pl-4 border-l border-slate-100">
-                <p>PEC: <span className="underline">{tester.pec || 'arch.luigiresta@pec.it'}</span></p>
-                <p>Email: <span className="underline">{tester.email || 'arch.luigiresta@gmail.com'}</span></p>
-                <p>Cell: {tester.phone || '392.6739862'}</p>
-            </div>
-        </div>
-
-        {/* RECIPIENTS (PDF ALIGN RIGHT) */}
-        <div className="flex justify-end mb-16">
-            <div className="w-[58%] text-[10.5pt] space-y-6 text-left">
+        {/* RECIPIENTS BLOCK: ALIGNED TO RIGHT EDGE */}
+        <div className="flex justify-end mb-12">
+            <div className="w-[60%] text-[10.5pt] space-y-6 text-left">
                 <div className="space-y-0.5 uppercase font-bold">
                     <p>SPETT.LE {project.subjects.testerAppointment.nominationAuthority || project.entity}</p>
                     <p>ALLA C.A. DEL RUP {formatNameWithTitle(rup)}</p>
@@ -146,25 +127,37 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                 </div>
                 
                 <div className="space-y-0.5 uppercase font-bold">
-                    <p>{dl.name || 'SIDOTI ENGINEERING s.r.l.'}</p>
+                    <p>{dl.name || 'DIREZIONE LAVORI'}</p>
                     <p>ALLA C.A. DEL DL {formatNameWithTitle(dl)}</p>
-                    {dl.address && <p className="text-[9.5pt] font-normal capitalize italic">Sede legale: {dl.address}</p>}
+                    {dl.address && <p className="text-[9.5pt] font-normal capitalize italic">Sede: {dl.address}</p>}
                     {dl.pec && <p className="text-[9.5pt] font-normal lowercase italic underline">PEC: {dl.pec}</p>}
                 </div>
 
-                <div className="space-y-0.5 uppercase font-bold">
+                <div className="space-y-1 uppercase font-bold">
                     <p>SPETT.LE {contractor.mainCompany.name}</p>
-                    {contractor.type === 'ati' && contractor.mandants.map((m, i) => (
-                        <p key={i} className="text-[9.5pt] font-normal capitalize italic leading-tight">
-                           (Esecutrice {m.name} PEC: {m.pec})
-                        </p>
-                    ))}
+                    {contractor.mainCompany.address && <p className="text-[9.5pt] font-normal capitalize italic">{contractor.mainCompany.address}</p>}
                     {contractor.mainCompany.pec && <p className="text-[9.5pt] font-normal lowercase italic underline">PEC: {contractor.mainCompany.pec}</p>}
+                    
+                    {/* ATI / CONSORTIUM DETAILS */}
+                    {contractor.type === 'ati' && contractor.mandants.map((m, i) => (
+                        <div key={i} className="pt-1">
+                            <p className="text-[9.5pt]">(Mandante: {m.name})</p>
+                            {m.address && <p className="text-[9pt] font-normal capitalize italic">{m.address}</p>}
+                            {m.pec && <p className="text-[9pt] font-normal lowercase italic underline">PEC: {m.pec}</p>}
+                        </div>
+                    ))}
+                    {contractor.type === 'consortium' && contractor.executors.map((e, i) => (
+                        <div key={i} className="pt-1">
+                            <p className="text-[9.5pt]">(Consorziata: {e.name})</p>
+                            {e.address && <p className="text-[9pt] font-normal capitalize italic">{e.address}</p>}
+                            {e.pec && <p className="text-[9pt] font-normal lowercase italic underline">PEC: {e.pec}</p>}
+                        </div>
+                    ))}
                 </div>
             </div>
         </div>
 
-        {/* OGGETTO (PDF STYLE) */}
+        {/* OGGETTO */}
         <div className="mb-10 text-[10.5pt] text-justify leading-relaxed">
             <p>
                 <span className="font-bold uppercase">Oggetto: {project.projectName}</span>
@@ -176,7 +169,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             </p>
         </div>
 
-        {/* BODY CONTENT (FROM EDITABLE FIELDS) */}
+        {/* BODY CONTENT */}
         <div className="text-[10.5pt] text-justify space-y-5 flex-grow leading-[1.35]">
             <p>{doc.letterIntro}</p>
             
@@ -187,24 +180,24 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             <p className="pt-2">{doc.letterClosing || 'Distinti saluti'}</p>
         </div>
 
-        {/* SIGNATURE (PDF STYLE) */}
+        {/* SIGNATURE */}
         <div className="mt-8 text-right text-[10.5pt]">
             <p className="uppercase font-bold m-0 leading-tight">IL COLLAUDATORE STATICO, TECNICO-AMMINISTRATIVO</p>
             <p className="uppercase font-bold m-0 leading-tight">E FUNZIONALE DEGLI IMPIANTI</p>
-            <p className="mt-6 font-bold text-[11pt] tracking-wide m-0">Arch. {tester.name || 'Luigi RESTA'}</p>
-            <div className="h-20"></div>
+            <p className="mt-6 font-bold text-[11pt] tracking-wide m-0">{formatNameWithTitle(tester)}</p>
+            <div className="h-16"></div>
         </div>
 
-        {/* FOOTER (PDF STYLE) */}
-        <div className="mt-auto pt-4 border-t border-slate-200 grid grid-cols-2 gap-x-12 text-[8pt] text-slate-500 italic">
-            <div>
-                <p>Piazza Matteotti, 3 - 72023 Mesagne (BR)</p>
-                <p>Tel: 0831.777752</p>
+        {/* FOOTER: DYNAMIC TESTER DATA */}
+        <div className="mt-auto pt-4 border-t border-slate-300 grid grid-cols-2 gap-x-8 text-[8.5pt] text-slate-600">
+            <div className="space-y-1">
+                <p className="font-medium">{tester.address || 'Piazza Matteotti, 3'}</p>
+                <p>{tester.phone ? `Cell: ${tester.phone}` : '72023 Mesagne'}</p>
             </div>
-            <div className="text-right">
-                <p>PEC: arch.luigiresta@pec.it</p>
-                <p>Email: arch.luigiresta@gmail.com</p>
-                <p>C.F./P.IVA: 392.6739862</p>
+            <div className="text-right space-y-1">
+                <p>PEC: <span className="underline">{tester.pec || 'arch.luigiresta@pec.it'}</span></p>
+                <p>Email: <span className="underline">{tester.email || 'arch.luigiresta@gmail.com'}</span></p>
+                {tester.vat && <p>C.F./P.IVA: {tester.vat}</p>}
             </div>
         </div>
       </div>
@@ -277,10 +270,10 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             <div className="space-y-2" style={{ marginTop: '1.5rem' }}>
                 <p className="font-bold" style={{ fontWeight: 'bold' }}>Premesso che:</p>
                 <ul className="list-disc pl-5 space-y-2">
-                    {type === 'VERBALE_COLLAUDO' && <li>{getNominationPremise()}</li>}
-                    {doc.premis ? (
+                    {type === 'VERBALE_COLLAUDO' && <li>{getNominationPremise() || 'Premessa di nomina non disponibile.'}</li>}
+                    {doc.premis && (
                         <div className="whitespace-pre-line leading-relaxed">{doc.premis}</div>
-                    ) : (type !== 'VERBALE_COLLAUDO' && <p className="italic" style={{ fontStyle: 'italic' }}>Nessuna premessa specifica inserita.</p>)}
+                    )}
                 </ul>
             </div>
             
@@ -308,7 +301,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             </div>
         </div>
 
-        {/* FIRME: Incolonnamento block per ordine sovrapposto */}
+        {/* FIRME */}
         <div style={{ marginTop: '1.5rem' }}>
             <div style={{ display: 'block', width: '100%', borderBottom: '1px solid black', paddingBottom: '4px', marginTop: '18px' }}>
                 <span style={{ fontStyle: 'italic', color: '#334155' }}>Il Collaudatore:</span> <span style={{ fontWeight: 'normal' }}>{formatNameWithTitle(project.subjects.tester.contact)}</span>
@@ -323,16 +316,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                     </div>
                 );
             })}
-            {!doc.attendees && (
-                <>
-                    <div style={{ display: 'block', width: '100%', borderBottom: '1px solid black', paddingBottom: '4px', marginTop: '18px', minHeight: '1.2rem' }}>
-                        <span style={{ fontStyle: 'italic', color: '#334155' }}>Per l'Ufficio di Direzione Lavori:</span>
-                    </div>
-                    <div style={{ display: 'block', width: '100%', borderBottom: '1px solid black', paddingBottom: '4px', marginTop: '18px', minHeight: '1.2rem' }}>
-                        <span style={{ fontStyle: 'italic', color: '#334155' }}>Per l'Impresa:</span>
-                    </div>
-                </>
-            )}
         </div>
       </div>
     </div>
