@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ProjectForm } from './components/ProjectForm';
@@ -410,6 +409,7 @@ const App: React.FC = () => {
               currentDocId={currentDocId}
               onSelectDocument={setCurrentDocId}
               onDeleteDocument={handleDeleteDocument}
+              onNewDocument={createNewVerbale}
               onEdit={(id) => {
                 setCurrentDocId(id);
                 // Navighiamo al tab di collaudo per l'editing

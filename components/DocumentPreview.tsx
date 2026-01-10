@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
 
@@ -111,55 +110,75 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
     const contractor = project.contractor;
 
     return (
-      <div id="document-preview-container" className="font-serif-print text-black leading-tight w-full max-w-[21cm] bg-white p-[2cm] min-h-[29.7cm] flex flex-col">
-        {/* HEADER: TESTER INFO - LUIGI RESTA STYLE */}
-        <div className="flex justify-between items-start mb-16 border-b border-slate-200 pb-4">
-            <div className="text-left">
-                <h1 className="text-xl font-bold uppercase tracking-widest m-0">{tester.name || 'IL COLLAUDATORE'}</h1>
+      <div id="document-preview-container" className="font-serif-print text-black leading-tight w-full max-w-[21cm] bg-white p-[1.5cm] min-h-[29.7cm] flex flex-col">
+        {/* HEADER: LUIGI RESTA STYLE */}
+        <div className="flex justify-between items-start mb-6">
+            <div>
+                <h1 className="text-xl font-bold uppercase tracking-wider m-0">LUIGI RESTA</h1>
             </div>
             <div className="text-right">
-                <p className="text-sm uppercase font-bold tracking-widest m-0">{tester.professionalOrder || 'ARCHITETTO'}</p>
+                <p className="text-sm uppercase tracking-[0.2em] font-medium m-0">ARCHITETTO</p>
             </div>
         </div>
 
-        {/* RECIPIENTS BLOCK - ALIGNED RIGHT */}
-        <div className="flex justify-end mb-12">
-            <div className="w-[65%] text-[10pt] space-y-6 text-left">
-                <div className="space-y-1">
-                    <p className="uppercase font-bold leading-tight">SPETT.LE {project.subjects.testerAppointment.nominationAuthority || project.entity}</p>
-                    <p className="uppercase font-bold">ALLA C.A. DEL RUP {formatNameWithTitle(rup)}</p>
-                    {rup.pec && <p className="text-[9pt]">PEC: <span className="underline text-blue-800">{rup.pec}</span></p>}
+        {/* HEADER CONTACTS: TWO COLUMNS */}
+        <div className="grid grid-cols-2 gap-4 mb-16 text-[10pt] text-slate-800">
+            <div className="space-y-0.5">
+                <p>Piazza Matteotti, 3</p>
+                <p>72023 Mesagne</p>
+                <p>0831.777752</p>
+            </div>
+            <div className="text-left space-y-0.5 pl-4">
+                <p>PEC: <span className="underline">{tester.pec || 'arch.luigiresta@pec.it'}</span></p>
+                <p>Email: <span className="underline">{tester.email || 'arch.luigiresta@gmail.com'}</span></p>
+                <p>Cell: {tester.phone || '392.6739862'}</p>
+            </div>
+        </div>
+
+        {/* RECIPIENTS BLOCK: ALIGNED TO RIGHT (APPROX 55% WIDTH) */}
+        <div className="flex justify-end mb-16">
+            <div className="w-[58%] text-[10.5pt] space-y-6 text-left">
+                <div className="space-y-0.5 uppercase font-bold">
+                    <p>SPETT.LE {project.subjects.testerAppointment.nominationAuthority || project.entity}</p>
+                    <p>ALLA C.A. DEL RUP {formatNameWithTitle(rup)}</p>
+                    {rup.pec && <p className="text-[9.5pt] font-normal lowercase italic underline">PEC: {rup.pec}</p>}
                 </div>
                 
-                <div className="space-y-1">
-                    <p className="uppercase font-bold">SIDOTI ENGINEERING s.r.l.</p>
-                    <p className="uppercase font-bold">ALLA C.A. DEL DL {formatNameWithTitle(dl)}</p>
-                    {dl.pec && <p className="text-[9pt]">PEC: <span className="underline text-blue-800">{dl.pec}</span></p>}
+                <div className="space-y-0.5 uppercase font-bold">
+                    <p>{dl.name || 'SIDOTI ENGINEERING s.r.l.'}</p>
+                    <p>ALLA C.A. DEL DL {formatNameWithTitle(dl)}</p>
+                    {dl.address && <p className="text-[9.5pt] font-normal capitalize italic">Sede legale: {dl.address}</p>}
+                    {dl.pec && <p className="text-[9.5pt] font-normal lowercase italic underline">PEC: {dl.pec}</p>}
                 </div>
 
-                <div className="space-y-1">
-                    <p className="uppercase font-bold">SPETT.LE {contractor.mainCompany.name}</p>
+                <div className="space-y-0.5 uppercase font-bold">
+                    <p>SPETT.LE {contractor.mainCompany.name}</p>
                     {contractor.type === 'ati' && contractor.mandants.map((m, i) => (
-                        <p key={i} className="text-[9pt] italic">(Mandante: {m.name} PEC: {m.pec})</p>
+                        <p key={i} className="text-[9.5pt] font-normal capitalize italic leading-tight">
+                           (Esecutrice {m.name} PEC: {m.pec})
+                        </p>
                     ))}
-                    {contractor.mainCompany.pec && <p className="text-[9pt]">PEC: <span className="underline text-blue-800">{contractor.mainCompany.pec}</span></p>}
+                    {contractor.mainCompany.address && <p className="text-[9.5pt] font-normal capitalize italic">{contractor.mainCompany.address}</p>}
+                    {contractor.mainCompany.pec && <p className="text-[9.5pt] font-normal lowercase italic underline">PEC: {contractor.mainCompany.pec}</p>}
                 </div>
             </div>
         </div>
 
         {/* SUBJECT */}
-        <div className="mb-10 text-[10pt] text-justify">
-            <p className="font-bold leading-relaxed">Oggetto: {project.projectName} - CUP: {project.cup} {project.cig ? `- CIG: ${project.cig}` : ''}.</p>
-            <p className="font-bold mt-1 tracking-wider">Convocazione {doc.visitNumber === 1 ? 'I' : doc.visitNumber === 2 ? 'II' : doc.visitNumber === 3 ? 'III' : doc.visitNumber}° visita di Collaudo</p>
+        <div className="mb-10 text-[10.5pt] text-justify">
+            <p className="leading-relaxed">
+                <span className="font-bold">Oggetto: {project.projectName}</span>
+                {project.cup ? ` - CUP: ${project.cup}` : ''}
+                {project.cig ? ` - CIG: ${project.cig}` : ''}.
+            </p>
+            <p className="font-bold mt-2 tracking-wide underline">
+                Convocazione {doc.visitNumber === 1 ? 'I' : doc.visitNumber === 2 ? 'II' : doc.visitNumber === 3 ? 'III' : doc.visitNumber}° visita di Collaudo
+            </p>
         </div>
 
-        {/* BODY */}
-        <div className="text-[10pt] text-justify space-y-5 flex-grow">
-            <p>Sentite le parti, si comunica che la {doc.visitNumber === 1 ? 'I' : doc.visitNumber === 2 ? 'II' : doc.visitNumber === 3 ? 'III' : doc.visitNumber}° visita di collaudo dei lavori di cui in oggetto è fissata per il giorno:</p>
-            
-            <p className="text-center font-bold text-[11pt] py-2">
-                il giorno {formatShortDate(doc.date)}, ore {doc.time || '12.00'}, con incontro presso il luogo dei lavori.
-            </p>
+        {/* BODY TEXT: EXACT WORDING FROM FAC-SIMILE */}
+        <div className="text-[10.5pt] text-justify space-y-6 flex-grow leading-[1.3]">
+            <p>Sentite le parti, si comunica che la {doc.visitNumber === 1 ? 'I' : doc.visitNumber === 2 ? 'II' : doc.visitNumber === 3 ? 'III' : doc.visitNumber}° visita di collaudo dei lavori di cui in oggetto è fissata per <span className="font-bold">il giorno {formatShortDate(doc.date)}, ore {doc.time || '12.00'}</span>, con incontro presso il luogo dei lavori.</p>
             
             <p>Durante le operazioni di collaudo, la Ditta dovrà assicurare la disponibilità di personale ed attrezzature per le verifiche, i saggi e le prove necessarie, oltre a copia del progetto completo in formato cartaceo al fine di agevolare le opportune valutazioni sul posto.</p>
             
@@ -169,27 +188,17 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             
             <p>Si rammenta, altresì, l’obbligo per la D.L. di presenziare alle operazioni suddette.</p>
             
-            <p className="pt-4">Distinti saluti</p>
+            <p className="pt-2">Distinti saluti</p>
         </div>
 
-        {/* SIGNATURE */}
-        <div className="mt-8 text-right text-[10pt]">
-            <p className="uppercase font-bold leading-tight">IL COLLAUDATORE STATICO, TECNICO-AMMINISTRATIVO</p>
-            <p className="uppercase font-bold leading-tight">E FUNZIONALE DEGLI IMPIANTI</p>
-            <p className="mt-6 font-bold">{formatNameWithTitle(tester)}</p>
-            <div className="h-16"></div>
-        </div>
-
-        {/* FOOTER: TESTER CONTACT DETAILS */}
-        <div className="mt-auto pt-4 border-t border-slate-200 grid grid-cols-2 gap-x-12 text-[8pt] text-slate-600">
-            <div className="space-y-1">
-                <p>{tester.address || 'Piazza Matteotti, 3 - 72023 Mesagne (BR)'}</p>
-                <p>Tel/Fax: {tester.phone || '0831.777752'}</p>
-            </div>
-            <div className="text-right space-y-1">
-                <p>PEC: <span className="underline">{tester.pec || 'arch.luigiresta@pec.it'}</span></p>
-                <p>Email: <span className="underline">{tester.email || 'arch.luigiresta@gmail.com'}</span></p>
-                <p>P.IVA: {tester.vat || '392.6739862'}</p>
+        {/* SIGNATURE SECTION: ALIGNED RIGHT */}
+        <div className="mt-8 text-right text-[10.5pt]">
+            <p className="uppercase font-bold m-0 leading-tight">IL COLLAUDATORE STATICO, TECNICO-AMMINISTRATIVO</p>
+            <p className="uppercase font-bold m-0 leading-tight">E FUNZIONALE DEGLI IMPIANTI</p>
+            <p className="mt-8 font-bold text-[11pt] tracking-wide m-0">Arch. {tester.name || 'Luigi RESTA'}</p>
+            {/* Signature Space */}
+            <div className="h-20 flex justify-end items-center pr-12 opacity-50 italic text-xs">
+                (spazio firma)
             </div>
         </div>
       </div>
