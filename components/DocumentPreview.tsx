@@ -31,6 +31,18 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       return parts.join(' - ');
   };
 
+  const renderContactLines = (c: ContactInfo) => {
+      return (
+          <>
+            {c.address && <p className="text-[9.5pt] font-normal capitalize italic">{formatFullAddress(c)}</p>}
+            <div className="flex flex-col text-[9pt] font-normal lowercase italic underline">
+                {c.pec && <span>PEC: {c.pec}</span>}
+                {c.email && <span>Email: {c.email}</span>}
+            </div>
+          </>
+      );
+  };
+
   const getRecipientInfo = (id: string) => {
       if (id === 'rup') {
           return { 
@@ -57,12 +69,12 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
       if (id.startsWith('mandant-')) {
           const idx = parseInt(id.split('-')[1]);
           const m = project.contractor.mandants[idx];
-          return { contact: m, label: 'SPETT.LE (Impresa Mandante) ' + m.name, subLabel: '' };
+          return { contact: m, label: 'SPETT.LE (Impresa Mandante) ' + (m?.name || '...'), subLabel: '' };
       }
       if (id.startsWith('executor-')) {
           const idx = parseInt(id.split('-')[1]);
           const e = project.contractor.executors[idx];
-          return { contact: e, label: 'SPETT.LE (Consorziata Esecutrice) ' + e.name, subLabel: '' };
+          return { contact: e, label: 'SPETT.LE (Consorziata Esecutrice) ' + (e?.name || '...'), subLabel: '' };
       }
       if (id.startsWith('other-')) {
           const idx = parseInt(id.split('-')[1]);
@@ -103,8 +115,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                             {rec.isPc && <p className="text-[9.5pt] font-normal lowercase italic mb-1">E, p.c.</p>}
                             <p>{info.label}</p>
                             {info.subLabel && <p>{info.subLabel}</p>}
-                            {info.contact.address && <p className="text-[9.5pt] font-normal capitalize italic">{formatFullAddress(info.contact)}</p>}
-                            {info.contact.pec && <p className="text-[9.5pt] font-normal lowercase italic underline">PEC: {info.contact.pec}</p>}
+                            {renderContactLines(info.contact)}
                         </div>
                     );
                 })}

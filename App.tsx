@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ProjectForm } from './components/ProjectForm';
@@ -33,7 +34,6 @@ const App: React.FC = () => {
   const [projectToShare, setProjectToShare] = useState<string | null>(null);
 
   useEffect(() => {
-    // Initial system setup: Ensure Admin exists
     const initSystem = async () => {
         try {
             await db.ensureAdminExists();
@@ -54,7 +54,6 @@ const App: React.FC = () => {
     if (!currentUser) return;
     try {
       const projects = await db.getProjectsForUser(currentUser.id, currentUser.email);
-      // Sort by displayOrder ascending
       const sorted = projects.sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
       setProjectList(sorted);
     } catch (error) {
@@ -75,18 +74,17 @@ const App: React.FC = () => {
   const handleNewProject = async () => {
     if (!currentUser) return;
     
-    // Calculate next order
     const maxOrder = projectList.reduce((max, p) => Math.max(max, p.displayOrder || 0), 0);
     
     const newProject = createEmptyProject(currentUser.id);
     newProject.projectName = "Nuovo Intervento";
-    newProject.displayOrder = maxOrder + 1; // Auto-increment
+    newProject.displayOrder = maxOrder + 1;
 
     const initialDoc = createInitialDocument(newProject.id);
     await db.saveProject(newProject);
     await db.saveDocument(initialDoc);
     
-    await loadProjects(); // Reload to get sorted list
+    await loadProjects();
     handleSelectProject(newProject);
   };
 
@@ -111,7 +109,6 @@ const App: React.FC = () => {
           const currentProject = projectList[currentIndex];
           const targetProject = projectList[targetIndex];
 
-          // Swap display orders
           const currentOrder = currentProject.displayOrder ?? 0;
           const targetOrder = targetProject.displayOrder ?? 0;
 
@@ -135,7 +132,6 @@ const App: React.FC = () => {
     }
     setUserRole(role);
 
-    // Deep Merge (Safe Loading)
     const emptyTemplate = createEmptyProject(project.ownerId);
     const completeProject: ProjectConstants = {
         ...emptyTemplate,
@@ -168,6 +164,7 @@ const App: React.FC = () => {
             ...emptyTemplate.contractor,
             ...(project.contractor || {}),
             mandants: project.contractor?.mandants || [],
+            executors: project.contractor?.executors || [],
             subcontractors: project.contractor?.subcontractors || []
         }
     };
@@ -176,9 +173,10 @@ const App: React.FC = () => {
 
     try {
       const docs = await db.getDocumentsByProject(project.id);
-      if (docs.length > 0) {
-        setDocuments(docs);
-        setCurrentDocId(docs[docs.length - 1].id);
+      const sortedDocs = docs.sort((a, b) => a.visitNumber - b.visitNumber);
+      if (sortedDocs.length > 0) {
+        setDocuments(sortedDocs);
+        setCurrentDocId(sortedDocs[sortedDocs.length - 1].id);
       } else {
         const initialDoc = createInitialDocument(project.id);
         await db.saveDocument(initialDoc);
@@ -233,17 +231,16 @@ const App: React.FC = () => {
     let nextNum = 1;
     let lastPremis = '';
     
-    if (documents.length > 0) {
-        // Trova l'ultimo verbale in base al numero di visita per questo appalto
-        const lastDoc = [...documents].sort((a, b) => b.visitNumber - a.visitNumber)[0];
+    // Filtriamo i documenti specifici di questo progetto per evitare commistioni
+    const projectDocs = documents.filter(d => d.projectId === currentProject.id);
+    
+    if (projectDocs.length > 0) {
+        const lastDoc = [...projectDocs].sort((a, b) => b.visitNumber - a.visitNumber)[0];
         nextNum = lastDoc.visitNumber + 1;
         
-        // Mantieni le premesse accumulate e aggiungi le lavorazioni dell'ultima visita
         lastPremis = lastDoc.premis || '';
-        
         const lastDate = new Date(lastDoc.date).toLocaleDateString('it-IT');
         
-        // Se nel verbale precedente sono state inserite lavorazioni, aggiungile formalmente alle premesse del nuovo
         const visitWorks = lastDoc.worksExecuted && lastDoc.worksExecuted.length > 0 
             ? lastDoc.worksExecuted.join(', ') 
             : 'attività di ispezione e verifica';
@@ -257,10 +254,15 @@ const App: React.FC = () => {
 
     const newDoc: DocumentVariables = {
       ...createInitialDocument(currentProject.id),
+      id: crypto.randomUUID(), // ID univoco per il nuovo documento
       visitNumber: nextNum,
       premis: lastPremis.trim(),
+      // Copia dei destinatari dall'ultimo documento se presente per continuità
+      letterRecipients: projectDocs.length > 0 ? projectDocs[projectDocs.length - 1].letterRecipients : undefined
     };
-    setDocuments([...documents, newDoc]);
+    
+    const updatedDocs = [...documents, newDoc].sort((a, b) => a.visitNumber - b.visitNumber);
+    setDocuments(updatedDocs);
     setCurrentDocId(newDoc.id);
     await db.saveDocument(newDoc);
   };
@@ -295,8 +297,6 @@ const App: React.FC = () => {
           alert("Errore durante l'esportazione dei dati.");
       }
   };
-
-  // --- RENDER ---
 
   if (!currentUser) {
       return <AuthScreen onLogin={handleLogin} />;
@@ -333,7 +333,7 @@ const App: React.FC = () => {
           onOpenAdmin={() => setView('admin-panel')}
           onUpdateOrder={handleUpdateProjectOrder}
           onMoveProject={handleMoveProject}
-          onExportData={handleExportData} // Pass export handler
+          onExportData={handleExportData} 
           currentUser={currentUser}
         />
         {showShareModal && projectToShare && (
@@ -412,7 +412,6 @@ const App: React.FC = () => {
               onNewDocument={createNewVerbale}
               onEdit={(id) => {
                 setCurrentDocId(id);
-                // Navighiamo al tab di collaudo per l'editing
                 setActiveTab('testing');
               }}
             />

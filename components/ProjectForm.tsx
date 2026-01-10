@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ProjectConstants, ContactInfo, SubjectProfile, AppointmentData, CompanyType, DesignerProfile, DesignPhaseData } from '../types';
-import { Save, User, Users, Mail, ShieldCheck, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote, ChevronDown, ImagePlus, X, BriefcaseBusiness, Network, Hammer, Gavel, FileCheck2, UserCheck, ShieldAlert, PlusCircle } from 'lucide-react';
+import { Save, User, Users, Mail, ShieldCheck, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote, ChevronDown, ImagePlus, X, BriefcaseBusiness, Network, Hammer, Gavel, FileCheck2, UserCheck, ShieldAlert, PlusCircle, AtSign } from 'lucide-react';
 
 const TITLES = ["Arch.", "Ing.", "Geom.", "Dott.", "Dott. Agr.", "Geol.", "Per. Ind.", "Sig."];
 
@@ -134,10 +134,17 @@ const ContactCard: React.FC<ContactCardProps> = ({
                     value={contact.vat || ''} onChange={e => onChange(`${path}.vat`, e.target.value)} />
             </div>
             
-            <div>
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">PEC / Email</label>
-                <input disabled={readOnly} type="email" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                    value={contact.pec || contact.email || ''} onChange={e => onChange(`${path}.pec`, e.target.value)} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:col-span-2">
+                <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1"><Mail className="w-3 h-3"/> PEC</label>
+                    <input disabled={readOnly} type="email" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100 lowercase" 
+                        value={contact.pec || ''} onChange={e => onChange(`${path}.pec`, e.target.value)} placeholder="esempio@pec.it" />
+                </div>
+                <div>
+                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1"><AtSign className="w-3 h-3"/> Email Ordinaria</label>
+                    <input disabled={readOnly} type="email" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100 lowercase" 
+                        value={contact.email || ''} onChange={e => onChange(`${path}.email`, e.target.value)} placeholder="esempio@email.it" />
+                </div>
             </div>
 
             <div className="md:col-span-2 grid grid-cols-12 gap-3">
