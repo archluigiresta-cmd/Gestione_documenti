@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ProjectConstants, ContactInfo, SubjectProfile, AppointmentData, CompanyType, DesignerProfile, DesignPhaseData } from '../types';
-import { Save, User, Users, Mail, ShieldCheck, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote, ChevronDown, ImagePlus, X, BriefcaseBusiness, Network, Hammer, Gavel, FileCheck2, UserCheck, ShieldAlert, PlusCircle, AtSign } from 'lucide-react';
+import { Save, User, Users, Mail, ShieldCheck, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote, ChevronDown, ImagePlus, X, BriefcaseBusiness, Network, Hammer, Gavel, FileCheck2, UserCheck, ShieldAlert, PlusCircle, AtSign, Hash } from 'lucide-react';
 
 const TITLES = ["Arch.", "Ing.", "Geom.", "Dott.", "Dott. Agr.", "Geol.", "Per. Ind.", "Sig."];
 
@@ -303,14 +303,18 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                         <label className="block text-sm font-semibold mb-2">Oggetto Lavori</label>
                         <textarea disabled={readOnly} className="w-full p-3 border border-slate-300 rounded-lg h-32" value={data.projectName || ''} onChange={e => handleChange('projectName', e.target.value)} />
                     </div>
-                    <div className="grid grid-cols-3 gap-6">
+                    <div className="grid grid-cols-4 gap-6">
                         <div className="col-span-2">
                             <label className="block text-sm font-semibold mb-2">Luogo</label>
                             <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg" value={data.location || ''} onChange={e => handleChange('location', e.target.value)} />
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold mb-2">CUP</label>
+                            <label className="block text-sm font-semibold mb-2 flex items-center gap-1"><Hash className="w-3 h-3 text-blue-500"/> CUP</label>
                             <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg uppercase font-mono" value={data.cup || ''} onChange={e => handleChange('cup', e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-semibold mb-2 flex items-center gap-1"><Hash className="w-3 h-3 text-blue-500"/> CIG</label>
+                            <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg uppercase font-mono" value={data.cig || ''} onChange={e => handleChange('cig', e.target.value)} />
                         </div>
                     </div>
                 </div>

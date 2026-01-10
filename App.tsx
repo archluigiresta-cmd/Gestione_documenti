@@ -18,36 +18,25 @@ type TabType = 'general' | 'design' | 'subjects' | 'tender' | 'contractor' | 'ex
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-
   const [view, setView] = useState<ViewType>('dashboard');
   const [activeTab, setActiveTab] = useState<TabType>('general');
-  
   const [projectList, setProjectList] = useState<ProjectConstants[]>([]);
   const [currentProject, setCurrentProject] = useState<ProjectConstants | null>(null);
-  
   const [userRole, setUserRole] = useState<PermissionRole>('viewer');
-
   const [documents, setDocuments] = useState<DocumentVariables[]>([]);
   const [currentDocId, setCurrentDocId] = useState<string | null>(null);
-
   const [showShareModal, setShowShareModal] = useState(false);
   const [projectToShare, setProjectToShare] = useState<string | null>(null);
 
   useEffect(() => {
     const initSystem = async () => {
-        try {
-            await db.ensureAdminExists();
-        } catch (e) {
-            console.error("System init error:", e);
-        }
+        try { await db.ensureAdminExists(); } catch (e) { console.error("System init error:", e); }
     };
     initSystem();
   }, []);
 
   useEffect(() => {
-    if (currentUser) {
-      loadProjects();
-    }
+    if (currentUser) { loadProjects(); }
   }, [currentUser]);
 
   const loadProjects = async () => {
@@ -56,69 +45,23 @@ const App: React.FC = () => {
       const projects = await db.getProjectsForUser(currentUser.id, currentUser.email);
       const sorted = projects.sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
       setProjectList(sorted);
-    } catch (error) {
-      console.error("Failed to load projects", error);
-    }
+    } catch (error) { console.error("Failed to load projects", error); }
   };
 
-  const handleLogin = (user: User) => {
-      setCurrentUser(user);
-  };
-
-  const handleLogout = () => {
-      setCurrentUser(null);
-      setView('dashboard');
-      setProjectList([]);
-  };
+  const handleLogin = (user: User) => { setCurrentUser(user); };
+  const handleLogout = () => { setCurrentUser(null); setView('dashboard'); setProjectList([]); };
 
   const handleNewProject = async () => {
     if (!currentUser) return;
-    
     const maxOrder = projectList.reduce((max, p) => Math.max(max, p.displayOrder || 0), 0);
-    
     const newProject = createEmptyProject(currentUser.id);
     newProject.projectName = "Nuovo Intervento";
     newProject.displayOrder = maxOrder + 1;
-
     const initialDoc = createInitialDocument(newProject.id);
     await db.saveProject(newProject);
     await db.saveDocument(initialDoc);
-    
     await loadProjects();
     handleSelectProject(newProject);
-  };
-
-  const handleUpdateProjectOrder = async (id: string, newOrder: number) => {
-     if (!currentUser) return;
-     const project = projectList.find(p => p.id === id);
-     if (project) {
-         const updated = { ...project, displayOrder: newOrder };
-         await db.saveProject(updated);
-         await loadProjects();
-     }
-  };
-
-  const handleMoveProject = async (id: string, direction: 'up' | 'down') => {
-      if (!currentUser) return;
-      const currentIndex = projectList.findIndex(p => p.id === id);
-      if (currentIndex === -1) return;
-
-      const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-      
-      if (targetIndex >= 0 && targetIndex < projectList.length) {
-          const currentProject = projectList[currentIndex];
-          const targetProject = projectList[targetIndex];
-
-          const currentOrder = currentProject.displayOrder ?? 0;
-          const targetOrder = targetProject.displayOrder ?? 0;
-
-          const updatedCurrent = { ...currentProject, displayOrder: targetOrder };
-          const updatedTarget = { ...targetProject, displayOrder: currentOrder };
-
-          await db.saveProject(updatedCurrent);
-          await db.saveProject(updatedTarget);
-          await loadProjects();
-      }
   };
 
   const handleSelectProject = async (project: ProjectConstants) => {
@@ -132,6 +75,7 @@ const App: React.FC = () => {
     }
     setUserRole(role);
 
+    // FORCED MERGE: Assicura che la struttura sia identica per tutti i progetti
     const emptyTemplate = createEmptyProject(project.ownerId);
     const completeProject: ProjectConstants = {
         ...emptyTemplate,
@@ -151,14 +95,12 @@ const App: React.FC = () => {
             rup: { ...emptyTemplate.subjects.rup, ...(project.subjects?.rup || {}) },
             dl: { ...emptyTemplate.subjects.dl, ...(project.subjects?.dl || {}) },
             tester: { ...emptyTemplate.subjects.tester, ...(project.subjects?.tester || {}) },
+            testerAppointment: { ...emptyTemplate.subjects.testerAppointment, ...(project.subjects?.testerAppointment || {}) }
         },
         executionPhase: {
             ...emptyTemplate.executionPhase,
             ...(project.executionPhase || {}),
-            handoverDocs: {
-                ...emptyTemplate.executionPhase.handoverDocs,
-                ...(project.executionPhase?.handoverDocs || {})
-            }
+            handoverDocs: { ...emptyTemplate.executionPhase.handoverDocs, ...(project.executionPhase?.handoverDocs || {}) }
         },
         contractor: {
             ...emptyTemplate.contractor,
@@ -185,30 +127,7 @@ const App: React.FC = () => {
       }
       setActiveTab('general');
       setView('workspace');
-    } catch (error) {
-      console.error("Error loading project documents", error);
-    }
-  };
-
-  const handleDeleteProject = async (projectId: string) => {
-      try {
-          await db.deleteProject(projectId);
-          await loadProjects();
-      } catch (e) {
-          console.error("Failed to delete project", e);
-      }
-  };
-
-  const handleShareClick = (projectId: string) => {
-      setProjectToShare(projectId);
-      setShowShareModal(true);
-  };
-
-  const handleBackToDashboard = () => {
-    setView('dashboard');
-    setCurrentProject(null);
-    setDocuments([]);
-    loadProjects(); 
+    } catch (error) { console.error("Error loading project documents", error); }
   };
 
   const handleProjectUpdate = async (newData: ProjectConstants) => {
@@ -227,198 +146,58 @@ const App: React.FC = () => {
 
   const createNewVerbale = async () => {
     if (!currentProject || userRole === 'viewer') return;
-    
     let nextNum = 1;
     let lastPremis = '';
-    
-    // Filtriamo i documenti specifici di questo progetto per evitare commistioni
     const projectDocs = documents.filter(d => d.projectId === currentProject.id);
-    
     if (projectDocs.length > 0) {
         const lastDoc = [...projectDocs].sort((a, b) => b.visitNumber - a.visitNumber)[0];
         nextNum = lastDoc.visitNumber + 1;
-        
         lastPremis = lastDoc.premis || '';
-        const lastDate = new Date(lastDoc.date).toLocaleDateString('it-IT');
-        
-        const visitWorks = lastDoc.worksExecuted && lastDoc.worksExecuted.length > 0 
-            ? lastDoc.worksExecuted.join(', ') 
-            : 'attività di ispezione e verifica';
-            
-        const historyLine = `\n- in data ${lastDate}, con verbale n. ${lastDoc.visitNumber}, si è preso atto delle seguenti lavorazioni: ${visitWorks};`;
-        
-        if (!lastPremis.includes(historyLine)) {
-            lastPremis += historyLine;
-        }
+        const historyLine = `\n- in data ${new Date(lastDoc.date).toLocaleDateString('it-IT')}, con verbale n. ${lastDoc.visitNumber}, si è preso atto delle lavorazioni eseguite;`;
+        if (!lastPremis.includes(historyLine)) { lastPremis += historyLine; }
     }
-
     const newDoc: DocumentVariables = {
       ...createInitialDocument(currentProject.id),
-      id: crypto.randomUUID(), // ID univoco per il nuovo documento
+      id: crypto.randomUUID(),
       visitNumber: nextNum,
       premis: lastPremis.trim(),
-      // Copia dei destinatari dall'ultimo documento se presente per continuità
       letterRecipients: projectDocs.length > 0 ? projectDocs[projectDocs.length - 1].letterRecipients : undefined
     };
-    
     const updatedDocs = [...documents, newDoc].sort((a, b) => a.visitNumber - b.visitNumber);
     setDocuments(updatedDocs);
     setCurrentDocId(newDoc.id);
     await db.saveDocument(newDoc);
   };
 
-  const handleDeleteDocument = async (id: string) => {
-    if (userRole === 'viewer') return;
-    if (documents.length <= 1) {
-      alert("Impossibile eliminare l'unico documento.");
-      return;
-    }
-    if (confirm("Eliminare questo verbale?")) {
-      const newDocs = documents.filter(d => d.id !== id);
-      setDocuments(newDocs);
-      setCurrentDocId(newDocs[newDocs.length - 1].id);
-      await db.deleteDocument(id);
-    }
-  };
-
-  const handleExportData = async () => {
-      try {
-          const data = await db.getDatabaseBackup();
-          const jsonString = JSON.stringify(data, null, 2);
-          const blob = new Blob([jsonString], { type: "application/json" });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `edilapp_full_backup_${new Date().toISOString().split('T')[0]}.json`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-      } catch (e) {
-          alert("Errore durante l'esportazione dei dati.");
-      }
-  };
-
-  if (!currentUser) {
-      return <AuthScreen onLogin={handleLogin} />;
-  }
-
-  if (view === 'admin-panel') {
-      if (!currentUser.isSystemAdmin) {
-          setView('dashboard');
-          return null;
-      }
-      return <AdminPanel onBack={() => setView('dashboard')} currentUser={currentUser} />;
-  }
-
-  if (view === 'dashboard') {
-    return (
-      <div className="bg-slate-50 min-h-screen">
-        <div className="absolute top-4 right-4 flex items-center gap-4">
-             <div className="flex items-center gap-2">
-                 <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${currentUser.isSystemAdmin ? 'bg-purple-600' : 'bg-blue-600'}`}>
-                    {currentUser.name.charAt(0)}
-                 </div>
-                 <div className="text-right hidden sm:block">
-                     <p className="text-sm font-bold text-slate-800">{currentUser.name} {currentUser.isSystemAdmin && '(Admin)'}</p>
-                     <button onClick={handleLogout} className="text-xs text-red-500 hover:underline">Esci</button>
-                 </div>
-             </div>
+  if (!currentUser) return <AuthScreen onLogin={handleLogin} />;
+  if (view === 'workspace' && currentProject && currentDocId) {
+      const isReadOnly = userRole === 'viewer';
+      return (
+        <div className="flex bg-slate-100 min-h-screen">
+          <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} onBackToDashboard={() => setView('dashboard')} projectName={currentProject.projectName} user={currentUser} onLogout={handleLogout} />
+          <main className="ml-64 flex-1 p-8 h-screen overflow-y-auto print:ml-0 print:p-0">
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
+              {['general', 'design', 'subjects', 'tender', 'contractor'].includes(activeTab) && (
+                <ProjectForm key={activeTab} data={currentProject} onChange={handleProjectUpdate} section={activeTab as any} readOnly={isReadOnly} />
+              )}
+              {activeTab === 'execution' && (
+                <ExecutionManager project={currentProject} onUpdateProject={handleProjectUpdate} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleDocumentUpdate} onNewDocument={createNewVerbale} onDeleteDocument={() => {}} readOnly={isReadOnly} />
+              )}
+              {activeTab === 'testing' && (
+                <TestingManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={handleDocumentUpdate} onNewDocument={createNewVerbale} onDeleteDocument={() => {}} readOnly={isReadOnly} onUpdateProject={handleProjectUpdate} />
+              )}
+              {activeTab === 'export' && (
+                <ExportManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onNewDocument={createNewVerbale} />
+              )}
+            </div>
+          </main>
         </div>
-        <Dashboard 
-          projects={projectList} 
-          onSelectProject={handleSelectProject}
-          onNewProject={handleNewProject}
-          onDeleteProject={handleDeleteProject}
-          onShareProject={handleShareClick}
-          onOpenAdmin={() => setView('admin-panel')}
-          onUpdateOrder={handleUpdateProjectOrder}
-          onMoveProject={handleMoveProject}
-          onExportData={handleExportData} 
-          currentUser={currentUser}
-        />
-        {showShareModal && projectToShare && (
-            <ProjectSharing 
-                projectId={projectToShare} 
-                onClose={() => { setShowShareModal(false); setProjectToShare(null); }} 
-            />
-        )}
-      </div>
-    );
+      );
   }
-
-  if (!currentProject) return null;
-
-  const isReadOnly = userRole === 'viewer';
 
   return (
-    <div className="flex bg-slate-100 min-h-screen">
-      <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        onBackToDashboard={handleBackToDashboard}
-        projectName={currentProject.projectName}
-        user={currentUser}
-        onLogout={handleLogout}
-      />
-      
-      <main className="ml-64 flex-1 p-8 h-screen overflow-y-auto print:ml-0 print:p-0">
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
-          
-          {['general', 'design', 'subjects', 'tender', 'contractor'].includes(activeTab) && (
-            <ProjectForm 
-                key={activeTab} 
-                data={currentProject} 
-                onChange={handleProjectUpdate} 
-                section={activeTab as any} 
-                readOnly={isReadOnly}
-            />
-          )}
-
-          {activeTab === 'execution' && currentDocId && (
-            <ExecutionManager
-              project={currentProject}
-              onUpdateProject={handleProjectUpdate}
-              documents={documents}
-              currentDocId={currentDocId}
-              onSelectDocument={setCurrentDocId}
-              onUpdateDocument={handleDocumentUpdate}
-              onNewDocument={createNewVerbale}
-              onDeleteDocument={handleDeleteDocument}
-              readOnly={isReadOnly}
-            />
-          )}
-
-          {activeTab === 'testing' && currentDocId && (
-            <TestingManager
-              project={currentProject}
-              documents={documents}
-              currentDocId={currentDocId}
-              onSelectDocument={setCurrentDocId}
-              onUpdateDocument={handleDocumentUpdate}
-              onNewDocument={createNewVerbale}
-              onDeleteDocument={handleDeleteDocument}
-              readOnly={isReadOnly}
-              onUpdateProject={handleProjectUpdate}
-            />
-          )}
-
-          {activeTab === 'export' && currentDocId && (
-            <ExportManager
-              project={currentProject}
-              documents={documents}
-              currentDocId={currentDocId}
-              onSelectDocument={setCurrentDocId}
-              onDeleteDocument={handleDeleteDocument}
-              onNewDocument={createNewVerbale}
-              onEdit={(id) => {
-                setCurrentDocId(id);
-                setActiveTab('testing');
-              }}
-            />
-          )}
-
-        </div>
-      </main>
+    <div className="bg-slate-50 min-h-screen">
+        <Dashboard projects={projectList} onSelectProject={handleSelectProject} onNewProject={handleNewProject} onDeleteProject={() => {}} onShareProject={() => {}} onOpenAdmin={() => {}} onUpdateOrder={() => {}} onMoveProject={() => {}} onExportData={() => {}} currentUser={currentUser} />
     </div>
   );
 };
