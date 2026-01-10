@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { DocumentVariables, ProjectConstants, TesterVisitSummary, DesignerProfile } from '../types';
-import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext, RefreshCw, MessageSquare, Bell, FileCheck2, X, TextQuote, Wand2, UserPlus } from 'lucide-react';
+import { DocumentVariables, ProjectConstants, TesterVisitSummary, LetterRecipientConfig } from '../types';
+import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ListChecks, ArrowRight, ArrowLeft, Activity, RefreshCw, MessageSquare, Bell, FileCheck2, X, UserPlus, ChevronUp, ChevronDown, AtSign } from 'lucide-react';
 
 interface TestingManagerProps {
   project: ProjectConstants;
@@ -11,11 +11,10 @@ interface TestingManagerProps {
   onUpdateDocument: (d: DocumentVariables) => void;
   onNewDocument: () => void;
   onDeleteDocument: (id: string) => void;
-  onUpdateProject?: (p: ProjectConstants) => void; // New prop for saving summaries
+  onUpdateProject?: (p: ProjectConstants) => void;
   readOnly?: boolean; 
 }
 
-// LETTE PRESETS FOR CONVOCATION
 const LETTER_PARAGRAPH_OPTIONS = [
     "Durante le operazioni di collaudo, la Ditta dovrà assicurare la disponibilità di personale ed attrezzature per le verifiche, i saggi e le prove necessarie.",
     "La Ditta dovrà inoltre assicurare copia del progetto completo in formato cartaceo al fine di agevolare le opportune valutazioni sul posto.",
@@ -60,16 +59,10 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   const currentDoc = documents.find(d => d.id === currentDocId) || documents[0];
   const [step, setStep] = useState<'info' | 'convocation' | 'present' | 'works' | 'requests' | 'invitations' | 'common' | 'eval'>('info');
 
-  // State for Inputs
   const [summaryManualInput, setSummaryManualInput] = useState('');
-  const [inProgressInput, setInProgressInput] = useState('');
-  const [upcomingInput, setUpcomingInput] = useState('');
-
-  // State for Custom Dropdown Inputs
   const [activeCustomField, setActiveCustomField] = useState<'testerRequests' | 'testerInvitations' | 'commonParts' | 'letterBody' | null>(null);
   const [customText, setCustomText] = useState('');
   
-  // Refs for selects to reset them
   const requestsSelectRef = useRef<HTMLSelectElement>(null);
   const invitationsSelectRef = useRef<HTMLSelectElement>(null);
   const commonSelectRef = useRef<HTMLSelectElement>(null);
@@ -84,7 +77,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
     try { return new Date(dateStr).toLocaleDateString('it-IT'); } catch { return dateStr; }
   };
 
-  // Logic to generate the standard letter intro
   const generateLetterIntro = () => {
     if(readOnly) return;
     const visitNumStr = currentDoc.visitNumber === 1 ? 'I' : currentDoc.visitNumber === 2 ? 'II' : currentDoc.visitNumber === 3 ? 'III' : `${currentDoc.visitNumber}°`;
@@ -92,14 +84,11 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
     handleUpdate({...currentDoc, letterIntro: introText});
   };
 
-  // Logic to generate the standard verbale intro text
   const generateIntroText = () => {
         if(readOnly) return;
-        
         const prevDocs = documents
             .filter(d => d.visitNumber < currentDoc.visitNumber) 
             .sort((a, b) => a.visitNumber - b.visitNumber);
-
         let prevDateDesc = 'la consegna dei lavori';
         if (prevDocs.length > 0) {
             const lastDoc = prevDocs[prevDocs.length - 1];
@@ -107,88 +96,53 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
         } else if (project.executionPhase.deliveryDate) {
             prevDateDesc = `il ${formatShortDate(project.executionPhase.deliveryDate)}`;
         }
-
         const defaultText = `Durante il presente sopralluogo prende atto che, nel periodo intercorrente tra ${prevDateDesc} e la data odierna sono state effettuate le seguenti lavorazioni:`;
-        
         handleUpdate({...currentDoc, worksIntroText: defaultText});
   };
 
-  // AUTO-POPULATE INTROS ON LOAD OR IF EMPTY
   useEffect(() => {
     if (!currentDoc || readOnly) return;
-    if (!currentDoc.worksIntroText || currentDoc.worksIntroText.trim() === '') {
-        generateIntroText();
-    }
-    if (!currentDoc.letterIntro || currentDoc.letterIntro.trim() === '') {
-        generateLetterIntro();
-    }
+    if (!currentDoc.worksIntroText) generateIntroText();
+    if (!currentDoc.letterIntro) generateLetterIntro();
     if (!currentDoc.letterBodyParagraphs || currentDoc.letterBodyParagraphs.length === 0) {
         handleUpdate({ ...currentDoc, letterBodyParagraphs: [...LETTER_PARAGRAPH_OPTIONS] });
     }
-    if (!currentDoc.selectedRecipients) {
-        handleUpdate({ ...currentDoc, selectedRecipients: ['rup', 'dl', 'contractor'] });
+    if (!currentDoc.letterRecipients) {
+        handleUpdate({ ...currentDoc, letterRecipients: [{ id: 'rup', isPc: false }, { id: 'dl', isPc: false }, { id: 'contractor', isPc: false }] });
     }
   }, [currentDoc?.id]);
-
-  if (!currentDoc) return <div className="p-8 text-center">Nessun verbale attivo. Crea un nuovo verbale dalla dashboard.</div>;
-
-  const handlePresetInsert = (field: 'testerRequests' | 'testerInvitations' | 'commonParts', text: string) => {
-      if (readOnly) return;
-      const current = currentDoc[field] || '';
-      const separator = current.trim() ? '\n- ' : '- ';
-      handleUpdate({ ...currentDoc, [field]: current + separator + text });
-  };
 
   const handleCustomConfirm = () => {
       if (activeCustomField && customText.trim()) {
           if (activeCustomField === 'letterBody') {
               handleUpdate({ ...currentDoc, letterBodyParagraphs: [...(currentDoc.letterBodyParagraphs || []), customText.trim()] });
           } else {
-              handlePresetInsert(activeCustomField, customText.trim());
+              const current = currentDoc[activeCustomField] || '';
+              const separator = current.trim() ? '\n- ' : '- ';
+              handleUpdate({ ...currentDoc, [activeCustomField]: current + separator + customText.trim() });
           }
           setCustomText('');
           setActiveCustomField(null);
-          
-          // Reset Selects
-          if (activeCustomField === 'testerRequests' && requestsSelectRef.current) requestsSelectRef.current.value = "";
-          if (activeCustomField === 'testerInvitations' && invitationsSelectRef.current) invitationsSelectRef.current.value = "";
-          if (activeCustomField === 'commonParts' && commonSelectRef.current) commonSelectRef.current.value = "";
-          if (activeCustomField === 'letterBody' && letterSelectRef.current) letterSelectRef.current.value = "";
       }
   };
 
   const handleCustomCancel = () => {
       setCustomText('');
       setActiveCustomField(null);
-       // Reset Selects
-       if (activeCustomField === 'testerRequests' && requestsSelectRef.current) requestsSelectRef.current.value = "";
-       if (activeCustomField === 'testerInvitations' && invitationsSelectRef.current) invitationsSelectRef.current.value = "";
-       if (activeCustomField === 'commonParts' && commonSelectRef.current) commonSelectRef.current.value = "";
-       if (activeCustomField === 'letterBody' && letterSelectRef.current) letterSelectRef.current.value = "";
   };
 
-  // Helper to safely update execution phase
   const updateExec = (field: string, value: any) => {
     if (readOnly || !onUpdateProject) return;
-    onUpdateProject({
-        ...project,
-        executionPhase: {
-            ...project.executionPhase,
-            [field]: value
-        }
-    });
+    onUpdateProject({ ...project, executionPhase: { ...project.executionPhase, [field]: value } });
   };
 
-  // --- Logic for Tester Visit Summaries (Project Level) ---
   const execPhase = project.executionPhase || {};
   const summaryIndex = (currentDoc.visitNumber > 0 ? currentDoc.visitNumber : 1) - 1;
   const currentSummary = execPhase.testerVisitSummaries?.[summaryIndex];
 
   const initSummaryForCurrentVisit = () => {
       if (readOnly || !onUpdateProject) return;
-      const newSummary: TesterVisitSummary = {
-          id: crypto.randomUUID(), startDate: '', endDate: '', works: [], notes: ''
-      };
+      const newSummary = { id: crypto.randomUUID(), startDate: '', endDate: '', works: [], notes: '' };
       const newSummaries = [...(execPhase.testerVisitSummaries || [])];
       newSummaries[summaryIndex] = newSummary;
       updateExec('testerVisitSummaries', newSummaries);
@@ -203,32 +157,45 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
 
   const addManualWorkSummary = () => {
       if (readOnly || !summaryManualInput.trim() || !currentSummary) return;
-      const newList = [...currentSummary.works, summaryManualInput.trim()];
-      updateCurrentSummary('works', newList);
+      updateCurrentSummary('works', [...currentSummary.works, summaryManualInput.trim()]);
       setSummaryManualInput('');
   };
 
-  const updateWorkSummaryItem = (index: number, newValue: string) => {
-      if (readOnly || !currentSummary) return;
-      const newList = [...currentSummary.works];
-      newList[index] = newValue;
-      updateCurrentSummary('works', newList);
+  const getRecipientLabel = (id: string) => {
+      if (id === 'rup') return 'RUP';
+      if (id === 'dl') return 'D.L.';
+      if (id === 'contractor') return 'Impresa';
+      if (id.startsWith('other-')) {
+          const idx = parseInt(id.split('-')[1]);
+          return project.subjects.others?.[idx]?.contact.role || `Altro ${idx+1}`;
+      }
+      return id;
   };
 
-  const removeWorkSummary = (index: number) => {
-      if (readOnly || !currentSummary) return;
-      const newList = [...currentSummary.works];
-      newList.splice(index, 1);
-      updateCurrentSummary('works', newList);
-  };
-
-  const toggleRecipient = (id: string) => {
+  const toggleLetterRecipient = (id: string) => {
       if (readOnly) return;
-      const current = currentDoc.selectedRecipients || [];
-      if (current.includes(id)) {
-          handleUpdate({ ...currentDoc, selectedRecipients: current.filter(r => r !== id) });
+      const current = currentDoc.letterRecipients || [];
+      const exists = current.find(r => r.id === id);
+      if (exists) {
+          handleUpdate({ ...currentDoc, letterRecipients: current.filter(r => r.id !== id) });
       } else {
-          handleUpdate({ ...currentDoc, selectedRecipients: [...current, id] });
+          handleUpdate({ ...currentDoc, letterRecipients: [...current, { id, isPc: false }] });
+      }
+  };
+
+  const toggleRecipientPc = (id: string) => {
+      if (readOnly) return;
+      const current = currentDoc.letterRecipients || [];
+      handleUpdate({ ...currentDoc, letterRecipients: current.map(r => r.id === id ? { ...r, isPc: !r.isPc } : r) });
+  };
+
+  const moveRecipient = (idx: number, direction: 'up' | 'down') => {
+      if (readOnly) return;
+      const current = [...(currentDoc.letterRecipients || [])];
+      const target = direction === 'up' ? idx - 1 : idx + 1;
+      if (target >= 0 && target < current.length) {
+          [current[idx], current[target]] = [current[target], current[idx]];
+          handleUpdate({ ...currentDoc, letterRecipients: current });
       }
   };
 
@@ -291,10 +258,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                       <div><label className="block text-sm font-bold text-slate-700 mb-2">Ora Fine (Verbale)</label>
                           <input disabled={readOnly} type="time" className="w-full p-3 border border-slate-300 rounded-lg" value={currentDoc.endTime || ''} onChange={e => handleUpdate({...currentDoc, endTime: e.target.value})} />
                       </div>
-                      <div className="md:col-span-3">
-                          <label className="block text-sm font-bold text-slate-700 mb-2">N. Progressivo</label>
-                          <input disabled={readOnly} type="number" className="w-32 p-3 border border-slate-300 rounded-lg bg-slate-50 font-mono text-center text-lg" value={currentDoc.visitNumber} onChange={e => handleUpdate({...currentDoc, visitNumber: parseInt(e.target.value)})} />
-                      </div>
                   </div>
               </div>
           )}
@@ -303,35 +266,40 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
               <div className="animate-in fade-in slide-in-from-right-4 space-y-8">
                   <h3 className="text-lg font-bold text-slate-800 border-b pb-4 flex items-center gap-2"><Mail className="w-5 h-5 text-blue-600"/> Contenuti Lettera di Convocazione</h3>
                   
-                  {/* RECIPIENT SELECTION */}
                   <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
                       <h4 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider flex items-center gap-2">
-                        <UserPlus className="w-4 h-4 text-blue-500"/> Seleziona Destinatari Lettera
+                        <UserPlus className="w-4 h-4 text-blue-500"/> Gestione Destinatari Lettera
                       </h4>
-                      <div className="flex flex-wrap gap-4">
-                          <label className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 cursor-pointer hover:border-blue-400">
-                             <input type="checkbox" checked={(currentDoc.selectedRecipients || []).includes('rup')} onChange={() => toggleRecipient('rup')} className="w-4 h-4 rounded text-blue-600" />
-                             <span className="text-sm font-medium">RUP</span>
-                          </label>
-                          <label className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 cursor-pointer hover:border-blue-400">
-                             <input type="checkbox" checked={(currentDoc.selectedRecipients || []).includes('dl')} onChange={() => toggleRecipient('dl')} className="w-4 h-4 rounded text-blue-600" />
-                             <span className="text-sm font-medium">D.L.</span>
-                          </label>
-                          <label className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 cursor-pointer hover:border-blue-400">
-                             <input type="checkbox" checked={(currentDoc.selectedRecipients || []).includes('contractor')} onChange={() => toggleRecipient('contractor')} className="w-4 h-4 rounded text-blue-600" />
-                             <span className="text-sm font-medium">Impresa</span>
-                          </label>
-                          {/* OTHER SUBJECTS DYNAMIC LIST */}
-                          {(project.subjects.others || []).map((other, oIdx) => (
-                             <label key={oIdx} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 cursor-pointer hover:border-blue-400">
-                                <input 
-                                    type="checkbox" 
-                                    checked={(currentDoc.selectedRecipients || []).includes(`other-${oIdx}`)} 
-                                    onChange={() => toggleRecipient(`other-${oIdx}`)} 
-                                    className="w-4 h-4 rounded text-blue-600" 
-                                />
-                                <span className="text-sm font-medium">{other.contact.role || other.contact.name || `Altro ${oIdx+1}`}</span>
-                             </label>
+                      
+                      <div className="flex flex-wrap gap-2 mb-6 border-b border-slate-200 pb-4">
+                          {['rup', 'dl', 'contractor', ...(project.subjects.others || []).map((_, i) => `other-${i}`)].map(id => {
+                              const isSel = (currentDoc.letterRecipients || []).some(r => r.id === id);
+                              return (
+                                  <button key={id} onClick={() => toggleLetterRecipient(id)} className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${isSel ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-300 hover:border-blue-400'}`}>
+                                      {getRecipientLabel(id)}
+                                  </button>
+                              );
+                          })}
+                      </div>
+
+                      <div className="space-y-2">
+                          {(currentDoc.letterRecipients || []).map((rec, idx) => (
+                              <div key={rec.id} className="flex items-center gap-4 bg-white p-3 rounded-lg border border-slate-200 shadow-sm group">
+                                  <div className="flex flex-col">
+                                      <button disabled={idx === 0} onClick={() => moveRecipient(idx, 'up')} className="p-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-0"><ChevronUp className="w-4 h-4"/></button>
+                                      <button disabled={idx === (currentDoc.letterRecipients?.length || 0) - 1} onClick={() => moveRecipient(idx, 'down')} className="p-0.5 text-slate-400 hover:text-blue-600 disabled:opacity-0"><ChevronDown className="w-4 h-4"/></button>
+                                  </div>
+                                  <div className="flex-1">
+                                      <p className="font-bold text-slate-800 text-sm">{getRecipientLabel(rec.id)}</p>
+                                  </div>
+                                  <div className="flex items-center gap-4">
+                                      <label className="flex items-center gap-2 cursor-pointer">
+                                          <input type="checkbox" checked={rec.isPc} onChange={() => toggleRecipientPc(rec.id)} className="w-4 h-4 rounded text-amber-500" />
+                                          <span className="text-xs font-bold text-slate-500 uppercase">p.c.</span>
+                                      </label>
+                                      <button onClick={() => toggleLetterRecipient(rec.id)} className="text-slate-300 hover:text-red-500"><X className="w-4 h-4"/></button>
+                                  </div>
+                              </div>
                           ))}
                       </div>
                   </div>
@@ -345,9 +313,9 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                   </div>
 
                   <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-3">Corpo della Lettera (Blocchi selezionabili)</label>
+                      <label className="block text-sm font-bold text-slate-700 mb-3">Corpo della Lettera</label>
                       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                        <select ref={letterSelectRef} disabled={readOnly} className="w-full p-2 border border-blue-300 rounded text-sm bg-white outline-none"
+                        <select disabled={readOnly} className="w-full p-2 border border-blue-300 rounded text-sm bg-white"
                           onChange={(e) => {
                               if (!e.target.value) return;
                               if (e.target.value === 'OTHER') { setActiveCustomField('letterBody'); setCustomText(''); }
@@ -355,9 +323,9 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                               e.target.value = '';
                           }}
                         >
-                            <option value="">Aggiungi un blocco standard...</option>
+                            <option value="">Aggiungi blocco standard...</option>
                             {LETTER_PARAGRAPH_OPTIONS.map((opt, i) => <option key={i} value={opt}>{opt.substring(0, 80)}...</option>)}
-                            <option value="OTHER" className="font-bold text-blue-800">Altro contenuto personalizzato...</option>
+                            <option value="OTHER">Altro personalizzato...</option>
                         </select>
                         {activeCustomField === 'letterBody' && (
                             <div className="mt-3 flex flex-col gap-2">
@@ -373,15 +341,10 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                               <p className="flex-1 text-xs text-slate-700 leading-relaxed">{p}</p>
                               {!readOnly && <button onClick={() => {
                                   const newList = [...currentDoc.letterBodyParagraphs]; newList.splice(idx, 1); handleUpdate({...currentDoc, letterBodyParagraphs: newList});
-                              }} className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4"/></button>}
+                              }} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4"/></button>}
                            </div>
                         ))}
                       </div>
-                  </div>
-
-                  <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-1">Testo Finale</label>
-                      <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg text-sm" value={currentDoc.letterClosing || 'Distinti saluti.'} onChange={e => handleUpdate({...currentDoc, letterClosing: e.target.value})} />
                   </div>
               </div>
           )}
@@ -431,8 +394,10 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                                    {currentSummary.works.map((work, wIdx) => (
                                        <li key={wIdx} className="flex justify-between items-center text-sm p-1.5 hover:bg-slate-50 rounded group gap-2">
                                            <span className="text-slate-500 font-mono text-xs">{wIdx + 1}.</span>
-                                           <input disabled={readOnly} type="text" className="flex-1 bg-transparent border-none focus:ring-0 p-0 text-sm" value={work} onChange={(e) => updateWorkSummaryItem(wIdx, e.target.value)} />
-                                           {!readOnly && <button onClick={() => removeWorkSummary(wIdx)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4"/></button>}
+                                           <p className="flex-1 text-sm">{work}</p>
+                                           {!readOnly && <button onClick={() => {
+                                               const newList = [...currentSummary.works]; newList.splice(wIdx, 1); updateCurrentSummary('works', newList);
+                                           }} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4"/></button>}
                                        </li>
                                    ))}
                                </ul>
@@ -449,80 +414,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                   </section>
               </div>
           )}
-
-          {step === 'requests' && (
-              <div className="animate-in fade-in slide-in-from-right-4">
-                  <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4 flex items-center gap-2"><MessageSquare className="w-5 h-5"/> Richieste del Collaudatore</h3>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                      <select ref={requestsSelectRef} disabled={readOnly} className="w-full p-2 border border-blue-300 rounded text-sm" onChange={(e) => {
-                            if (!e.target.value) return; setActiveCustomField('testerRequests'); setCustomText(e.target.value === 'OTHER' ? '' : e.target.value); e.target.value = '';
-                        }}
-                      >
-                          <option value="">Richieste standard...</option>
-                          {REQUEST_OPTIONS.map((opt, i) => <option key={i} value={opt}>{opt}</option>)}
-                          <option value="OTHER" className="font-bold">Altro...</option>
-                      </select>
-                      {activeCustomField === 'testerRequests' && (
-                          <div className="mt-3 flex flex-col gap-2"><textarea className="w-full p-2 border border-blue-300 rounded text-sm" rows={3} value={customText} onChange={e => setCustomText(e.target.value)} autoFocus />
-                              <div className="flex justify-end gap-2"><button onClick={handleCustomCancel} className="text-xs font-bold">Annulla</button><button onClick={handleCustomConfirm} className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold">Aggiungi</button></div>
-                          </div>
-                      )}
-                  </div>
-                  <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed" value={currentDoc.testerRequests || ''} onChange={e => handleUpdate({...currentDoc, testerRequests: e.target.value})} placeholder="Richieste specifiche..."/>
-              </div>
-          )}
-
-          {step === 'invitations' && (
-              <div className="animate-in fade-in slide-in-from-right-4">
-                  <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4 flex items-center gap-2"><Bell className="w-5 h-5"/> Inviti del Collaudatore</h3>
-                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-                      <select ref={invitationsSelectRef} disabled={readOnly} className="w-full p-2 border border-amber-300 rounded text-sm" onChange={(e) => {
-                            if (!e.target.value) return; setActiveCustomField('testerInvitations'); setCustomText(e.target.value === 'OTHER' ? '' : e.target.value); e.target.value = '';
-                        }}
-                      >
-                          <option value="">Inviti standard...</option>
-                          {INVITATION_OPTIONS.map((opt, i) => <option key={i} value={opt}>{opt.substring(0, 100)}...</option>)}
-                          <option value="OTHER" className="font-bold">Altro...</option>
-                      </select>
-                      {activeCustomField === 'testerInvitations' && (
-                          <div className="mt-3 flex flex-col gap-2"><textarea className="w-full p-2 border border-amber-300 rounded text-sm" rows={3} value={customText} onChange={e => setCustomText(e.target.value)} autoFocus />
-                              <div className="flex justify-end gap-2"><button onClick={handleCustomCancel} className="text-xs font-bold">Annulla</button><button onClick={handleCustomConfirm} className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold">Aggiungi</button></div>
-                          </div>
-                      )}
-                  </div>
-                  <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed" value={currentDoc.testerInvitations || ''} onChange={e => handleUpdate({...currentDoc, testerInvitations: e.target.value})} placeholder="Inviti e prescrizioni..."/>
-              </div>
-          )}
-
-          {step === 'common' && (
-              <div className="animate-in fade-in slide-in-from-right-4">
-                  <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4 flex items-center gap-2"><FileCheck2 className="w-5 h-5"/> Parti Comuni & Chiusura</h3>
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
-                      <select ref={commonSelectRef} disabled={readOnly} className="w-full p-2 border border-slate-300 rounded text-sm" onChange={(e) => {
-                            if (!e.target.value) return; setActiveCustomField('commonParts'); setCustomText(e.target.value === 'OTHER' ? '' : e.target.value); e.target.value = '';
-                        }}
-                      >
-                          <option value="">Frasi di chiusura standard...</option>
-                          {COMMON_PART_OPTIONS.map((opt, i) => <option key={i} value={opt}>{opt.substring(0, 100)}...</option>)}
-                          <option value="OTHER" className="font-bold">Altro...</option>
-                      </select>
-                      {activeCustomField === 'commonParts' && (
-                          <div className="mt-3 flex flex-col gap-2"><textarea className="w-full p-2 border border-blue-300 rounded text-sm" rows={3} value={customText} onChange={e => setCustomText(e.target.value)} autoFocus />
-                              <div className="flex justify-end gap-2"><button onClick={handleCustomCancel} className="text-xs font-bold">Annulla</button><button onClick={handleCustomConfirm} className="bg-slate-800 text-white px-3 py-1 rounded text-xs font-bold">Aggiungi</button></div>
-                          </div>
-                      )}
-                  </div>
-                  <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed" value={currentDoc.commonParts || ''} onChange={e => handleUpdate({...currentDoc, commonParts: e.target.value})} placeholder="Frasi di rito e chiusura..."/>
-              </div>
-          )}
-
-          {step === 'eval' && (
-              <div className="animate-in fade-in slide-in-from-right-4">
-                  <h3 className="text-lg font-bold text-slate-800 mb-6 border-b pb-4">Valutazioni Tecnico-Amministrative</h3>
-                  <textarea disabled={readOnly} className="w-full p-5 border border-slate-300 rounded-xl h-64 text-sm leading-relaxed" value={currentDoc.observations} onChange={e => handleUpdate({...currentDoc, observations: e.target.value})} placeholder="Valutazioni del collaudatore..."/>
-              </div>
-          )}
-
        </div>
 
        <div className="flex justify-between mt-6">

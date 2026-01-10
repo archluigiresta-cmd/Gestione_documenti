@@ -1,22 +1,26 @@
 
+
 export interface ContactInfo {
-  name: string; // Nome e Cognome o Ragione Sociale
-  title?: string; // Arch., Ing., Geom.
-  role?: string; // Ruolo specifico o Categoria Lavori (per subappalti)
+  name: string;
+  title?: string;
+  role?: string;
   address?: string;
+  zip?: string;      // NEW: CAP
+  city?: string;     // NEW: Città
+  province?: string; // NEW: Provincia
   email?: string;
   pec?: string;
   phone?: string;
-  vat?: string; // P.IVA / C.F.
-  repName?: string; // Rappresentante Legale Name
-  repRole?: string; // Rappresentante Legale Role
-  repTitle?: string; // NEW: Titolo Rappresentante (es. Sig., Dott.)
-  professionalOrder?: string; // NEW: Albo/Ordine di appartenenza
-  registrationNumber?: string; // NEW: Numero iscrizione
+  vat?: string;
+  repName?: string;
+  repRole?: string;
+  repTitle?: string;
+  professionalOrder?: string;
+  registrationNumber?: string;
 }
 
 export interface AppointmentData {
-  type: string; // Es. Determina, Delibera, Lettera incarico
+  type: string;
   number: string;
   date: string;
 }
@@ -27,10 +31,10 @@ export interface SubjectProfile {
 }
 
 export interface DesignerProfile extends SubjectProfile {
-  designLevels: string[]; // NEW: ['PFTE', 'Esecutivo', ...]
-  roles: string[]; // NEW: ['Architettonico', 'Strutturale', ...] (Multiselect)
-  isLegalEntity: boolean; // NEW: True if RTP or Engineering Society
-  operatingDesigners: ContactInfo[]; // NEW: List of actual people doing the work if Entity
+  designLevels: string[];
+  roles: string[];
+  isLegalEntity: boolean;
+  operatingDesigners: ContactInfo[];
 }
 
 export type CompanyType = 'single' | 'ati' | 'consortium';
@@ -102,6 +106,11 @@ export interface TesterVisitSummary {
     notes: string;
 }
 
+export interface LetterRecipientConfig {
+  id: string;   // 'rup', 'dl', 'contractor', o 'other-0', etc.
+  isPc: boolean; // True se "p.c."
+}
+
 export interface ProjectConstants {
   id: string; 
   ownerId: string; 
@@ -145,7 +154,7 @@ export interface ProjectConstants {
     dlOffice: SubjectProfile[]; 
     cse: DesignerProfile; 
     tester: SubjectProfile; 
-    others: SubjectProfile[]; // NEW: Altre figure interessate
+    others: SubjectProfile[]; // NEW
     testerAppointment: { 
         nominationType: string;
         nominationAuthority: string; 
@@ -196,24 +205,28 @@ export interface ProjectConstants {
   };
 }
 
+/**
+ * Interface representing a photo attachment with metadata.
+ */
 export interface PhotoAttachment {
   id: string;
-  url: string; 
-  file?: File; 
+  url: string;
+  file?: File;
   description: string;
 }
 
+/**
+ * Type representing the different kinds of documents that can be generated.
+ */
 export type DocumentType = 
+  | 'LETTERA_CONVOCAZIONE' 
   | 'VERBALE_COLLAUDO' 
-  | 'LETTERA_CONVOCAZIONE'
   | 'VERBALE_CONSEGNA' 
   | 'SOSPENSIONE_LAVORI' 
   | 'RIPRESA_LAVORI' 
   | 'SAL' 
-  | 'RELAZIONE_FINALE' 
   | 'RELAZIONE_COLLAUDO' 
-  | 'CERTIFICATO_ULTIMAZIONE' 
-  | 'CERTIFICATO_REGOLARE_ESECUZIONE';
+  | 'CERTIFICATO_ULTIMAZIONE';
 
 export interface DocumentVariables {
   id: string;
@@ -221,8 +234,8 @@ export interface DocumentVariables {
   createdAt: number; 
   visitNumber: number; 
   date: string;
-  time: string; // Ora Inizio
-  endTime: string; // Ora Fine
+  time: string; 
+  endTime: string; 
   convocationMethod: string; 
   convocationDate: string;   
   convocationDetails: string; 
@@ -238,16 +251,8 @@ export interface DocumentVariables {
   observations: string; 
   photos: PhotoAttachment[];
   
-  // NEW FIELDS FOR LETTER
   letterIntro: string;
   letterBodyParagraphs: string[];
   letterClosing: string;
-  selectedRecipients?: string[]; // NEW: ID o tipi di destinatari selezionati per la lettera
-}
-
-export interface AppState {
-  user: User | null; 
-  project: ProjectConstants;
-  documents: DocumentVariables[];
-  currentDocumentId: string | null;
+  letterRecipients?: LetterRecipientConfig[]; // NEW: Lista ordinata di destinatari
 }

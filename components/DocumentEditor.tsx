@@ -2,7 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { DocumentVariables, PhotoAttachment } from '../types';
 import { Plus, Trash2, Wand2, Loader2, Calendar, Clock, Hash, ImagePlus, X, Mail, UserCheck } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
+import {GoogleGenAI} from "@google/genai";
 
 interface DocumentEditorProps {
   data: DocumentVariables;
@@ -14,31 +14,12 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ data, onChange }
   const [workInput, setWorkInput] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Helper to safely get API Key without crashing if process is undefined
-  const getApiKey = () => {
-    try {
-      if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-        return process.env.API_KEY;
-      }
-    } catch (e) {
-      console.warn("Process env not available");
-    }
-    return null;
-  };
-
   // Gemini Integration for polishing text
   const polishText = async (field: 'premis' | 'observations') => {
-    const apiKey = getApiKey();
-    
-    if (!apiKey) {
-      alert("API Key mancante o non accessibile. Impossibile usare l'IA.");
-      return;
-    }
-    
     setIsGenerating(true);
     try {
-      // Create new GoogleGenAI instance right before making an API call
-      const ai = new GoogleGenAI({ apiKey });
+      // Use process.env.API_KEY directly as per guidelines. Assume it is pre-configured.
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
       const prompt = `
         Agisci come un esperto Collaudatore di Opere Pubbliche italiano.
         Riscrivi il seguente testo in un linguaggio tecnico, formale e burocratico appropriato per un Verbale di Collaudo.
@@ -48,13 +29,13 @@ export const DocumentEditor: React.FC<DocumentEditorProps> = ({ data, onChange }
         "${data[field]}"
       `;
 
-      // Use gemini-3-flash-preview for proofreading tasks
+      // Use gemini-3-flash-preview for proofreading and basic text refinement tasks
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
         contents: prompt,
       });
 
-      // Directly access .text property
+      // Directly access .text property from GenerateContentResponse
       if (response.text) {
         onChange({ ...data, [field]: response.text.trim() });
       }

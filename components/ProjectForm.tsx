@@ -140,6 +140,29 @@ const ContactCard: React.FC<ContactCardProps> = ({
                     value={contact.pec || contact.email || ''} onChange={e => onChange(`${path}.pec`, e.target.value)} />
             </div>
 
+            <div className="md:col-span-2 grid grid-cols-12 gap-3">
+                <div className="col-span-12">
+                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Indirizzo (Via/Piazza)</label>
+                   <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
+                       value={contact.address || ''} onChange={e => onChange(`${path}.address`, e.target.value)} />
+                </div>
+                <div className="col-span-3">
+                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">CAP</label>
+                   <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
+                       value={contact.zip || ''} onChange={e => onChange(`${path}.zip`, e.target.value)} />
+                </div>
+                <div className="col-span-6">
+                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Città</label>
+                   <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
+                       value={contact.city || ''} onChange={e => onChange(`${path}.city`, e.target.value)} />
+                </div>
+                <div className="col-span-3">
+                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Prov.</label>
+                   <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100 uppercase" 
+                       value={contact.province || ''} onChange={e => onChange(`${path}.province`, e.target.value)} />
+                </div>
+            </div>
+
             {!isCompany && (
                 <>
                     <div>
@@ -154,12 +177,6 @@ const ContactCard: React.FC<ContactCardProps> = ({
                     </div>
                 </>
             )}
-
-            <div className="md:col-span-2">
-                <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Indirizzo</label>
-                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                    value={contact.address || ''} onChange={e => onChange(`${path}.address`, e.target.value)} />
-            </div>
 
             {showRepInfo && (
                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100 mt-2">
@@ -265,7 +282,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                             <label className="block text-sm font-semibold mb-2">Ente Appaltante</label>
                             <textarea 
                               disabled={readOnly} 
-                              className="w-full p-3 border border-slate-300 rounded-lg uppercase font-bold min-h-[80px]" 
+                              className="w-full p-3 border border-slate-300 rounded-lg uppercase font-bold min-h-[120px]" 
                               value={data.entity || ''} 
                               onChange={e => handleChange('entity', e.target.value)} 
                             />
@@ -351,7 +368,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                 { id: 'dlOffice', label: 'Ufficio D.L.', icon: Users },
                 { id: 'cse', label: 'CSE', icon: ShieldAlert },
                 { id: 'tester', label: 'Collaudatore', icon: Stamp },
-                { id: 'others', label: 'Altri', icon: PlusCircle }, // NEW
+                { id: 'others', label: 'Altri', icon: PlusCircle },
             ]} />
             
             {subTab === 'rup' && <ContactCard label="Responsabile Unico del Progetto" path="subjects.rup.contact" contact={data.subjects.rup.contact} readOnly={readOnly} onChange={handleChange} />}
@@ -447,7 +464,6 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
 
             {subTab === 'tester' && (
                 <div className="space-y-6">
-                    {/* INVERTED ORDER: Contact card first, then Appointment */}
                     <ContactCard label="Anagrafica Collaudatore" path="subjects.tester.contact" contact={data.subjects.tester.contact} readOnly={readOnly} onChange={handleChange} />
                     
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
@@ -496,7 +512,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-4">
                                 <div className="flex justify-between items-center mb-6 border-b pb-3">
                                     <h4 className="font-bold text-slate-800 flex items-center gap-2">
-                                        <PlusCircle className="w-5 h-5 text-blue-500"/> Figura Interessata {idx+1}
+                                        <PlusCircle className="w-5 h-5 text-blue-500"/> Altra Figura / Ente Interessato {idx+1}
                                     </h4>
                                     {!readOnly && <button onClick={() => {
                                         const list = [...data.subjects.others];

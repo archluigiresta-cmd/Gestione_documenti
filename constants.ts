@@ -1,7 +1,7 @@
 
 import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData, ContactInfo, DesignerProfile } from './types';
 
-const emptyContact: ContactInfo = { name: '', title: '', email: '', pec: '', phone: '', professionalOrder: '', registrationNumber: '' };
+const emptyContact: ContactInfo = { name: '', title: '', address: '', zip: '', city: '', province: '', email: '', pec: '', phone: '', professionalOrder: '', registrationNumber: '' };
 const emptyAppointment = { type: 'Determina', number: '', date: '' };
 
 const createEmptySubject = (): SubjectProfile => ({
@@ -31,10 +31,10 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
   id: crypto.randomUUID(),
   ownerId: ownerId, 
   lastModified: Date.now(),
-  displayOrder: 0, // Initial order, will be overwritten by logic
+  displayOrder: 0,
   entity: 'PROVINCIA DI TARANTO', 
   entityProvince: '', 
-  headerLogo: '', // NEW
+  headerLogo: '',
   projectName: '',
   location: '',
   cup: '',
@@ -73,15 +73,15 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
         contact: { ...emptyContact, title: 'Arch.' },
         appointment: { ...emptyAppointment }
     },
-    others: [], // NEW
+    others: [],
     testerAppointment: { 
         nominationType: 'Determina Dirigenziale',
-        nominationAuthority: '', // NEW
+        nominationAuthority: '',
         nominationNumber: '',
         nominationDate: '',
-        contractRepNumber: '', // NEW: Rep. Convenzione
-        contractDate: '', // NEW
-        contractProtocol: '', // NEW: Prot. n.
+        contractRepNumber: '',
+        contractDate: '',
+        contractProtocol: '',
         isStatic: true,
         isAdmin: true,
         isFunctional: false
@@ -97,7 +97,7 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
     type: 'single',
     mainCompany: { 
         ...emptyContact, 
-        role: 'Legale Rappresentante', // Default role for rep
+        role: 'Legale Rappresentante',
         repTitle: 'Sig.'
     },
     mandants: [],
@@ -112,7 +112,7 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
     resumptions: [],
     sals: [],
     variants: [],
-    testerVisitSummaries: [], // NEW
+    testerVisitSummaries: [],
     completionDate: '',
     
     handoverDocs: {
@@ -150,19 +150,19 @@ export const createInitialDocument = (projectId: string): DocumentVariables => (
   premis: '',
   worksExecuted: [],
   worksInProgress: '', 
-  upcomingWorks: '', // NEW
-  
-  worksIntroText: '', // NEW
-  testerRequests: '', // NEW
-  testerInvitations: '', // NEW
-  commonParts: '', // NEW
-
+  upcomingWorks: '',
+  worksIntroText: '',
+  testerRequests: '',
+  testerInvitations: '',
+  commonParts: '',
   observations: '',
   photos: [],
-  
-  // LETTER INITIAL VALUES
   letterIntro: '',
   letterBodyParagraphs: [],
   letterClosing: 'Distinti saluti.',
-  selectedRecipients: ['rup', 'dl', 'contractor'] // Default recipients
+  letterRecipients: [
+      { id: 'rup', isPc: false },
+      { id: 'dl', isPc: false },
+      { id: 'contractor', isPc: false }
+  ]
 });

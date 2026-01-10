@@ -1,7 +1,8 @@
+
 import React, { useState } from 'react';
 import { DocumentVariables } from '../types';
 import { Calendar, Clock, Plus, Trash2, Wand2, Loader2, Save, Activity, CalendarCheck } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
+import {GoogleGenAI} from "@google/genai";
 
 interface WorksManagerProps {
   documents: DocumentVariables[];
@@ -26,35 +27,25 @@ export const WorksManager: React.FC<WorksManagerProps> = ({
   const [workInput, setWorkInput] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Helper to safely get API Key
-  const getApiKey = () => {
-    try {
-      if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-        return process.env.API_KEY;
-      }
-    } catch (e) {
-      console.warn("Process env not available");
-    }
-    return null;
-  };
-
   const polishText = async (field: 'premis' | 'observations') => {
     if (readOnly) return;
-    const apiKey = getApiKey();
-    if (!apiKey) {
-      alert("API Key mancante. Impossibile usare l'IA.");
-      return;
-    }
     
     setIsGenerating(true);
     try {
-      // Create new GoogleGenAI instance right before making an API call
-      const ai = new GoogleGenAI({ apiKey });
+      // Use process.env.API_KEY directly as per guidelines. Assume it is pre-configured.
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
       const prompt = `Riscrivi in linguaggio tecnico/burocratico per verbale lavori pubblici: "${currentDoc[field]}"`;
-      // Use gemini-3-flash-preview for basic text tasks
-      const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: prompt });
-      // Directly access .text property
-      if (response.text) onUpdateDocument({ ...currentDoc, [field]: response.text.trim() });
+      
+      // Use gemini-3-flash-preview for proofreading and basic text tasks.
+      const response = await ai.models.generateContent({ 
+        model: 'gemini-3-flash-preview', 
+        contents: prompt 
+      });
+
+      // Directly access .text property from GenerateContentResponse
+      if (response.text) {
+        onUpdateDocument({ ...currentDoc, [field]: response.text.trim() });
+      }
     } catch (error) {
       console.error(error);
       alert("Errore durante la generazione del testo.");
