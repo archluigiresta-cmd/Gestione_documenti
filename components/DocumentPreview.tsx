@@ -36,7 +36,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
     return `VERBALE DI VISITA DI ${rolesStr} IN CORSO D'OPERA N. ${doc.visitNumber}`;
   };
 
-  // Fix: Implement missing getNominationPremise function
   const getNominationPremise = () => {
     const ta = project.subjects.testerAppointment;
     const tester = project.subjects.tester.contact;
@@ -104,6 +103,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
     const rup = project.subjects.rup.contact;
     const dl = project.subjects.dl.contact;
     const contractor = project.contractor;
+    const selectedRecipients = doc.selectedRecipients || [];
 
     return (
       <div id="document-preview-container" className="font-serif-print text-black leading-tight w-full max-w-[21cm] bg-white p-[1.5cm] min-h-[29.7cm] flex flex-col">
@@ -113,47 +113,67 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                 <h1 className="text-xl font-bold uppercase tracking-wider m-0">{tester.name || 'LUIGI RESTA'}</h1>
             </div>
             <div className="text-right">
-                <p className="text-sm uppercase tracking-[0.2em] font-medium m-0">{tester.professionalOrder || 'ARCHITETTO'}</p>
+                <p className="text-sm uppercase tracking-[0.2em] font-medium m-0">ARCHITETTO</p>
             </div>
         </div>
 
         {/* RECIPIENTS BLOCK: ALIGNED TO RIGHT EDGE */}
         <div className="flex justify-end mb-12">
             <div className="w-[60%] text-[10.5pt] space-y-6 text-left">
-                <div className="space-y-0.5 uppercase font-bold">
-                    <p>SPETT.LE {project.subjects.testerAppointment.nominationAuthority || project.entity}</p>
-                    <p>ALLA C.A. DEL RUP {formatNameWithTitle(rup)}</p>
-                    {rup.pec && <p className="text-[9.5pt] font-normal lowercase italic underline">PEC: {rup.pec}</p>}
-                </div>
+                {selectedRecipients.includes('rup') && (
+                  <div className="space-y-0.5 uppercase font-bold">
+                      <p>SPETT.LE {project.subjects.testerAppointment.nominationAuthority || project.entity}</p>
+                      <p>ALLA C.A. DEL RUP {formatNameWithTitle(rup)}</p>
+                      {rup.pec && <p className="text-[9.5pt] font-normal lowercase italic underline">PEC: {rup.pec}</p>}
+                  </div>
+                )}
                 
-                <div className="space-y-0.5 uppercase font-bold">
-                    <p>{dl.name || 'DIREZIONE LAVORI'}</p>
-                    <p>ALLA C.A. DEL DL {formatNameWithTitle(dl)}</p>
-                    {dl.address && <p className="text-[9.5pt] font-normal capitalize italic">Sede: {dl.address}</p>}
-                    {dl.pec && <p className="text-[9.5pt] font-normal lowercase italic underline">PEC: {dl.pec}</p>}
-                </div>
+                {selectedRecipients.includes('dl') && (
+                  <div className="space-y-0.5 uppercase font-bold">
+                      <p>{dl.name || 'DIREZIONE LAVORI'}</p>
+                      <p>ALLA C.A. DEL DL {formatNameWithTitle(dl)}</p>
+                      {dl.address && <p className="text-[9.5pt] font-normal capitalize italic">Sede: {dl.address}</p>}
+                      {dl.pec && <p className="text-[9.5pt] font-normal lowercase italic underline">PEC: {dl.pec}</p>}
+                  </div>
+                )}
 
-                <div className="space-y-1 uppercase font-bold">
-                    <p>SPETT.LE {contractor.mainCompany.name}</p>
-                    {contractor.mainCompany.address && <p className="text-[9.5pt] font-normal capitalize italic">{contractor.mainCompany.address}</p>}
-                    {contractor.mainCompany.pec && <p className="text-[9.5pt] font-normal lowercase italic underline">PEC: {contractor.mainCompany.pec}</p>}
-                    
-                    {/* ATI / CONSORTIUM DETAILS */}
-                    {contractor.type === 'ati' && contractor.mandants.map((m, i) => (
-                        <div key={i} className="pt-1">
-                            <p className="text-[9.5pt]">(Mandante: {m.name})</p>
-                            {m.address && <p className="text-[9pt] font-normal capitalize italic">{m.address}</p>}
-                            {m.pec && <p className="text-[9pt] font-normal lowercase italic underline">PEC: {m.pec}</p>}
-                        </div>
-                    ))}
-                    {contractor.type === 'consortium' && contractor.executors.map((e, i) => (
-                        <div key={i} className="pt-1">
-                            <p className="text-[9.5pt]">(Consorziata: {e.name})</p>
-                            {e.address && <p className="text-[9pt] font-normal capitalize italic">{e.address}</p>}
-                            {e.pec && <p className="text-[9pt] font-normal lowercase italic underline">PEC: {e.pec}</p>}
-                        </div>
-                    ))}
-                </div>
+                {selectedRecipients.includes('contractor') && (
+                  <div className="space-y-1 uppercase font-bold">
+                      <p>SPETT.LE {contractor.mainCompany.name}</p>
+                      {contractor.mainCompany.address && <p className="text-[9.5pt] font-normal capitalize italic">{contractor.mainCompany.address}</p>}
+                      {contractor.mainCompany.pec && <p className="text-[9.5pt] font-normal lowercase italic underline">PEC: {contractor.mainCompany.pec}</p>}
+                      
+                      {contractor.type === 'ati' && contractor.mandants.map((m, i) => (
+                          <div key={i} className="pt-1">
+                              <p className="text-[9.5pt]">(Mandante: {m.name})</p>
+                              {m.address && <p className="text-[9pt] font-normal capitalize italic">{m.address}</p>}
+                              {m.pec && <p className="text-[9pt] font-normal lowercase italic underline">PEC: {m.pec}</p>}
+                          </div>
+                      ))}
+                      {contractor.type === 'consortium' && contractor.executors.map((e, i) => (
+                          <div key={i} className="pt-1">
+                              <p className="text-[9.5pt]">(Consorziata: {e.name})</p>
+                              {e.address && <p className="text-[9pt] font-normal capitalize italic">{e.address}</p>}
+                              {e.pec && <p className="text-[9pt] font-normal lowercase italic underline">PEC: {e.pec}</p>}
+                          </div>
+                      ))}
+                  </div>
+                )}
+
+                {/* DYNAMIC OTHER RECIPIENTS */}
+                {(project.subjects.others || []).map((other, oIdx) => {
+                  if (selectedRecipients.includes(`other-${oIdx}`)) {
+                    return (
+                      <div key={oIdx} className="space-y-0.5 uppercase font-bold">
+                          <p>{other.contact.role || 'SOGGETTO INTERESSATO'}</p>
+                          <p>{formatNameWithTitle(other.contact)}</p>
+                          {other.contact.address && <p className="text-[9.5pt] font-normal capitalize italic">{other.contact.address}</p>}
+                          {other.contact.pec && <p className="text-[9.5pt] font-normal lowercase italic underline">PEC: {other.contact.pec}</p>}
+                      </div>
+                    );
+                  }
+                  return null;
+                })}
             </div>
         </div>
 
@@ -188,7 +208,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             <div className="h-16"></div>
         </div>
 
-        {/* FOOTER: DYNAMIC TESTER DATA */}
+        {/* FOOTER */}
         <div className="mt-auto pt-4 border-t border-slate-300 grid grid-cols-2 gap-x-8 text-[8.5pt] text-slate-600">
             <div className="space-y-1">
                 <p className="font-medium">{tester.address || 'Piazza Matteotti, 3'}</p>

@@ -145,6 +145,7 @@ export interface ProjectConstants {
     dlOffice: SubjectProfile[]; 
     cse: DesignerProfile; 
     tester: SubjectProfile; 
+    others: SubjectProfile[]; // NEW: Altre figure interessate
     testerAppointment: { 
         nominationType: string;
         nominationAuthority: string; 
@@ -241,6 +242,7 @@ export interface DocumentVariables {
   letterIntro: string;
   letterBodyParagraphs: string[];
   letterClosing: string;
+  selectedRecipients?: string[]; // NEW: ID o tipi di destinatari selezionati per la lettera
 }
 
 export interface AppState {

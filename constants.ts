@@ -73,6 +73,7 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
         contact: { ...emptyContact, title: 'Arch.' },
         appointment: { ...emptyAppointment }
     },
+    others: [], // NEW
     testerAppointment: { 
         nominationType: 'Determina Dirigenziale',
         nominationAuthority: '', // NEW
@@ -162,5 +163,6 @@ export const createInitialDocument = (projectId: string): DocumentVariables => (
   // LETTER INITIAL VALUES
   letterIntro: '',
   letterBodyParagraphs: [],
-  letterClosing: 'Distinti saluti.'
+  letterClosing: 'Distinti saluti.',
+  selectedRecipients: ['rup', 'dl', 'contractor'] // Default recipients
 });

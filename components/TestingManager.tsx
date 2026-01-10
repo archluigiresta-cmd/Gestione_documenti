@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { DocumentVariables, ProjectConstants, TesterVisitSummary, DesignerProfile } from '../types';
-import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext, RefreshCw, MessageSquare, Bell, FileCheck2, X, TextQuote, Wand2 } from 'lucide-react';
+import { Calendar, Clock, Mail, ClipboardCheck, Users, CheckSquare, Plus, Trash2, ArrowDownToLine, CalendarRange, ListChecks, ArrowRight, ArrowLeft, Activity, CalendarCheck as CalendarIconNext, RefreshCw, MessageSquare, Bell, FileCheck2, X, TextQuote, Wand2, UserPlus } from 'lucide-react';
 
 interface TestingManagerProps {
   project: ProjectConstants;
@@ -125,6 +125,9 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
     if (!currentDoc.letterBodyParagraphs || currentDoc.letterBodyParagraphs.length === 0) {
         handleUpdate({ ...currentDoc, letterBodyParagraphs: [...LETTER_PARAGRAPH_OPTIONS] });
     }
+    if (!currentDoc.selectedRecipients) {
+        handleUpdate({ ...currentDoc, selectedRecipients: ['rup', 'dl', 'contractor'] });
+    }
   }, [currentDoc?.id]);
 
   if (!currentDoc) return <div className="p-8 text-center">Nessun verbale attivo. Crea un nuovo verbale dalla dashboard.</div>;
@@ -176,88 +179,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
     });
   };
 
-  // --- Logic for Lists stored in Document (In Progress & Upcoming) ---
-  const addToListInDoc = (field: 'worksInProgress' | 'upcomingWorks', inputVal: string, setInputVal: (s: string) => void) => {
-      if (readOnly || !inputVal.trim()) return;
-      const currentText = currentDoc[field] || '';
-      const items = currentText.split('\n').filter(i => i.trim());
-      items.push(inputVal.trim());
-      handleUpdate({ ...currentDoc, [field]: items.join('\n') });
-      setInputVal('');
-  };
-
-  const updateListInDoc = (field: 'worksInProgress' | 'upcomingWorks', index: number, newValue: string) => {
-      if (readOnly) return;
-      const currentText = currentDoc[field] || '';
-      const items = currentText.split('\n').filter(i => i.trim());
-      items[index] = newValue;
-      handleUpdate({ ...currentDoc, [field]: items.join('\n') });
-  };
-
-  const removeFromListInDoc = (field: 'worksInProgress' | 'upcomingWorks', index: number) => {
-      if (readOnly) return;
-      const currentText = currentDoc[field] || '';
-      const items = currentText.split('\n').filter(i => i.trim());
-      items.splice(index, 1);
-      handleUpdate({ ...currentDoc, [field]: items.join('\n') });
-  };
-
-  // --- Logic for Smart Attendees Selection ---
-  const getSubjectName = (profile: any) => {
-      if (!profile || !profile.contact || !profile.contact.name) return '';
-      if (profile.isLegalEntity) {
-          if (profile.operatingDesigners && profile.operatingDesigners.length > 0) {
-              const names = profile.operatingDesigners.map((op: any) => {
-                  const title = op.title ? `${op.title} ` : '';
-                  return `${title}${op.name}`;
-              }).join('; ');
-              return `${names} (per ${profile.contact.name})`;
-          }
-          if (profile.contact.repName) {
-              const repTitle = profile.contact.repTitle ? `${profile.contact.repTitle} ` : '';
-              return `${repTitle}${profile.contact.repName} (Leg. Rep. ${profile.contact.name})`;
-          }
-          return profile.contact.name; 
-      }
-      const title = profile.contact.title ? `${profile.contact.title} ` : '';
-      return `${title}${profile.contact.name}`;
-  };
-
-  const potentialAttendees = [
-      { id: 'rup', label: 'RUP', fullText: project.subjects.rup.contact.name ? `Responsabile Unico del Progetto: ${getSubjectName(project.subjects.rup)}` : '' },
-      { id: 'dl', label: 'DL', fullText: project.subjects.dl.contact.name ? `Direttore dei Lavori: ${getSubjectName(project.subjects.dl)}` : '' },
-      { id: 'cse', label: 'CSE', fullText: project.subjects.cse.contact.name ? `Coord. Sicurezza Esecuzione: ${getSubjectName(project.subjects.cse)}` : '' },
-      { id: 'contractor', label: 'Impresa', fullText: (() => {
-              const c = project.contractor.mainCompany;
-              if (!c || !c.name) return '';
-              const role = c.role || 'Legale Rappresentante';
-              const repTitle = c.repTitle ? `${c.repTitle} ` : 'Sig. ';
-              const repName = c.repName || '...';
-              return `per l'Impresa ${c.name} (${role}): ${repTitle}${repName}`;
-          })()
-      },
-  ].filter(p => p.fullText !== '');
-
-  const toggleAttendee = (fullText: string) => {
-      if (readOnly) return;
-      const currentText = currentDoc.attendees || '';
-      if (currentText.includes(fullText)) {
-          const newText = currentText.replace(fullText, '').replace('\n\n', '\n').trim();
-          handleUpdate({...currentDoc, attendees: newText});
-      } else {
-          const separator = currentText.length > 0 ? '\n' : '';
-          handleUpdate({...currentDoc, attendees: currentText + separator + fullText});
-      }
-  };
-
-  const regenerateAttendees = () => {
-      if(readOnly) return;
-      if(confirm("Attenzione: Il testo attuale dei presenti verrà sostituito con i dati aggiornati dall'anagrafica (RUP, DL, CSE, Impresa). Continuare?")) {
-          const lines = potentialAttendees.map(p => p.fullText);
-          handleUpdate({ ...currentDoc, attendees: lines.join('\n') });
-      }
-  };
-
   // --- Logic for Tester Visit Summaries (Project Level) ---
   const execPhase = project.executionPhase || {};
   const summaryIndex = (currentDoc.visitNumber > 0 ? currentDoc.visitNumber : 1) - 1;
@@ -280,7 +201,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
       updateExec('testerVisitSummaries', list);
   };
 
-  // FIX: Implement missing summary management functions
   const addManualWorkSummary = () => {
       if (readOnly || !summaryManualInput.trim() || !currentSummary) return;
       const newList = [...currentSummary.works, summaryManualInput.trim()];
@@ -300,6 +220,16 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
       const newList = [...currentSummary.works];
       newList.splice(index, 1);
       updateCurrentSummary('works', newList);
+  };
+
+  const toggleRecipient = (id: string) => {
+      if (readOnly) return;
+      const current = currentDoc.selectedRecipients || [];
+      if (current.includes(id)) {
+          handleUpdate({ ...currentDoc, selectedRecipients: current.filter(r => r !== id) });
+      } else {
+          handleUpdate({ ...currentDoc, selectedRecipients: [...current, id] });
+      }
   };
 
   const NavButton = ({ id, label, icon: Icon }: any) => (
@@ -373,6 +303,39 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
               <div className="animate-in fade-in slide-in-from-right-4 space-y-8">
                   <h3 className="text-lg font-bold text-slate-800 border-b pb-4 flex items-center gap-2"><Mail className="w-5 h-5 text-blue-600"/> Contenuti Lettera di Convocazione</h3>
                   
+                  {/* RECIPIENT SELECTION */}
+                  <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                      <h4 className="text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider flex items-center gap-2">
+                        <UserPlus className="w-4 h-4 text-blue-500"/> Seleziona Destinatari Lettera
+                      </h4>
+                      <div className="flex flex-wrap gap-4">
+                          <label className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 cursor-pointer hover:border-blue-400">
+                             <input type="checkbox" checked={(currentDoc.selectedRecipients || []).includes('rup')} onChange={() => toggleRecipient('rup')} className="w-4 h-4 rounded text-blue-600" />
+                             <span className="text-sm font-medium">RUP</span>
+                          </label>
+                          <label className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 cursor-pointer hover:border-blue-400">
+                             <input type="checkbox" checked={(currentDoc.selectedRecipients || []).includes('dl')} onChange={() => toggleRecipient('dl')} className="w-4 h-4 rounded text-blue-600" />
+                             <span className="text-sm font-medium">D.L.</span>
+                          </label>
+                          <label className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 cursor-pointer hover:border-blue-400">
+                             <input type="checkbox" checked={(currentDoc.selectedRecipients || []).includes('contractor')} onChange={() => toggleRecipient('contractor')} className="w-4 h-4 rounded text-blue-600" />
+                             <span className="text-sm font-medium">Impresa</span>
+                          </label>
+                          {/* OTHER SUBJECTS DYNAMIC LIST */}
+                          {(project.subjects.others || []).map((other, oIdx) => (
+                             <label key={oIdx} className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-slate-200 cursor-pointer hover:border-blue-400">
+                                <input 
+                                    type="checkbox" 
+                                    checked={(currentDoc.selectedRecipients || []).includes(`other-${oIdx}`)} 
+                                    onChange={() => toggleRecipient(`other-${oIdx}`)} 
+                                    className="w-4 h-4 rounded text-blue-600" 
+                                />
+                                <span className="text-sm font-medium">{other.contact.role || other.contact.name || `Altro ${oIdx+1}`}</span>
+                             </label>
+                          ))}
+                      </div>
+                  </div>
+
                   <div>
                       <div className="flex items-center justify-between mb-2">
                         <label className="block text-sm font-bold text-slate-700">Testo Iniziale</label>
@@ -427,20 +390,16 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
               <div className="animate-in fade-in slide-in-from-right-4">
                   <div className="flex items-center justify-between mb-6 border-b pb-4">
                     <h3 className="text-lg font-bold text-slate-800">Soggetti Presenti al Sopralluogo</h3>
-                    {!readOnly && <button onClick={regenerateAttendees} className="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1 rounded text-slate-600 font-bold transition-colors"><RefreshCw className="w-3 h-3 inline mr-1"/> Rigenera da Anagrafica</button>}
-                  </div>
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 mb-4">
-                      <p className="text-xs font-bold text-slate-500 uppercase mb-2">Seleziona Presenti:</p>
-                      <div className="flex flex-wrap gap-2">
-                          {potentialAttendees.map(p => {
-                              const isSelected = (currentDoc.attendees || '').includes(p.fullText);
-                              return (
-                                <button key={p.id} onClick={() => toggleAttendee(p.fullText)} disabled={readOnly} className={`text-xs px-3 py-1.5 rounded-full border transition-all ${isSelected ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-300 hover:border-blue-400'}`}>
-                                    {isSelected ? <CheckSquare className="w-3 h-3 inline mr-1"/> : <span className="w-3 h-3 inline-block border rounded-sm border-slate-300 mr-1"></span>} {p.label}
-                                </button>
-                              );
-                          })}
-                      </div>
+                    {!readOnly && <button onClick={() => {
+                        if(confirm("Il testo attuale verrà sostituito con i dati aggiornati dall'anagrafica. Continuare?")) {
+                            const lines = [
+                                project.subjects.rup.contact.name ? `RUP: ${project.subjects.rup.contact.name}` : '',
+                                project.subjects.dl.contact.name ? `D.L.: ${project.subjects.dl.contact.name}` : '',
+                                project.contractor.mainCompany.name ? `Impresa: ${project.contractor.mainCompany.name}` : ''
+                            ].filter(l => l !== '');
+                            handleUpdate({ ...currentDoc, attendees: lines.join('\n') });
+                        }
+                    }} className="text-xs bg-slate-100 hover:bg-slate-200 px-3 py-1 rounded text-slate-600 font-bold transition-colors"><RefreshCw className="w-3 h-3 inline mr-1"/> Rigenera da Anagrafica</button>}
                   </div>
                   <textarea disabled={readOnly} className="w-full p-4 border border-slate-300 rounded-xl h-48 text-sm leading-relaxed" value={currentDoc.attendees} onChange={e => handleUpdate({...currentDoc, attendees: e.target.value})} placeholder="Elenco nominativo dei presenti..."/>
               </div>
@@ -548,7 +507,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                           <option value="OTHER" className="font-bold">Altro...</option>
                       </select>
                       {activeCustomField === 'commonParts' && (
-                          <div className="mt-3 flex flex-col gap-2"><textarea className="w-full p-2 border border-slate-300 rounded text-sm" rows={3} value={customText} onChange={e => setCustomText(e.target.value)} autoFocus />
+                          <div className="mt-3 flex flex-col gap-2"><textarea className="w-full p-2 border border-blue-300 rounded text-sm" rows={3} value={customText} onChange={e => setCustomText(e.target.value)} autoFocus />
                               <div className="flex justify-end gap-2"><button onClick={handleCustomCancel} className="text-xs font-bold">Annulla</button><button onClick={handleCustomConfirm} className="bg-slate-800 text-white px-3 py-1 rounded text-xs font-bold">Aggiungi</button></div>
                           </div>
                       )}

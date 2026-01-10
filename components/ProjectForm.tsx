@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { ProjectConstants, ContactInfo, SubjectProfile, AppointmentData, CompanyType, DesignerProfile, DesignPhaseData } from '../types';
-import { Save, User, Users, Mail, ShieldCheck, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote, ChevronDown, ImagePlus, X, BriefcaseBusiness, Network, Hammer, Gavel, FileCheck2, UserCheck, ShieldAlert } from 'lucide-react';
+import { Save, User, Users, Mail, ShieldCheck, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote, ChevronDown, ImagePlus, X, BriefcaseBusiness, Network, Hammer, Gavel, FileCheck2, UserCheck, ShieldAlert, PlusCircle } from 'lucide-react';
 
 const TITLES = ["Arch.", "Ing.", "Geom.", "Dott.", "Dott. Agr.", "Geol.", "Per. Ind.", "Sig."];
 
@@ -100,7 +100,7 @@ const ContactCard: React.FC<ContactCardProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Nome / Ragione Sociale</label>
-                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
+                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100 font-semibold" 
                     value={contact.name || ''} onChange={e => onChange(`${path}.name`, e.target.value)} />
             </div>
             
@@ -263,7 +263,12 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                     <div className="grid grid-cols-4 gap-6">
                         <div className="col-span-3">
                             <label className="block text-sm font-semibold mb-2">Ente Appaltante</label>
-                            <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg uppercase font-bold" value={data.entity || ''} onChange={e => handleChange('entity', e.target.value)} />
+                            <textarea 
+                              disabled={readOnly} 
+                              className="w-full p-3 border border-slate-300 rounded-lg uppercase font-bold min-h-[80px]" 
+                              value={data.entity || ''} 
+                              onChange={e => handleChange('entity', e.target.value)} 
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-semibold mb-2">Provincia</label>
@@ -346,6 +351,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                 { id: 'dlOffice', label: 'Ufficio D.L.', icon: Users },
                 { id: 'cse', label: 'CSE', icon: ShieldAlert },
                 { id: 'tester', label: 'Collaudatore', icon: Stamp },
+                { id: 'others', label: 'Altri', icon: PlusCircle }, // NEW
             ]} />
             
             {subTab === 'rup' && <ContactCard label="Responsabile Unico del Progetto" path="subjects.rup.contact" contact={data.subjects.rup.contact} readOnly={readOnly} onChange={handleChange} />}
@@ -441,6 +447,9 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
 
             {subTab === 'tester' && (
                 <div className="space-y-6">
+                    {/* INVERTED ORDER: Contact card first, then Appointment */}
+                    <ContactCard label="Anagrafica Collaudatore" path="subjects.tester.contact" contact={data.subjects.tester.contact} readOnly={readOnly} onChange={handleChange} />
+                    
                     <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                        <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 border-b pb-3"><Stamp className="w-5 h-5 text-blue-500"/> Nomina Collaudatore</h4>
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -477,7 +486,50 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                            </div>
                        </div>
                     </div>
-                    <ContactCard label="Anagrafica Collaudatore" path="subjects.tester.contact" contact={data.subjects.tester.contact} readOnly={readOnly} onChange={handleChange} />
+                </div>
+            )}
+
+            {subTab === 'others' && (
+                <div className="space-y-6">
+                    {(data.subjects.others || []).map((other, idx) => (
+                        <div key={idx} className="relative group">
+                            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-4">
+                                <div className="flex justify-between items-center mb-6 border-b pb-3">
+                                    <h4 className="font-bold text-slate-800 flex items-center gap-2">
+                                        <PlusCircle className="w-5 h-5 text-blue-500"/> Figura Interessata {idx+1}
+                                    </h4>
+                                    {!readOnly && <button onClick={() => {
+                                        const list = [...data.subjects.others];
+                                        list.splice(idx, 1);
+                                        handleChange('subjects.others', list);
+                                    }} className="text-red-500 hover:bg-red-50 p-1.5 rounded"><Trash2 className="w-4 h-4"/></button>}
+                                </div>
+                                <div className="mb-6">
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Chi è questa figura / Ente? (es. Soprintendenza, Consulente...)</label>
+                                    <input 
+                                        disabled={readOnly} 
+                                        type="text" 
+                                        className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 font-bold" 
+                                        value={other.contact.role || ''} 
+                                        onChange={e => {
+                                            const list = [...data.subjects.others];
+                                            list[idx].contact.role = e.target.value;
+                                            handleChange('subjects.others', list);
+                                        }} 
+                                        placeholder="Inserisci descrizione ruolo..."
+                                    />
+                                </div>
+                                <ContactCard 
+                                    label="Dati di Contatto" 
+                                    path={`subjects.others.${idx}.contact`} 
+                                    contact={other.contact} 
+                                    readOnly={readOnly} 
+                                    onChange={handleChange} 
+                                />
+                            </div>
+                        </div>
+                    ))}
+                    {!readOnly && <button onClick={() => handleChange('subjects.others', [...(data.subjects.others || []), { contact: { name: '', role: '' }, appointment: { type: '', number: '', date: '' } }])} className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2"><Plus className="w-5 h-5"/> Aggiungi Altra Figura / Ente</button>}
                 </div>
             )}
         </>
