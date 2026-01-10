@@ -236,6 +236,11 @@ export interface DocumentVariables {
   commonParts: string; 
   observations: string; 
   photos: PhotoAttachment[];
+  
+  // NEW FIELDS FOR LETTER
+  letterIntro: string;
+  letterBodyParagraphs: string[];
+  letterClosing: string;
 }
 
 export interface AppState {

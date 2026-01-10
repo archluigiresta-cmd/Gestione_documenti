@@ -140,7 +140,7 @@ export const createInitialDocument = (projectId: string): DocumentVariables => (
   createdAt: Date.now(),
   visitNumber: 1,
   date: new Date().toISOString().split('T')[0],
-  time: '09:00',
+  time: '12:00',
   endTime: '',
   convocationMethod: 'PEC',
   convocationDate: '',
@@ -157,5 +157,10 @@ export const createInitialDocument = (projectId: string): DocumentVariables => (
   commonParts: '', // NEW
 
   observations: '',
-  photos: []
+  photos: [],
+  
+  // LETTER INITIAL VALUES
+  letterIntro: '',
+  letterBodyParagraphs: [],
+  letterClosing: 'Distinti saluti.'
 });

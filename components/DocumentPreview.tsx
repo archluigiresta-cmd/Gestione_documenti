@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
 
@@ -37,7 +38,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
   const getDocumentTitle = () => {
       switch(type) {
-          case 'LETTERA_CONVOCAZIONE': return `LETTERA DI CONVOCAZIONE VISITA DI COLLAUDO N. ${doc.visitNumber}`;
+          case 'LETTERA_CONVOCAZIONE': return `Convocazione ${doc.visitNumber === 1 ? 'I' : doc.visitNumber === 2 ? 'II' : doc.visitNumber === 3 ? 'III' : doc.visitNumber}° visita di Collaudo`;
           case 'VERBALE_COLLAUDO': return getDynamicTestingTitle();
           case 'VERBALE_CONSEGNA': return 'VERBALE DI CONSEGNA DEI LAVORI';
           case 'SOSPENSIONE_LAVORI': return 'VERBALE DI SOSPENSIONE LAVORI';
@@ -111,7 +112,7 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
     return (
       <div id="document-preview-container" className="font-serif-print text-black leading-tight w-full max-w-[21cm] bg-white p-[1.5cm] min-h-[29.7cm] flex flex-col">
-        {/* HEADER: LUIGI RESTA STYLE */}
+        {/* HEADER: EXACT LUIGI RESTA PDF FORMAT */}
         <div className="flex justify-between items-start mb-6">
             <div>
                 <h1 className="text-xl font-bold uppercase tracking-wider m-0">LUIGI RESTA</h1>
@@ -121,21 +122,21 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             </div>
         </div>
 
-        {/* HEADER CONTACTS: TWO COLUMNS */}
+        {/* HEADER CONTACTS (PDF STYLE) */}
         <div className="grid grid-cols-2 gap-4 mb-16 text-[10pt] text-slate-800">
             <div className="space-y-0.5">
                 <p>Piazza Matteotti, 3</p>
                 <p>72023 Mesagne</p>
                 <p>0831.777752</p>
             </div>
-            <div className="text-left space-y-0.5 pl-4">
+            <div className="text-left space-y-0.5 pl-4 border-l border-slate-100">
                 <p>PEC: <span className="underline">{tester.pec || 'arch.luigiresta@pec.it'}</span></p>
                 <p>Email: <span className="underline">{tester.email || 'arch.luigiresta@gmail.com'}</span></p>
                 <p>Cell: {tester.phone || '392.6739862'}</p>
             </div>
         </div>
 
-        {/* RECIPIENTS BLOCK: ALIGNED TO RIGHT (APPROX 55% WIDTH) */}
+        {/* RECIPIENTS (PDF ALIGN RIGHT) */}
         <div className="flex justify-end mb-16">
             <div className="w-[58%] text-[10.5pt] space-y-6 text-left">
                 <div className="space-y-0.5 uppercase font-bold">
@@ -158,47 +159,52 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                            (Esecutrice {m.name} PEC: {m.pec})
                         </p>
                     ))}
-                    {contractor.mainCompany.address && <p className="text-[9.5pt] font-normal capitalize italic">{contractor.mainCompany.address}</p>}
                     {contractor.mainCompany.pec && <p className="text-[9.5pt] font-normal lowercase italic underline">PEC: {contractor.mainCompany.pec}</p>}
                 </div>
             </div>
         </div>
 
-        {/* SUBJECT */}
-        <div className="mb-10 text-[10.5pt] text-justify">
-            <p className="leading-relaxed">
-                <span className="font-bold">Oggetto: {project.projectName}</span>
+        {/* OGGETTO (PDF STYLE) */}
+        <div className="mb-10 text-[10.5pt] text-justify leading-relaxed">
+            <p>
+                <span className="font-bold uppercase">Oggetto: {project.projectName}</span>
                 {project.cup ? ` - CUP: ${project.cup}` : ''}
                 {project.cig ? ` - CIG: ${project.cig}` : ''}.
             </p>
-            <p className="font-bold mt-2 tracking-wide underline">
-                Convocazione {doc.visitNumber === 1 ? 'I' : doc.visitNumber === 2 ? 'II' : doc.visitNumber === 3 ? 'III' : doc.visitNumber}° visita di Collaudo
+            <p className="font-bold mt-2 tracking-wide underline uppercase">
+                {getDocumentTitle()}
             </p>
         </div>
 
-        {/* BODY TEXT: EXACT WORDING FROM FAC-SIMILE */}
-        <div className="text-[10.5pt] text-justify space-y-6 flex-grow leading-[1.3]">
-            <p>Sentite le parti, si comunica che la {doc.visitNumber === 1 ? 'I' : doc.visitNumber === 2 ? 'II' : doc.visitNumber === 3 ? 'III' : doc.visitNumber}° visita di collaudo dei lavori di cui in oggetto è fissata per <span className="font-bold">il giorno {formatShortDate(doc.date)}, ore {doc.time || '12.00'}</span>, con incontro presso il luogo dei lavori.</p>
+        {/* BODY CONTENT (FROM EDITABLE FIELDS) */}
+        <div className="text-[10.5pt] text-justify space-y-5 flex-grow leading-[1.35]">
+            <p>{doc.letterIntro}</p>
             
-            <p>Durante le operazioni di collaudo, la Ditta dovrà assicurare la disponibilità di personale ed attrezzature per le verifiche, i saggi e le prove necessarie, oltre a copia del progetto completo in formato cartaceo al fine di agevolare le opportune valutazioni sul posto.</p>
+            {(doc.letterBodyParagraphs || []).map((p, i) => (
+                <p key={i}>{p}</p>
+            ))}
             
-            <p>Durante il suddetto incontro lo scrivente estrarrà copia, altresì, di quanto eventualmente necessario alla presa d’atto delle attività già svolte.</p>
-            
-            <p>Si invitano le parti ad astenersi dal porre in essere qualsivoglia opera di carattere strutturale in mancanza della verifica e del preventivo assenso da parte dello scrivente collaudatore.</p>
-            
-            <p>Si rammenta, altresì, l’obbligo per la D.L. di presenziare alle operazioni suddette.</p>
-            
-            <p className="pt-2">Distinti saluti</p>
+            <p className="pt-2">{doc.letterClosing || 'Distinti saluti'}</p>
         </div>
 
-        {/* SIGNATURE SECTION: ALIGNED RIGHT */}
+        {/* SIGNATURE (PDF STYLE) */}
         <div className="mt-8 text-right text-[10.5pt]">
             <p className="uppercase font-bold m-0 leading-tight">IL COLLAUDATORE STATICO, TECNICO-AMMINISTRATIVO</p>
             <p className="uppercase font-bold m-0 leading-tight">E FUNZIONALE DEGLI IMPIANTI</p>
-            <p className="mt-8 font-bold text-[11pt] tracking-wide m-0">Arch. {tester.name || 'Luigi RESTA'}</p>
-            {/* Signature Space */}
-            <div className="h-20 flex justify-end items-center pr-12 opacity-50 italic text-xs">
-                (spazio firma)
+            <p className="mt-6 font-bold text-[11pt] tracking-wide m-0">Arch. {tester.name || 'Luigi RESTA'}</p>
+            <div className="h-20"></div>
+        </div>
+
+        {/* FOOTER (PDF STYLE) */}
+        <div className="mt-auto pt-4 border-t border-slate-200 grid grid-cols-2 gap-x-12 text-[8pt] text-slate-500 italic">
+            <div>
+                <p>Piazza Matteotti, 3 - 72023 Mesagne (BR)</p>
+                <p>Tel: 0831.777752</p>
+            </div>
+            <div className="text-right">
+                <p>PEC: arch.luigiresta@pec.it</p>
+                <p>Email: arch.luigiresta@gmail.com</p>
+                <p>C.F./P.IVA: 392.6739862</p>
             </div>
         </div>
       </div>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ProjectConstants, ContactInfo, SubjectProfile, AppointmentData, CompanyType, DesignerProfile, DesignPhaseData } from '../types';
 import { Save, User, Users, Mail, ShieldCheck, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote, ChevronDown, ImagePlus, X, BriefcaseBusiness, Network, Hammer, Gavel, FileCheck2, UserCheck, ShieldAlert } from 'lucide-react';
@@ -281,10 +282,6 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                         <div>
                             <label className="block text-sm font-semibold mb-2">CUP</label>
                             <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg uppercase font-mono" value={data.cup || ''} onChange={e => handleChange('cup', e.target.value)} />
-                        </div>
-                        <div className="md:col-span-3 mt-4">
-                            <label className="block text-sm font-semibold mb-2">CIG</label>
-                            <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg uppercase font-mono" value={data.cig || ''} onChange={e => handleChange('cig', e.target.value)} />
                         </div>
                     </div>
                 </div>
