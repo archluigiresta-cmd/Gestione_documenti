@@ -106,24 +106,28 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   if (type === 'LETTERA_CONVOCAZIONE') {
     return (
       <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm] bg-white p-[2cm]">
-        <div className="text-center mb-12">
-            {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2.5cm', margin: '0 auto 10px' }} alt="Logo" />}
-            <p className="uppercase font-bold text-base tracking-widest">{project.entity}</p>
+        <div style={{ textAlign: 'center', width: '100%', marginBottom: '3rem' }}>
+            {project.headerLogo && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+                    <img src={project.headerLogo} style={{ maxHeight: '2.5cm', maxWidth: '100%' }} alt="Logo" />
+                </div>
+            )}
+            <p style={{ textTransform: 'uppercase', fontWeight: 'bold', fontSize: '12pt', letterSpacing: '0.1em', margin: 0 }}>{project.entity}</p>
         </div>
-        <div className="flex justify-between mb-12 text-sm">
-            <div className="text-left space-y-4">
+        <div className="flex justify-between mb-12 text-sm" style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <div className="text-left space-y-4" style={{ textAlign: 'left' }}>
                 <p>Al RUP: {formatNameWithTitle(project.subjects.rup.contact)}</p>
                 <p>Alla D.L.: {formatNameWithTitle(project.subjects.dl.contact)}</p>
                 <div className="max-w-[10cm]"><p>All'Impresa:</p>{renderContractorInfo()}</div>
             </div>
-            <div className="text-right"><p>Data, {new Date().toLocaleDateString('it-IT')}</p></div>
+            <div className="text-right" style={{ textAlign: 'right' }}><p>Data, {new Date().toLocaleDateString('it-IT')}</p></div>
         </div>
         <div className="mb-12 text-sm"><p className="font-bold">OGGETTO: {project.projectName}</p><p className="font-bold">CUP: {project.cup} - CONVOCAZIONE VISITA N. {doc.visitNumber}</p></div>
-        <div className="text-justify text-sm space-y-4"><p>Si comunica che la visita di collaudo n. {doc.visitNumber} si terrà il giorno:</p><p className="font-bold text-center text-lg">{formatShortDate(doc.date)} alle ore {doc.time}</p><p>presso il cantiere in {project.location}.</p></div>
-        <div className="mt-24 text-right text-sm">
+        <div className="text-justify text-sm space-y-4" style={{ textAlign: 'justify' }}><p>Si comunica che la visita di collaudo n. {doc.visitNumber} si terrà il giorno:</p><p className="font-bold text-center text-lg" style={{ textAlign: 'center' }}>{formatShortDate(doc.date)} alle ore {doc.time}</p><p>presso il cantiere in {project.location}.</p></div>
+        <div className="mt-24 text-right text-sm" style={{ textAlign: 'right', marginTop: '6rem' }}>
             <p>Il Collaudatore</p>
-            <p className="mt-12 font-normal">{formatNameWithTitle(project.subjects.tester.contact)}</p>
-            <div className="border-b border-black w-48 ml-auto mt-1"></div>
+            <p className="mt-12 font-normal" style={{ marginTop: '3rem' }}>{formatNameWithTitle(project.subjects.tester.contact)}</p>
+            <div className="border-b border-black w-48 ml-auto mt-1" style={{ borderBottom: '1px solid black', width: '12rem', marginLeft: 'auto', marginTop: '4px' }}></div>
         </div>
       </div>
     );
@@ -132,109 +136,120 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   return (
     <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm]">
       <div className="bg-white shadow-lg p-[1.5cm] mb-8 border border-slate-100 overflow-visible">
-        <div className="text-center mb-8">
-            {project.headerLogo && <img src={project.headerLogo} style={{ maxHeight: '2.5cm', margin: '0 auto 10px' }} alt="Logo" />}
-            <p className="uppercase font-bold text-sm tracking-widest m-0">{project.entity}</p>
-            {project.entityProvince && <p className="text-xs m-0">({project.entityProvince})</p>}
+        <div style={{ textAlign: 'center', width: '100%', marginBottom: '2.5rem' }}>
+            {project.headerLogo && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+                    <img src={project.headerLogo} style={{ maxHeight: '2.5cm', maxWidth: '100%' }} alt="Logo" />
+                </div>
+            )}
+            <p style={{ textTransform: 'uppercase', fontWeight: 'bold', fontSize: '11pt', letterSpacing: '0.1em', margin: 0 }}>{project.entity}</p>
+            {project.entityProvince && <p style={{ fontSize: '9pt', margin: 0 }}>({project.entityProvince})</p>}
         </div>
-        <div className="mb-10 text-center px-4">
+        <div className="mb-10 text-center px-4" style={{ textAlign: 'center' }}>
             <p className="text-xs uppercase mb-4 leading-relaxed">lavori di: “{project.projectName}”</p>
-            <h2 className="font-bold text-base uppercase tracking-tight">{getDocumentTitle()}</h2>
+            <h2 className="font-bold text-base uppercase tracking-tight" style={{ fontWeight: 'bold' }}>{getDocumentTitle()}</h2>
         </div>
-        <table className="w-full text-xs mb-10 border-collapse">
+        <table className="w-full text-xs mb-10 border-collapse" style={{ width: '100%', borderCollapse: 'collapse' }}>
             <tbody>
                 <tr className="align-top">
-                    <td className="w-48 py-1 font-bold">Impresa:</td>
-                    <td className="py-1">{renderContractorInfo()}</td>
+                    <td className="w-48 py-1 font-bold" style={{ width: '12rem', padding: '4px 0', fontWeight: 'bold' }}>Impresa:</td>
+                    <td className="py-1" style={{ padding: '4px 0' }}>{renderContractorInfo()}</td>
                 </tr>
                 {project.contract.date && (
                     <tr className="align-top">
-                        <td className="py-1 font-bold">Contratto d'appalto:</td>
-                        <td className="py-1">stipulato in data {formatShortDate(project.contract.date)} {project.contract.repNumber ? `, Rep. N. ${project.contract.repNumber}` : ''}</td>
+                        <td className="py-1 font-bold" style={{ padding: '4px 0', fontWeight: 'bold' }}>Contratto d'appalto:</td>
+                        <td className="py-1" style={{ padding: '4px 0' }}>stipulato in data {formatShortDate(project.contract.date)} {project.contract.repNumber ? `, Rep. N. ${project.contract.repNumber}` : ''}</td>
                     </tr>
                 )}
                 {project.contract.totalAmount && (
                     <tr className="align-top">
-                        <td className="py-1 font-bold">Importo Contrattuale:</td>
-                        <td className="py-1">Euro {project.contract.totalAmount} {project.contract.securityCosts ? `(di cui Euro ${project.contract.securityCosts} per oneri sicurezza)` : ''}</td>
+                        <td className="py-1 font-bold" style={{ padding: '4px 0', fontWeight: 'bold' }}>Importo Contrattuale:</td>
+                        <td className="py-1" style={{ padding: '4px 0' }}>Euro {project.contract.totalAmount} {project.contract.securityCosts ? `(di cui Euro ${project.contract.securityCosts} per oneri sicurezza)` : ''}</td>
                     </tr>
                 )}
                 {project.executionPhase?.completionDate && (
                     <tr className="align-top">
-                        <td className="py-1 font-bold">Scadenza contrattuale:</td>
-                        <td className="py-1">{formatShortDate(project.executionPhase.completionDate)}</td>
+                        <td className="py-1 font-bold" style={{ padding: '4px 0', fontWeight: 'bold' }}>Scadenza contrattuale:</td>
+                        <td className="py-1" style={{ padding: '4px 0' }}>{formatShortDate(project.executionPhase.completionDate)}</td>
                     </tr>
                 )}
                 <tr className="align-top">
-                    <td className="py-1 font-bold">RUP:</td>
-                    <td className="py-1">{formatNameWithTitle(project.subjects.rup.contact)}</td>
+                    <td className="py-1 font-bold" style={{ padding: '4px 0', fontWeight: 'bold' }}>RUP:</td>
+                    <td className="py-1" style={{ padding: '4px 0' }}>{formatNameWithTitle(project.subjects.rup.contact)}</td>
                 </tr>
                 <tr className="align-top">
-                    <td className="py-1 font-bold">Direttore dei Lavori:</td>
-                    <td className="py-1">{formatNameWithTitle(project.subjects.dl.contact)}</td>
+                    <td className="py-1 font-bold" style={{ padding: '4px 0', fontWeight: 'bold' }}>Direttore dei Lavori:</td>
+                    <td className="py-1" style={{ padding: '4px 0' }}>{formatNameWithTitle(project.subjects.dl.contact)}</td>
                 </tr>
             </tbody>
         </table>
 
-        <div className="text-xs text-justify space-y-6">
+        <div className="text-xs text-justify space-y-6" style={{ textAlign: 'justify' }}>
             <p>Il giorno {verboseDate.day} del mese di {verboseDate.month} {verboseDate.year}, alle ore {doc.time}, presso il luogo dei lavori in {project.location}, ha avvio la {doc.visitNumber}° visita di collaudo in corso d’opera {doc.convocationDetails || 'convocata nelle forme di rito'}.</p>
-            <div className="space-y-1">
+            
+            <div style={{ marginTop: '1.2rem' }}>
                 <p>Sono presenti, oltre al sottoscritto Collaudatore {formatNameWithTitle(project.subjects.tester.contact)}:</p>
-                <div className="pl-4 whitespace-pre-line italic">{doc.attendees || "..."}</div>
+                <div style={{ paddingLeft: '1.5rem', marginTop: '0.5rem' }}>
+                    {doc.attendees ? doc.attendees.split('\n').filter(l => l.trim()).map((line, i) => (
+                        <p key={i} style={{ fontStyle: 'italic', margin: '4px 0', display: 'block' }}>- {line}</p>
+                    )) : <p style={{ fontStyle: 'italic' }}>...</p>}
+                </div>
             </div>
-            <div className="space-y-2">
-                <p className="font-bold">Premesso che:</p>
+
+            <div className="space-y-2" style={{ marginTop: '1.5rem' }}>
+                <p className="font-bold" style={{ fontWeight: 'bold' }}>Premesso che:</p>
                 <ul className="list-disc pl-5 space-y-2">
                     {type === 'VERBALE_COLLAUDO' && <li>{getNominationPremise()}</li>}
-                    {doc.premis ? <li>{doc.premis}</li> : (type !== 'VERBALE_COLLAUDO' && <p className="italic">Nessuna premessa specifica inserita.</p>)}
+                    {doc.premis ? <li>{doc.premis}</li> : (type !== 'VERBALE_COLLAUDO' && <p className="italic" style={{ fontStyle: 'italic' }}>Nessuna premessa specifica inserita.</p>)}
                 </ul>
             </div>
-            <div className="space-y-2">
+            
+            <div className="space-y-2" style={{ marginTop: '1.5rem' }}>
                 <p>{doc.worksIntroText || "Durante il presente sopralluogo si prende atto che sono state effettuate le seguenti lavorazioni:"}</p>
                 {project.executionPhase?.testerVisitSummaries?.[doc.visitNumber-1]?.works && project.executionPhase.testerVisitSummaries[doc.visitNumber-1].works.length > 0 ? (
                     <ul className="list-decimal pl-10 space-y-1">{project.executionPhase.testerVisitSummaries[doc.visitNumber-1].works.map((w, i) => <li key={i}>{w}</li>)}</ul>
-                ) : <p className="italic pl-4">Nessuna lavorazione specifica riportata nel riepilogo del periodo.</p>}
+                ) : <p className="italic pl-4" style={{ fontStyle: 'italic', paddingLeft: '1rem' }}>Nessuna lavorazione specifica riportata nel riepilogo del periodo.</p>}
             </div>
             {doc.worksInProgress && (
-                <div className="space-y-1"><p className="font-bold">Opere in corso di esecuzione:</p><div className="whitespace-pre-line pl-4">{doc.worksInProgress.split('\n').map((line, i) => <p key={i}>- {line}</p>)}</div></div>
+                <div style={{ marginTop: '1.5rem' }}><p className="font-bold" style={{ fontWeight: 'bold' }}>Opere in corso di esecuzione:</p><div style={{ paddingLeft: '1rem' }}>{doc.worksInProgress.split('\n').map((line, i) => <p key={i}>- {line}</p>)}</div></div>
             )}
             {doc.upcomingWorks && (
-                <div className="space-y-1"><p className="font-bold">Prossime attività previste:</p><div className="whitespace-pre-line pl-4">{doc.upcomingWorks.split('\n').map((line, i) => <p key={i}>- {line}</p>)}</div></div>
+                <div style={{ marginTop: '1.5rem' }}><p className="font-bold" style={{ fontWeight: 'bold' }}>Prossime attività previste:</p><div style={{ paddingLeft: '1rem' }}>{doc.upcomingWorks.split('\n').map((line, i) => <p key={i}>- {line}</p>)}</div></div>
             )}
-            {doc.testerRequests && <div className="space-y-1"><p className="font-bold">Richieste del Collaudatore:</p><div className="whitespace-pre-line pl-4">{doc.testerRequests}</div></div>}
-            {doc.testerInvitations && <div className="space-y-1"><p className="font-bold">Inviti del Collaudatore:</p><div className="whitespace-pre-line pl-4">{doc.testerInvitations}</div></div>}
-            {doc.commonParts && <div className="mt-4 italic whitespace-pre-line">{doc.commonParts}</div>}
+            {doc.testerRequests && <div style={{ marginTop: '1.5rem' }}><p className="font-bold" style={{ fontWeight: 'bold' }}>Richieste del Collaudatore:</p><div style={{ paddingLeft: '1rem', whiteSpace: 'pre-line' }}>{doc.testerRequests}</div></div>}
+            {doc.testerInvitations && <div style={{ marginTop: '1.5rem' }}><p className="font-bold" style={{ fontWeight: 'bold' }}>Inviti del Collaudatore:</p><div style={{ paddingLeft: '1rem', whiteSpace: 'pre-line' }}>{doc.testerInvitations}</div></div>}
+            {doc.commonParts && <div style={{ marginTop: '1.5rem', fontStyle: 'italic', whiteSpace: 'pre-line' }}>{doc.commonParts}</div>}
             
-            <div className="mt-8 text-left">
-                <p className="font-bold mb-1">Osservazioni e valutazioni:</p>
-                <p className="whitespace-pre-line">{doc.observations || "..."}</p>
-                <p className="mt-6 italic">La visita si conclude alle ore {doc.endTime || '__________'}.</p>
-                <p className="mt-4 font-bold">L.C.S.</p>
+            <div style={{ marginTop: '2.5rem', textAlign: 'left' }}>
+                <p className="font-bold mb-1" style={{ fontWeight: 'bold' }}>Osservazioni e valutazioni:</p>
+                <p style={{ whiteSpace: 'pre-line' }}>{doc.observations || "..."}</p>
+                <p style={{ marginTop: '1.8rem', fontStyle: 'italic' }}>La visita si conclude alle ore {doc.endTime || '__________'}.</p>
+                <p style={{ marginTop: '1.2rem', fontWeight: 'bold' }}>L.C.S.</p>
             </div>
         </div>
 
-        {/* FIRME: Senza grassetto nei nomi e nomi distanziati dalla linea di base per chiarezza */}
-        <div className="mt-4 text-xs space-y-4">
-            <div className="block border-b border-black pb-1 leading-tight w-full">
-                <span className="font-medium italic text-slate-700">Il Collaudatore:</span> <span className="font-normal">{formatNameWithTitle(project.subjects.tester.contact)}</span>
+        {/* FIRME: Incolonnamento block per ordine sovrapposto */}
+        <div style={{ marginTop: '1.5rem' }}>
+            <div style={{ display: 'block', width: '100%', borderBottom: '1px solid black', paddingBottom: '4px', marginTop: '18px' }}>
+                <span style={{ fontStyle: 'italic', color: '#334155' }}>Il Collaudatore:</span> <span style={{ fontWeight: 'normal' }}>{formatNameWithTitle(project.subjects.tester.contact)}</span>
             </div>
             {doc.attendees && doc.attendees.split('\n').filter(l => l.trim()).map((present, idx) => {
                 const parts = present.split(':');
                 const label = parts[0];
                 const name = parts[1]?.trim() || '';
                 return (
-                    <div key={idx} className="block border-b border-black pb-1 leading-tight w-full">
-                        <span className="font-medium italic text-slate-700">{label}:</span> <span className="font-normal">{name}</span>
+                    <div key={idx} style={{ display: 'block', width: '100%', borderBottom: '1px solid black', paddingBottom: '4px', marginTop: '18px' }}>
+                        <span style={{ fontStyle: 'italic', color: '#334155' }}>{label}:</span> <span style={{ fontWeight: 'normal' }}>{name}</span>
                     </div>
                 );
             })}
             {!doc.attendees && (
                 <>
-                    <div className="block border-b border-black pb-1 leading-tight min-h-[1.2rem] w-full">
-                        <span className="font-medium italic text-slate-700">Per l'Ufficio di Direzione Lavori:</span>
+                    <div style={{ display: 'block', width: '100%', borderBottom: '1px solid black', paddingBottom: '4px', marginTop: '18px', minHeight: '1.2rem' }}>
+                        <span style={{ fontStyle: 'italic', color: '#334155' }}>Per l'Ufficio di Direzione Lavori:</span>
                     </div>
-                    <div className="block border-b border-black pb-1 leading-tight min-h-[1.2rem] w-full">
-                        <span className="font-medium italic text-slate-700">Per l'Impresa:</span>
+                    <div style={{ display: 'block', width: '100%', borderBottom: '1px solid black', paddingBottom: '4px', marginTop: '18px', minHeight: '1.2rem' }}>
+                        <span style={{ fontStyle: 'italic', color: '#334155' }}>Per l'Impresa:</span>
                     </div>
                 </>
             )}

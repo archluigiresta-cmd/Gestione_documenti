@@ -37,7 +37,6 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
     const element = document.getElementById('document-preview-container');
     if (!element) return;
 
-    // Crea una nuova finestra per la stampa isolata
     const printWindow = window.open('', '_blank', 'width=1000,height=800');
     if (!printWindow) {
         alert("Per favore, abilita i popup per stampare il documento.");
@@ -46,41 +45,77 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
 
     const content = element.innerHTML;
     
-    // Inserisce il contenuto con un CSS dedicato e minimale
     printWindow.document.write(`
       <html>
         <head>
           <title>${effectiveDocType} - N. ${currentDoc.visitNumber}</title>
-          <link href="https://cdn.tailwindcss.com" rel="stylesheet">
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap');
-            @page { size: A4; margin: 2cm; }
-            body { 
-                background: white !important; 
-                margin: 0; 
-                padding: 0; 
-                font-family: 'Noto Serif', serif !important;
+            
+            @page { 
+              size: A4; 
+              margin: 2.5cm 2cm; 
             }
+            
+            body { 
+              background: white !important; 
+              margin: 0; 
+              padding: 0; 
+              font-family: 'Noto Serif', serif;
+              color: black;
+              line-height: 1.4;
+              -webkit-print-color-adjust: exact;
+            }
+
             #print-container { width: 100%; }
-            /* Forza la visibilità degli elementi per la stampa */
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            .print-only { display: block !important; }
-            /* Rimuove ombre e bordi esterni che servono solo a video */
-            .shadow-lg, .border { box-shadow: none !important; border-color: transparent !important; }
-            .border-b, .border-black { border-color: black !important; border-bottom-width: 1px !important; }
+
+            /* Centratura Header */
+            .header-box { width: 100%; text-align: center; margin-bottom: 40px; }
+            .logo-img { max-height: 2.5cm; margin: 0 auto 10px auto; display: block; }
+            
+            /* Typography */
+            .text-center { text-align: center !important; }
+            .text-justify { text-align: justify !important; }
+            .text-right { text-align: right !important; }
+            .uppercase { text-transform: uppercase !important; }
+            .font-bold { font-weight: bold !important; }
+            .italic { font-style: italic !important; }
+            
+            /* Liste e Tabelle */
+            table { width: 100%; border-collapse: collapse; margin-bottom: 25px; font-size: 10.5pt; }
+            td { padding: 4px 0; vertical-align: top; }
+            ul, ol { margin-top: 10px; margin-bottom: 10px; }
+            
+            /* Firme e Presenti Stacked */
+            .signature-line {
+              display: block;
+              width: 100%;
+              border-bottom: 1px solid black;
+              margin-top: 20px;
+              padding-bottom: 3px;
+              font-size: 10pt;
+            }
+
+            .presenti-line {
+              display: block;
+              margin-bottom: 4px;
+              font-style: italic;
+              padding-left: 20px;
+            }
+            
+            /* Utilità */
+            .no-print { display: none !important; }
           </style>
         </head>
-        <body class="p-0">
+        <body>
           <div id="print-container">
             ${content}
           </div>
           <script>
-            // Aspetta il caricamento di stili e immagini (logo) prima di stampare
             window.onload = () => {
+              // Pulizia extra classi se necessario
               setTimeout(() => {
                 window.print();
-                // Opzionale: chiude la finestra dopo la stampa
-                // window.close();
               }, 500);
             };
           </script>
@@ -99,7 +134,7 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
       <head>
         <meta charset="utf-8">
         <style>
-          @page { size: A4; margin: 2.0cm; mso-header: h1; mso-footer: f1; }
+          @page { size: A4; margin: 2.0cm; }
           body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.2; text-align: justify; }
           .text-center { text-align: center; }
           .font-bold { font-weight: bold; }
