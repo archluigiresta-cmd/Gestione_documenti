@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ProjectConstants, ContactInfo, SubjectProfile, AppointmentData, CompanyType, DesignerProfile, DesignPhaseData } from '../types';
 import { Save, User, Users, Mail, ShieldCheck, MapPin, Plus, Trash2, FileText, Briefcase, Stamp, Building, PencilRuler, HardHat, FileSignature, Lock, FolderOpen, Copy, StickyNote, ChevronDown, ImagePlus, X, BriefcaseBusiness, Network, Hammer, Gavel, FileCheck2, UserCheck, ShieldAlert } from 'lucide-react';
@@ -291,6 +292,30 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                     <div><label className="block text-sm font-semibold mb-2">Repertorio N.</label><input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg" value={data.contract.repNumber || ''} onChange={e => handleChange('contract.repNumber', e.target.value)} /></div>
                     <div><label className="block text-sm font-semibold mb-2">Importo Totale (€)</label><input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg" value={data.contract.totalAmount || ''} onChange={e => handleChange('contract.totalAmount', e.target.value)} /></div>
                     <div><label className="block text-sm font-semibold mb-2">Oneri Sicurezza (€)</label><input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg" value={data.contract.securityCosts || ''} onChange={e => handleChange('contract.securityCosts', e.target.value)} /></div>
+                </div>
+            )}
+            {subTab === 'registration' && (
+                <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 grid grid-cols-2 gap-6">
+                    <div className="col-span-2">
+                        <h3 className="font-bold text-slate-800 mb-2">Dati Registrazione Contratto</h3>
+                        <p className="text-xs text-slate-500 mb-4">Informazioni relative alla registrazione dell'atto presso l'Agenzia delle Entrate.</p>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold mb-2">Luogo Registrazione</label>
+                        <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg" value={data.contract.regPlace || ''} onChange={e => handleChange('contract.regPlace', e.target.value)} />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold mb-2">Data Registrazione</label>
+                        <input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg" value={data.contract.regDate || ''} onChange={e => handleChange('contract.regDate', e.target.value)} />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold mb-2">Numero Registrazione</label>
+                        <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg" value={data.contract.regNumber || ''} onChange={e => handleChange('contract.regNumber', e.target.value)} />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold mb-2">Serie</label>
+                        <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg" value={data.contract.regSeries || ''} onChange={e => handleChange('contract.regSeries', e.target.value)} />
+                    </div>
                 </div>
             )}
         </>

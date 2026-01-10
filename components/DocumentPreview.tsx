@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
 
@@ -104,30 +105,95 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   };
 
   if (type === 'LETTERA_CONVOCAZIONE') {
+    const tester = project.subjects.tester.contact;
+    const rup = project.subjects.rup.contact;
+    const dl = project.subjects.dl.contact;
+    const contractor = project.contractor;
+
     return (
-      <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm] bg-white p-[2cm]">
-        <div style={{ textAlign: 'center', width: '100%', marginBottom: '3rem' }}>
-            {project.headerLogo && (
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
-                    <img src={project.headerLogo} style={{ maxHeight: '2.5cm', maxWidth: '100%' }} alt="Logo" />
-                </div>
-            )}
-            <p style={{ textTransform: 'uppercase', fontWeight: 'bold', fontSize: '12pt', letterSpacing: '0.1em', margin: 0 }}>{project.entity}</p>
-        </div>
-        <div className="flex justify-between mb-12 text-sm" style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <div className="text-left space-y-4" style={{ textAlign: 'left' }}>
-                <p>Al RUP: {formatNameWithTitle(project.subjects.rup.contact)}</p>
-                <p>Alla D.L.: {formatNameWithTitle(project.subjects.dl.contact)}</p>
-                <div className="max-w-[10cm]"><p>All'Impresa:</p>{renderContractorInfo()}</div>
+      <div id="document-preview-container" className="font-serif-print text-black leading-tight w-full max-w-[21cm] bg-white p-[2cm] min-h-[29.7cm] flex flex-col">
+        {/* HEADER: TESTER INFO */}
+        <div className="flex justify-between items-start mb-16 border-b pb-4">
+            <div className="text-left">
+                <h1 className="text-xl font-bold uppercase tracking-widest">{tester.name || 'IL COLLAUDATORE'}</h1>
             </div>
-            <div className="text-right" style={{ textAlign: 'right' }}><p>Data, {new Date().toLocaleDateString('it-IT')}</p></div>
+            <div className="text-right">
+                <p className="text-xs uppercase font-medium tracking-widest">{tester.professionalOrder || 'Professionista'}</p>
+            </div>
         </div>
-        <div className="mb-12 text-sm"><p className="font-bold">OGGETTO: {project.projectName}</p><p className="font-bold">CUP: {project.cup} - CONVOCAZIONE VISITA N. {doc.visitNumber}</p></div>
-        <div className="text-justify text-sm space-y-4" style={{ textAlign: 'justify' }}><p>Si comunica che la visita di collaudo n. {doc.visitNumber} si terrà il giorno:</p><p className="font-bold text-center text-lg" style={{ textAlign: 'center' }}>{formatShortDate(doc.date)} alle ore {doc.time}</p><p>presso il cantiere in {project.location}.</p></div>
-        <div className="mt-24 text-right text-sm" style={{ textAlign: 'right', marginTop: '6rem' }}>
-            <p>Il Collaudatore</p>
-            <p className="mt-12 font-normal" style={{ marginTop: '3rem' }}>{formatNameWithTitle(project.subjects.tester.contact)}</p>
-            <div className="border-b border-black w-48 ml-auto mt-1" style={{ borderBottom: '1px solid black', width: '12rem', marginLeft: 'auto', marginTop: '4px' }}></div>
+
+        {/* RECIPIENTS BLOCK */}
+        <div className="flex justify-end mb-16">
+            <div className="w-1/2 text-sm space-y-4 text-right">
+                <div className="space-y-1">
+                    <p className="uppercase font-bold">SPETT.LE {project.entity}</p>
+                    <p className="italic">ALLA C.A. DEL RUP: {formatNameWithTitle(rup)}</p>
+                    {rup.pec && <p className="text-xs">PEC: {rup.pec}</p>}
+                </div>
+                
+                <div className="space-y-1">
+                    <p className="uppercase font-bold italic">ALLA C.A. DEL DL: {formatNameWithTitle(dl)}</p>
+                    {dl.pec && <p className="text-xs">PEC: {dl.pec}</p>}
+                </div>
+
+                <div className="space-y-1">
+                    <p className="uppercase font-bold">SPETT.LE {contractor.mainCompany.name}</p>
+                    {contractor.type === 'ati' && contractor.mandants.map((m, i) => (
+                        <p key={i} className="text-xs italic">(Mandante: {m.name})</p>
+                    ))}
+                    {contractor.mainCompany.pec && <p className="text-xs">PEC: {contractor.mainCompany.pec}</p>}
+                </div>
+            </div>
+        </div>
+
+        {/* SUBJECT */}
+        <div className="mb-12 text-sm text-justify">
+            <p className="font-bold uppercase underline">OGGETTO: {project.projectName}</p>
+            <p className="font-bold mt-1">CUP: {project.cup} {project.cig ? `- CIG: ${project.cig}` : ''}</p>
+            <p className="font-bold mt-1 tracking-wider">Convocazione {doc.visitNumber === 1 ? 'I' : doc.visitNumber === 2 ? 'II' : doc.visitNumber === 3 ? 'III' : doc.visitNumber}° visita di Collaudo</p>
+        </div>
+
+        {/* BODY */}
+        <div className="text-sm text-justify space-y-6 flex-grow">
+            <p>Sentite le parti, si comunica che la {doc.visitNumber === 1 ? 'I' : doc.visitNumber === 2 ? 'II' : doc.visitNumber === 3 ? 'III' : doc.visitNumber}° visita di collaudo dei lavori di cui in oggetto è fissata per il giorno:</p>
+            
+            <p className="text-center font-bold text-lg py-4 border-y border-slate-100 my-4">
+                {formatShortDate(doc.date)} alle ore {doc.time || '12.00'}
+            </p>
+            
+            <p>con incontro presso il luogo dei lavori in {project.location}.</p>
+            
+            <p>Durante le operazioni di collaudo, la Ditta dovrà assicurare la disponibilità di personale ed attrezzature per le verifiche, i saggi e le prove necessarie, oltre a copia del progetto completo in formato cartaceo al fine di agevolare le opportune valutazioni sul posto.</p>
+            
+            <p>Durante il suddetto incontro lo scrivente estrarrà copia, altresì, di quanto eventualmente necessario alla presa d'atto delle attività già svolte.</p>
+            
+            <p>Si invitano le parti ad astenersi dal porre in essere qualsivoglia opera di carattere strutturale in mancanza della verifica e del preventivo assenso da parte dello scrivente collaudatore.</p>
+            
+            <p>Si rammenta, altresì, l'obbligo per la D.L. di presenziare alle operazioni suddette.</p>
+            
+            <p className="pt-8">Distinti saluti.</p>
+        </div>
+
+        {/* SIGNATURE */}
+        <div className="mt-12 text-right text-sm">
+            <p className="uppercase font-bold">IL COLLAUDATORE {project.subjects.testerAppointment.isStatic ? 'STATICO' : ''} {project.subjects.testerAppointment.isAdmin ? ', TECNICO-AMMINISTRATIVO' : ''}</p>
+            <p className="uppercase font-bold">{project.subjects.testerAppointment.isFunctional ? 'E FUNZIONALE DEGLI IMPIANTI' : ''}</p>
+            <p className="mt-8 font-normal italic">{formatNameWithTitle(tester)}</p>
+            {/* SPAZIO FIRMA */}
+            <div className="h-12"></div>
+        </div>
+
+        {/* FOOTER: TESTER CONTACT DETAILS */}
+        <div className="mt-auto pt-4 border-t border-slate-200 grid grid-cols-2 gap-4 text-[10px] text-slate-500">
+            <div className="space-y-1">
+                <p>{tester.address || 'Indirizzo non inserito'}</p>
+                <p>Tel: {tester.phone || 'N/D'}</p>
+            </div>
+            <div className="text-right space-y-1">
+                <p>PEC: {tester.pec || '-'}</p>
+                <p>Email: {tester.email || '-'}</p>
+                <p>C.F./P.IVA: {tester.vat || '-'}</p>
+            </div>
         </div>
       </div>
     );
@@ -200,7 +266,9 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                 <p className="font-bold" style={{ fontWeight: 'bold' }}>Premesso che:</p>
                 <ul className="list-disc pl-5 space-y-2">
                     {type === 'VERBALE_COLLAUDO' && <li>{getNominationPremise()}</li>}
-                    {doc.premis ? <li>{doc.premis}</li> : (type !== 'VERBALE_COLLAUDO' && <p className="italic" style={{ fontStyle: 'italic' }}>Nessuna premessa specifica inserita.</p>)}
+                    {doc.premis ? (
+                        <div className="whitespace-pre-line leading-relaxed">{doc.premis}</div>
+                    ) : (type !== 'VERBALE_COLLAUDO' && <p className="italic" style={{ fontStyle: 'italic' }}>Nessuna premessa specifica inserita.</p>)}
                 </ul>
             </div>
             
