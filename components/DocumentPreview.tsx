@@ -32,20 +32,52 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
   };
 
   const getRecipientInfo = (id: string) => {
-      if (id === 'rup') return { contact: project.subjects.rup.contact, label: 'SPETT.LE ' + (project.subjects.testerAppointment.nominationAuthority || project.entity), subLabel: 'ALLA C.A. DEL RUP ' + formatNameWithTitle(project.subjects.rup.contact) };
-      if (id === 'dl') return { contact: project.subjects.dl.contact, label: project.subjects.dl.contact.name || 'DIREZIONE LAVORI', subLabel: 'ALLA C.A. DEL DL ' + formatNameWithTitle(project.subjects.dl.contact) };
-      if (id === 'contractor') return { contact: project.contractor.mainCompany, label: 'SPETT.LE ' + project.contractor.mainCompany.name, subLabel: '' };
+      if (id === 'rup') {
+          return { 
+              contact: project.subjects.rup.contact, 
+              label: 'SPETT.LE ' + (project.subjects.testerAppointment.nominationAuthority || project.entity), 
+              subLabel: 'ALLA C.A. DEL RUP ' + formatNameWithTitle(project.subjects.rup.contact) 
+          };
+      }
+      if (id === 'dl') {
+          return { 
+              contact: project.subjects.dl.contact, 
+              label: project.subjects.dl.contact.name || 'DIREZIONE LAVORI', 
+              subLabel: 'ALLA C.A. DEL DL ' + formatNameWithTitle(project.subjects.dl.contact) 
+          };
+      }
+      if (id === 'contractor') {
+          const prefix = project.contractor.type === 'single' ? 'SPETT.LE ' : 'SPETT.LE (Mandataria/Capogruppo) ';
+          return { 
+              contact: project.contractor.mainCompany, 
+              label: prefix + project.contractor.mainCompany.name, 
+              subLabel: '' 
+          };
+      }
+      if (id.startsWith('mandant-')) {
+          const idx = parseInt(id.split('-')[1]);
+          const m = project.contractor.mandants[idx];
+          return { contact: m, label: 'SPETT.LE (Impresa Mandante) ' + m.name, subLabel: '' };
+      }
+      if (id.startsWith('executor-')) {
+          const idx = parseInt(id.split('-')[1]);
+          const e = project.contractor.executors[idx];
+          return { contact: e, label: 'SPETT.LE (Consorziata Esecutrice) ' + e.name, subLabel: '' };
+      }
       if (id.startsWith('other-')) {
           const idx = parseInt(id.split('-')[1]);
           const other = project.subjects.others?.[idx];
-          return { contact: other?.contact, label: other?.contact.role?.toUpperCase() || 'SOGGETTO INTERESSATO', subLabel: formatNameWithTitle(other?.contact) };
+          return { 
+              contact: other?.contact, 
+              label: other?.contact.role?.toUpperCase() || 'SOGGETTO INTERESSATO', 
+              subLabel: formatNameWithTitle(other?.contact as any) 
+          };
       }
       return null;
   };
 
   if (type === 'LETTERA_CONVOCAZIONE') {
     const tester = project.subjects.tester.contact;
-    const contractor = project.contractor;
     const recs = doc.letterRecipients || [];
 
     return (
@@ -73,15 +105,6 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
                             {info.subLabel && <p>{info.subLabel}</p>}
                             {info.contact.address && <p className="text-[9.5pt] font-normal capitalize italic">{formatFullAddress(info.contact)}</p>}
                             {info.contact.pec && <p className="text-[9.5pt] font-normal lowercase italic underline">PEC: {info.contact.pec}</p>}
-                            
-                            {/* Special handling for Contractor Sub-companies if ID is contractor */}
-                            {rec.id === 'contractor' && contractor.type === 'ati' && contractor.mandants.map((m, i) => (
-                                <div key={i} className="pt-1 mt-1 border-t border-slate-100">
-                                    <p className="text-[9pt] font-normal italic">(Mandante: {m.name})</p>
-                                    <p className="text-[8.5pt] font-normal italic">{formatFullAddress(m)}</p>
-                                    {m.pec && <p className="text-[8.5pt] font-normal italic underline">PEC: {m.pec}</p>}
-                                </div>
-                            ))}
                         </div>
                     );
                 })}
@@ -108,11 +131,11 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
             <div className="h-16"></div>
         </div>
 
-        {/* FOOTER */}
+        {/* FOOTER: DYNAMIC TESTER DATA */}
         <div className="mt-auto pt-4 border-t border-slate-300 grid grid-cols-2 gap-x-8 text-[8.5pt] text-slate-600">
             <div className="space-y-1">
-                <p className="font-medium">{formatFullAddress(tester)}</p>
-                <p>{tester.phone ? `Cell: ${tester.phone}` : '72023 Mesagne'}</p>
+                <p className="font-medium">{formatFullAddress(tester) || 'Piazza Matteotti, 3 - 72023 Mesagne'}</p>
+                <p>{tester.phone ? `Cell: ${tester.phone}` : 'Cell: 392.6739862'}</p>
             </div>
             <div className="text-right space-y-1">
                 <p>PEC: <span className="underline">{tester.pec || 'arch.luigiresta@pec.it'}</span></p>
@@ -124,50 +147,48 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
     );
   }
 
-  // STANDARD VERBALE PREVIEW (simplified to focus on address updates)
+  // STANDARD VERBALE PREVIEW
   return (
     <div id="document-preview-container" className="font-serif-print text-black leading-normal w-full max-w-[21cm] bg-white p-[1.5cm] shadow-lg">
         <div className="text-center mb-10">
             {project.headerLogo && <img src={project.headerLogo} className="h-16 mx-auto mb-4" />}
-            <h2 className="font-bold uppercase">{project.entity}</h2>
-            <p className="text-xs uppercase mt-2">Lavori di: {project.projectName}</p>
-            <h3 className="font-bold mt-6 uppercase border-y py-2">Verbale di Collaudo n. {doc.visitNumber}</h3>
+            <h2 className="font-bold uppercase tracking-wide">{project.entity}</h2>
+            <p className="text-xs uppercase mt-2 italic">Lavori di: {project.projectName}</p>
+            <h3 className="font-bold mt-6 uppercase border-y py-3 text-lg">Verbale di Collaudo n. {doc.visitNumber}</h3>
         </div>
 
         <div className="text-sm space-y-4">
             <p><strong>Luogo:</strong> {project.location}</p>
             <p><strong>Data:</strong> {new Date(doc.date).toLocaleDateString('it-IT')} ore {doc.time}</p>
             <p><strong>Presenti:</strong></p>
-            <p className="italic ml-4 whitespace-pre-line">{doc.attendees || '...'}</p>
+            <p className="italic ml-4 whitespace-pre-line leading-relaxed">{doc.attendees || '...'}</p>
             
             <div className="mt-8 text-justify">
                 <p className="font-bold mb-2">Premesso che:</p>
-                <p className="whitespace-pre-line">{doc.premis}</p>
+                <p className="whitespace-pre-line leading-relaxed">{doc.premis}</p>
             </div>
 
             <div className="mt-6">
                 <p className="font-bold mb-2">Lavorazioni Eseguite:</p>
-                <ul className="list-disc ml-6">
+                <ul className="list-disc ml-6 space-y-1">
                     {doc.worksExecuted.map((w, i) => <li key={i}>{w}</li>)}
                 </ul>
             </div>
 
             <div className="mt-8">
                 <p className="font-bold mb-2">Osservazioni:</p>
-                <p className="whitespace-pre-line">{doc.observations}</p>
+                <p className="whitespace-pre-line leading-relaxed">{doc.observations}</p>
             </div>
         </div>
 
-        <div className="mt-20 flex justify-between border-t pt-4">
-            <div className="text-center">
-                <p className="text-[10px] uppercase font-bold italic">L'Impresa</p>
-                <div className="h-10"></div>
-                <p className="text-xs">____________________</p>
+        <div className="mt-20 flex justify-between border-t border-slate-200 pt-6">
+            <div className="text-center w-1/3">
+                <p className="text-[10px] uppercase font-bold italic text-slate-500 mb-8">L'Impresa</p>
+                <p className="text-xs border-b border-black w-full pb-1"></p>
             </div>
-            <div className="text-center">
-                <p className="text-[10px] uppercase font-bold italic">Il Collaudatore</p>
-                <div className="h-10"></div>
-                <p className="text-xs">{formatNameWithTitle(project.subjects.tester.contact)}</p>
+            <div className="text-center w-1/3">
+                <p className="text-[10px] uppercase font-bold italic text-slate-500 mb-8">Il Collaudatore</p>
+                <p className="text-xs font-bold">{formatNameWithTitle(project.subjects.tester.contact)}</p>
             </div>
         </div>
     </div>

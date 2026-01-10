@@ -66,7 +66,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   const requestsSelectRef = useRef<HTMLSelectElement>(null);
   const invitationsSelectRef = useRef<HTMLSelectElement>(null);
   const commonSelectRef = useRef<HTMLSelectElement>(null);
-  const letterSelectRef = useRef<HTMLSelectElement>(null);
 
   const handleUpdate = (updatedDoc: DocumentVariables) => {
       if (!readOnly) onUpdateDocument(updatedDoc);
@@ -164,7 +163,15 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   const getRecipientLabel = (id: string) => {
       if (id === 'rup') return 'RUP';
       if (id === 'dl') return 'D.L.';
-      if (id === 'contractor') return 'Impresa';
+      if (id === 'contractor') return project.contractor.type === 'single' ? 'Impresa' : 'Capogruppo';
+      if (id.startsWith('mandant-')) {
+          const idx = parseInt(id.split('-')[1]);
+          return `Mandante: ${project.contractor.mandants[idx]?.name || '...'}`;
+      }
+      if (id.startsWith('executor-')) {
+          const idx = parseInt(id.split('-')[1]);
+          return `Consorziata: ${project.contractor.executors[idx]?.name || '...'}`;
+      }
       if (id.startsWith('other-')) {
           const idx = parseInt(id.split('-')[1]);
           return project.subjects.others?.[idx]?.contact.role || `Altro ${idx+1}`;
@@ -272,10 +279,17 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                       </h4>
                       
                       <div className="flex flex-wrap gap-2 mb-6 border-b border-slate-200 pb-4">
-                          {['rup', 'dl', 'contractor', ...(project.subjects.others || []).map((_, i) => `other-${i}`)].map(id => {
+                          {[
+                            'rup', 
+                            'dl', 
+                            'contractor', 
+                            ...(project.contractor.type === 'ati' ? project.contractor.mandants.map((_, i) => `mandant-${i}`) : []),
+                            ...(project.contractor.type === 'consortium' ? project.contractor.executors.map((_, i) => `executor-${i}`) : []),
+                            ...(project.subjects.others || []).map((_, i) => `other-${i}`)
+                          ].map(id => {
                               const isSel = (currentDoc.letterRecipients || []).some(r => r.id === id);
                               return (
-                                  <button key={id} onClick={() => toggleLetterRecipient(id)} className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all border ${isSel ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-500 border-slate-300 hover:border-blue-400'}`}>
+                                  <button key={id} onClick={() => toggleLetterRecipient(id)} className={`px-3 py-1.5 rounded-full text-[10px] md:text-xs font-bold transition-all border ${isSel ? 'bg-blue-600 text-white border-blue-600 shadow-sm' : 'bg-white text-slate-500 border-slate-300 hover:border-blue-400'}`}>
                                       {getRecipientLabel(id)}
                                   </button>
                               );
@@ -294,13 +308,16 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                                   </div>
                                   <div className="flex items-center gap-4">
                                       <label className="flex items-center gap-2 cursor-pointer">
-                                          <input type="checkbox" checked={rec.isPc} onChange={() => toggleRecipientPc(rec.id)} className="w-4 h-4 rounded text-amber-500" />
+                                          <input type="checkbox" checked={rec.isPc} onChange={() => toggleRecipientPc(rec.id)} className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500" />
                                           <span className="text-xs font-bold text-slate-500 uppercase">p.c.</span>
                                       </label>
-                                      <button onClick={() => toggleLetterRecipient(rec.id)} className="text-slate-300 hover:text-red-500"><X className="w-4 h-4"/></button>
+                                      <button onClick={() => toggleLetterRecipient(rec.id)} className="text-slate-300 hover:text-red-500 transition-colors"><X className="w-4 h-4"/></button>
                                   </div>
                               </div>
                           ))}
+                          {(!currentDoc.letterRecipients || currentDoc.letterRecipients.length === 0) && (
+                              <p className="text-center text-slate-400 text-sm py-4 italic">Nessun destinatario selezionato.</p>
+                          )}
                       </div>
                   </div>
 
@@ -328,7 +345,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                             <option value="OTHER">Altro personalizzato...</option>
                         </select>
                         {activeCustomField === 'letterBody' && (
-                            <div className="mt-3 flex flex-col gap-2">
+                            <div className="mt-3 flex flex-col gap-2 animate-in slide-in-from-top-2">
                                 <textarea className="w-full p-2 border border-blue-300 rounded text-sm" placeholder="Scrivi il testo..." rows={3} value={customText} onChange={e => setCustomText(e.target.value)} autoFocus />
                                 <div className="flex justify-end gap-2"><button onClick={handleCustomCancel} className="text-xs font-bold text-slate-500">Annulla</button><button onClick={handleCustomConfirm} className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold">Aggiungi</button></div>
                             </div>
@@ -341,7 +358,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                               <p className="flex-1 text-xs text-slate-700 leading-relaxed">{p}</p>
                               {!readOnly && <button onClick={() => {
                                   const newList = [...currentDoc.letterBodyParagraphs]; newList.splice(idx, 1); handleUpdate({...currentDoc, letterBodyParagraphs: newList});
-                              }} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4"/></button>}
+                              }} className="text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 className="w-4 h-4"/></button>}
                            </div>
                         ))}
                       </div>
