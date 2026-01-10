@@ -235,13 +235,24 @@ const App: React.FC = () => {
     let lastPremis = '';
     
     if (documents.length > 0) {
-        const lastDoc = documents.reduce((prev, current) => (prev.visitNumber > current.visitNumber) ? prev : current);
+        // Trova l'ultimo verbale in base al numero di visita per questo appalto
+        const lastDoc = [...documents].sort((a, b) => b.visitNumber - a.visitNumber)[0];
         nextNum = lastDoc.visitNumber + 1;
-        lastPremis = lastDoc.premis;
+        
+        // Mantieni le premesse accumulate e aggiungi le lavorazioni dell'ultima visita
+        lastPremis = lastDoc.premis || '';
         
         const lastDate = new Date(lastDoc.date).toLocaleDateString('it-IT');
-        if (lastDoc.worksExecuted && lastDoc.worksExecuted.length > 0) {
-          lastPremis += `\n\n- in data ${lastDate}, con verbale n. ${lastDoc.visitNumber}, si è preso atto delle seguenti lavorazioni: ${lastDoc.worksExecuted.join(', ')};\n`;
+        
+        // Se nel verbale precedente sono state inserite lavorazioni, aggiungile formalmente alle premesse del nuovo
+        const visitWorks = lastDoc.worksExecuted && lastDoc.worksExecuted.length > 0 
+            ? lastDoc.worksExecuted.join(', ') 
+            : 'attività di ispezione e verifica';
+            
+        const historyLine = `\n- in data ${lastDate}, con verbale n. ${lastDoc.visitNumber}, si è preso atto delle seguenti lavorazioni: ${visitWorks};`;
+        
+        if (!lastPremis.includes(historyLine)) {
+            lastPremis += historyLine;
         }
     }
 

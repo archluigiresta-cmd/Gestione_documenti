@@ -112,87 +112,84 @@ export const DocumentPreview: React.FC<DocumentPreviewProps> = ({ project, doc, 
 
     return (
       <div id="document-preview-container" className="font-serif-print text-black leading-tight w-full max-w-[21cm] bg-white p-[2cm] min-h-[29.7cm] flex flex-col">
-        {/* HEADER: TESTER INFO */}
-        <div className="flex justify-between items-start mb-16 border-b pb-4">
+        {/* HEADER: TESTER INFO - LUIGI RESTA STYLE */}
+        <div className="flex justify-between items-start mb-16 border-b border-slate-200 pb-4">
             <div className="text-left">
-                <h1 className="text-xl font-bold uppercase tracking-widest">{tester.name || 'IL COLLAUDATORE'}</h1>
+                <h1 className="text-xl font-bold uppercase tracking-widest m-0">{tester.name || 'IL COLLAUDATORE'}</h1>
             </div>
             <div className="text-right">
-                <p className="text-xs uppercase font-medium tracking-widest">{tester.professionalOrder || 'Professionista'}</p>
+                <p className="text-sm uppercase font-bold tracking-widest m-0">{tester.professionalOrder || 'ARCHITETTO'}</p>
             </div>
         </div>
 
-        {/* RECIPIENTS BLOCK */}
-        <div className="flex justify-end mb-16">
-            <div className="w-1/2 text-sm space-y-4 text-right">
+        {/* RECIPIENTS BLOCK - ALIGNED RIGHT */}
+        <div className="flex justify-end mb-12">
+            <div className="w-[65%] text-[10pt] space-y-6 text-left">
                 <div className="space-y-1">
-                    <p className="uppercase font-bold">SPETT.LE {project.entity}</p>
-                    <p className="italic">ALLA C.A. DEL RUP: {formatNameWithTitle(rup)}</p>
-                    {rup.pec && <p className="text-xs">PEC: {rup.pec}</p>}
+                    <p className="uppercase font-bold leading-tight">SPETT.LE {project.subjects.testerAppointment.nominationAuthority || project.entity}</p>
+                    <p className="uppercase font-bold">ALLA C.A. DEL RUP {formatNameWithTitle(rup)}</p>
+                    {rup.pec && <p className="text-[9pt]">PEC: <span className="underline text-blue-800">{rup.pec}</span></p>}
                 </div>
                 
                 <div className="space-y-1">
-                    <p className="uppercase font-bold italic">ALLA C.A. DEL DL: {formatNameWithTitle(dl)}</p>
-                    {dl.pec && <p className="text-xs">PEC: {dl.pec}</p>}
+                    <p className="uppercase font-bold">SIDOTI ENGINEERING s.r.l.</p>
+                    <p className="uppercase font-bold">ALLA C.A. DEL DL {formatNameWithTitle(dl)}</p>
+                    {dl.pec && <p className="text-[9pt]">PEC: <span className="underline text-blue-800">{dl.pec}</span></p>}
                 </div>
 
                 <div className="space-y-1">
                     <p className="uppercase font-bold">SPETT.LE {contractor.mainCompany.name}</p>
                     {contractor.type === 'ati' && contractor.mandants.map((m, i) => (
-                        <p key={i} className="text-xs italic">(Mandante: {m.name})</p>
+                        <p key={i} className="text-[9pt] italic">(Mandante: {m.name} PEC: {m.pec})</p>
                     ))}
-                    {contractor.mainCompany.pec && <p className="text-xs">PEC: {contractor.mainCompany.pec}</p>}
+                    {contractor.mainCompany.pec && <p className="text-[9pt]">PEC: <span className="underline text-blue-800">{contractor.mainCompany.pec}</span></p>}
                 </div>
             </div>
         </div>
 
         {/* SUBJECT */}
-        <div className="mb-12 text-sm text-justify">
-            <p className="font-bold uppercase underline">OGGETTO: {project.projectName}</p>
-            <p className="font-bold mt-1">CUP: {project.cup} {project.cig ? `- CIG: ${project.cig}` : ''}</p>
+        <div className="mb-10 text-[10pt] text-justify">
+            <p className="font-bold leading-relaxed">Oggetto: {project.projectName} - CUP: {project.cup} {project.cig ? `- CIG: ${project.cig}` : ''}.</p>
             <p className="font-bold mt-1 tracking-wider">Convocazione {doc.visitNumber === 1 ? 'I' : doc.visitNumber === 2 ? 'II' : doc.visitNumber === 3 ? 'III' : doc.visitNumber}° visita di Collaudo</p>
         </div>
 
         {/* BODY */}
-        <div className="text-sm text-justify space-y-6 flex-grow">
+        <div className="text-[10pt] text-justify space-y-5 flex-grow">
             <p>Sentite le parti, si comunica che la {doc.visitNumber === 1 ? 'I' : doc.visitNumber === 2 ? 'II' : doc.visitNumber === 3 ? 'III' : doc.visitNumber}° visita di collaudo dei lavori di cui in oggetto è fissata per il giorno:</p>
             
-            <p className="text-center font-bold text-lg py-4 border-y border-slate-100 my-4">
-                {formatShortDate(doc.date)} alle ore {doc.time || '12.00'}
+            <p className="text-center font-bold text-[11pt] py-2">
+                il giorno {formatShortDate(doc.date)}, ore {doc.time || '12.00'}, con incontro presso il luogo dei lavori.
             </p>
-            
-            <p>con incontro presso il luogo dei lavori in {project.location}.</p>
             
             <p>Durante le operazioni di collaudo, la Ditta dovrà assicurare la disponibilità di personale ed attrezzature per le verifiche, i saggi e le prove necessarie, oltre a copia del progetto completo in formato cartaceo al fine di agevolare le opportune valutazioni sul posto.</p>
             
-            <p>Durante il suddetto incontro lo scrivente estrarrà copia, altresì, di quanto eventualmente necessario alla presa d'atto delle attività già svolte.</p>
+            <p>Durante il suddetto incontro lo scrivente estrarrà copia, altresì, di quanto eventualmente necessario alla presa d’atto delle attività già svolte.</p>
             
             <p>Si invitano le parti ad astenersi dal porre in essere qualsivoglia opera di carattere strutturale in mancanza della verifica e del preventivo assenso da parte dello scrivente collaudatore.</p>
             
-            <p>Si rammenta, altresì, l'obbligo per la D.L. di presenziare alle operazioni suddette.</p>
+            <p>Si rammenta, altresì, l’obbligo per la D.L. di presenziare alle operazioni suddette.</p>
             
-            <p className="pt-8">Distinti saluti.</p>
+            <p className="pt-4">Distinti saluti</p>
         </div>
 
         {/* SIGNATURE */}
-        <div className="mt-12 text-right text-sm">
-            <p className="uppercase font-bold">IL COLLAUDATORE {project.subjects.testerAppointment.isStatic ? 'STATICO' : ''} {project.subjects.testerAppointment.isAdmin ? ', TECNICO-AMMINISTRATIVO' : ''}</p>
-            <p className="uppercase font-bold">{project.subjects.testerAppointment.isFunctional ? 'E FUNZIONALE DEGLI IMPIANTI' : ''}</p>
-            <p className="mt-8 font-normal italic">{formatNameWithTitle(tester)}</p>
-            {/* SPAZIO FIRMA */}
-            <div className="h-12"></div>
+        <div className="mt-8 text-right text-[10pt]">
+            <p className="uppercase font-bold leading-tight">IL COLLAUDATORE STATICO, TECNICO-AMMINISTRATIVO</p>
+            <p className="uppercase font-bold leading-tight">E FUNZIONALE DEGLI IMPIANTI</p>
+            <p className="mt-6 font-bold">{formatNameWithTitle(tester)}</p>
+            <div className="h-16"></div>
         </div>
 
         {/* FOOTER: TESTER CONTACT DETAILS */}
-        <div className="mt-auto pt-4 border-t border-slate-200 grid grid-cols-2 gap-4 text-[10px] text-slate-500">
+        <div className="mt-auto pt-4 border-t border-slate-200 grid grid-cols-2 gap-x-12 text-[8pt] text-slate-600">
             <div className="space-y-1">
-                <p>{tester.address || 'Indirizzo non inserito'}</p>
-                <p>Tel: {tester.phone || 'N/D'}</p>
+                <p>{tester.address || 'Piazza Matteotti, 3 - 72023 Mesagne (BR)'}</p>
+                <p>Tel/Fax: {tester.phone || '0831.777752'}</p>
             </div>
             <div className="text-right space-y-1">
-                <p>PEC: {tester.pec || '-'}</p>
-                <p>Email: {tester.email || '-'}</p>
-                <p>C.F./P.IVA: {tester.vat || '-'}</p>
+                <p>PEC: <span className="underline">{tester.pec || 'arch.luigiresta@pec.it'}</span></p>
+                <p>Email: <span className="underline">{tester.email || 'arch.luigiresta@gmail.com'}</span></p>
+                <p>P.IVA: {tester.vat || '392.6739862'}</p>
             </div>
         </div>
       </div>
