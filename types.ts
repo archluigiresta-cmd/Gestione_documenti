@@ -75,6 +75,18 @@ export interface ProjectPermission {
   role: PermissionRole;
 }
 
+/**
+ * Interface for events recorded outside of a specific project structure
+ */
+export interface ExternalEvent {
+    id: string;
+    projectName: string;
+    visitNumber: number;
+    date: string;
+    time: string;
+    type: string;
+}
+
 export interface BackupData {
   version: number;
   timestamp: number;
@@ -82,6 +94,7 @@ export interface BackupData {
   projects: ProjectConstants[];
   documents: DocumentVariables[];
   permissions: ProjectPermission[];
+  externalEvents?: ExternalEvent[];
 }
 
 export interface SALData {

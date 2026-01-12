@@ -1,23 +1,16 @@
 
-import { ProjectConstants, DocumentVariables, User, ProjectPermission, PermissionRole, UserStatus, BackupData } from './types';
+import { ProjectConstants, DocumentVariables, User, ProjectPermission, PermissionRole, UserStatus, BackupData, ExternalEvent } from './types';
 
-// Fixed: Added and exported ExternalEvent interface
-export interface ExternalEvent {
-    id: string;
-    projectName: string;
-    visitNumber: number;
-    date: string;
-    time: string;
-    type: 'visita' | 'collaudo';
-}
+// Export type for components using it from db.ts
+export type { ExternalEvent };
 
 const DB_NAME = 'EdilAppDB';
-const DB_VERSION = 9; // Incremented to 9 to add external_events store
+const DB_VERSION = 11; 
 const STORE_PROJECTS = 'projects';
 const STORE_DOCUMENTS = 'documents';
 const STORE_USERS = 'users';
 const STORE_PERMISSIONS = 'permissions';
-const STORE_EXTERNAL_EVENTS = 'external_events';
+const STORE_EXTERNAL_EVENTS = 'externalEvents';
 
 export const db = {
   open: (): Promise<IDBDatabase> => {
@@ -27,25 +20,30 @@ export const db = {
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         
-        // Pulizia degli store esistenti se presenti (reset totale richiesto)
-        Array.from(db.objectStoreNames).forEach(name => {
-          db.deleteObjectStore(name);
-        });
+        // Crea gli store solo se non esistono, SENZA cancellare quelli esistenti
+        if (!db.objectStoreNames.contains(STORE_PROJECTS)) {
+          db.createObjectStore(STORE_PROJECTS, { keyPath: 'id' });
+        }
         
-        db.createObjectStore(STORE_PROJECTS, { keyPath: 'id' });
-        
-        const docStore = db.createObjectStore(STORE_DOCUMENTS, { keyPath: 'id' });
-        docStore.createIndex('projectId', 'projectId', { unique: false });
+        if (!db.objectStoreNames.contains(STORE_DOCUMENTS)) {
+          const docStore = db.createObjectStore(STORE_DOCUMENTS, { keyPath: 'id' });
+          docStore.createIndex('projectId', 'projectId', { unique: false });
+        }
 
-        const userStore = db.createObjectStore(STORE_USERS, { keyPath: 'id' });
-        userStore.createIndex('email', 'email', { unique: true });
+        if (!db.objectStoreNames.contains(STORE_USERS)) {
+          const userStore = db.createObjectStore(STORE_USERS, { keyPath: 'id' });
+          userStore.createIndex('email', 'email', { unique: true });
+        }
 
-        const permStore = db.createObjectStore(STORE_PERMISSIONS, { keyPath: 'id' });
-        permStore.createIndex('projectId', 'projectId', { unique: false });
-        permStore.createIndex('userEmail', 'userEmail', { unique: false });
+        if (!db.objectStoreNames.contains(STORE_PERMISSIONS)) {
+          const permStore = db.createObjectStore(STORE_PERMISSIONS, { keyPath: 'id' });
+          permStore.createIndex('projectId', 'projectId', { unique: false });
+          permStore.createIndex('userEmail', 'userEmail', { unique: false });
+        }
 
-        // Fixed: Added store for external events
-        db.createObjectStore(STORE_EXTERNAL_EVENTS, { keyPath: 'id' });
+        if (!db.objectStoreNames.contains(STORE_EXTERNAL_EVENTS)) {
+          db.createObjectStore(STORE_EXTERNAL_EVENTS, { keyPath: 'id' });
+        }
       };
 
       request.onsuccess = (event) => resolve((event.target as IDBOpenDBRequest).result);
@@ -83,7 +81,7 @@ export const db = {
       const store = transaction.objectStore(STORE_USERS);
       const request = store.add(user);
       request.onsuccess = () => resolve();
-      request.onerror = () => reject(new Error("Email già esistente o errore database."));
+      request.onerror = () => reject(new Error("Email già esistente."));
     });
   },
 
@@ -140,7 +138,9 @@ export const db = {
     });
   },
 
-  // Fixed: Added getAllDocuments to retrieve all documents across all projects
+  /**
+   * Returns all document records across all projects.
+   */
   getAllDocuments: async (): Promise<DocumentVariables[]> => {
     const database = await db.open();
     return new Promise((resolve) => {
@@ -162,6 +162,60 @@ export const db = {
       return new Promise((resolve) => {
         database.transaction(STORE_DOCUMENTS, 'readwrite').objectStore(STORE_DOCUMENTS).delete(docId).onsuccess = () => resolve();
       });
+  },
+
+  /**
+   * Retrieves specific project permissions by ID.
+   */
+  getProjectPermissions: async (projectId: string): Promise<ProjectPermission[]> => {
+    const database = await db.open();
+    return new Promise((resolve) => {
+        database.transaction(STORE_PERMISSIONS, 'readonly').objectStore(STORE_PERMISSIONS).index('projectId').getAll(projectId).onsuccess = (e) => resolve((e.target as any).result);
+    });
+  },
+
+  /**
+   * Adds or updates project sharing permissions.
+   */
+  shareProject: async (permission: ProjectPermission): Promise<void> => {
+    const database = await db.open();
+    return new Promise((resolve) => {
+        const transaction = database.transaction(STORE_PERMISSIONS, 'readwrite');
+        transaction.objectStore(STORE_PERMISSIONS).put(permission);
+        transaction.oncomplete = () => resolve();
+    });
+  },
+
+  /**
+   * Retrieves all external event records.
+   */
+  getExternalEvents: async (): Promise<ExternalEvent[]> => {
+    const database = await db.open();
+    return new Promise((resolve) => {
+        database.transaction(STORE_EXTERNAL_EVENTS, 'readonly').objectStore(STORE_EXTERNAL_EVENTS).getAll().onsuccess = (e) => resolve((e.target as any).result);
+    });
+  },
+
+  /**
+   * Saves or updates an external event record.
+   */
+  saveExternalEvent: async (event: ExternalEvent): Promise<void> => {
+    const database = await db.open();
+    return new Promise((resolve) => {
+        const transaction = database.transaction(STORE_EXTERNAL_EVENTS, 'readwrite');
+        transaction.objectStore(STORE_EXTERNAL_EVENTS).put(event);
+        transaction.oncomplete = () => resolve();
+    });
+  },
+
+  /**
+   * Deletes a specific external event by ID.
+   */
+  deleteExternalEvent: async (id: string): Promise<void> => {
+    const database = await db.open();
+    return new Promise((resolve) => {
+        database.transaction(STORE_EXTERNAL_EVENTS, 'readwrite').objectStore(STORE_EXTERNAL_EVENTS).delete(id).onsuccess = () => resolve();
+    });
   },
 
   getAllUsers: async (): Promise<User[]> => {
@@ -188,58 +242,15 @@ export const db = {
       });
   },
 
-  // Fixed: Added getProjectPermissions to retrieve permissions for a specific project
-  getProjectPermissions: async (projectId: string): Promise<ProjectPermission[]> => {
-    const database = await db.open();
-    return new Promise((resolve) => {
-      database.transaction(STORE_PERMISSIONS, 'readonly').objectStore(STORE_PERMISSIONS).index('projectId').getAll(projectId).onsuccess = (e) => resolve((e.target as any).result);
-    });
-  },
-
-  // Fixed: Added shareProject to save a project permission
-  shareProject: async (permission: ProjectPermission): Promise<void> => {
-    const database = await db.open();
-    return new Promise((resolve) => {
-      const transaction = database.transaction(STORE_PERMISSIONS, 'readwrite');
-      transaction.objectStore(STORE_PERMISSIONS).put(permission);
-      transaction.oncomplete = () => resolve();
-    });
-  },
-
-  // Fixed: Added methods for handling external events
-  getExternalEvents: async (): Promise<ExternalEvent[]> => {
-    const database = await db.open();
-    return new Promise((resolve) => {
-      database.transaction(STORE_EXTERNAL_EVENTS, 'readonly').objectStore(STORE_EXTERNAL_EVENTS).getAll().onsuccess = (e) => resolve((e.target as any).result);
-    });
-  },
-
-  saveExternalEvent: async (event: ExternalEvent): Promise<void> => {
-    const database = await db.open();
-    return new Promise((resolve) => {
-      const transaction = database.transaction(STORE_EXTERNAL_EVENTS, 'readwrite');
-      transaction.objectStore(STORE_EXTERNAL_EVENTS).put(event);
-      transaction.oncomplete = () => resolve();
-    });
-  },
-
-  deleteExternalEvent: async (id: string): Promise<void> => {
-    const database = await db.open();
-    return new Promise((resolve) => {
-      const transaction = database.transaction(STORE_EXTERNAL_EVENTS, 'readwrite');
-      transaction.objectStore(STORE_EXTERNAL_EVENTS).delete(id);
-      transaction.oncomplete = () => resolve();
-    });
-  },
-
   getDatabaseBackup: async (): Promise<BackupData> => {
       const database = await db.open();
       return new Promise((resolve) => {
-          const transaction = database.transaction([STORE_PROJECTS, STORE_DOCUMENTS, STORE_USERS, STORE_PERMISSIONS], 'readonly');
+          const transaction = database.transaction([STORE_PROJECTS, STORE_DOCUMENTS, STORE_USERS, STORE_PERMISSIONS, STORE_EXTERNAL_EVENTS], 'readonly');
           const pReq = transaction.objectStore(STORE_PROJECTS).getAll();
           const dReq = transaction.objectStore(STORE_DOCUMENTS).getAll();
           const uReq = transaction.objectStore(STORE_USERS).getAll();
           const pmReq = transaction.objectStore(STORE_PERMISSIONS).getAll();
+          const eReq = transaction.objectStore(STORE_EXTERNAL_EVENTS).getAll();
           transaction.oncomplete = () => {
               resolve({
                   version: 1,
@@ -247,7 +258,8 @@ export const db = {
                   users: uReq.result || [],
                   projects: pReq.result || [],
                   documents: dReq.result || [],
-                  permissions: pmReq.result || []
+                  permissions: pmReq.result || [],
+                  externalEvents: eReq.result || []
               });
           };
       });
@@ -256,15 +268,19 @@ export const db = {
   restoreDatabaseBackup: async (data: BackupData): Promise<void> => {
     const database = await db.open();
     return new Promise((resolve, reject) => {
-      const transaction = database.transaction([STORE_PROJECTS, STORE_DOCUMENTS, STORE_USERS, STORE_PERMISSIONS], 'readwrite');
+      const transaction = database.transaction([STORE_PROJECTS, STORE_DOCUMENTS, STORE_USERS, STORE_PERMISSIONS, STORE_EXTERNAL_EVENTS], 'readwrite');
       transaction.objectStore(STORE_PROJECTS).clear();
       transaction.objectStore(STORE_DOCUMENTS).clear();
       transaction.objectStore(STORE_USERS).clear();
       transaction.objectStore(STORE_PERMISSIONS).clear();
+      transaction.objectStore(STORE_EXTERNAL_EVENTS).clear();
       data.projects.forEach(p => transaction.objectStore(STORE_PROJECTS).put(p));
       data.documents.forEach(d => transaction.objectStore(STORE_DOCUMENTS).put(d));
       data.users.forEach(u => transaction.objectStore(STORE_USERS).put(u));
       data.permissions.forEach(p => transaction.objectStore(STORE_PERMISSIONS).put(p));
+      if (data.externalEvents) {
+          data.externalEvents.forEach(e => transaction.objectStore(STORE_EXTERNAL_EVENTS).put(e));
+      }
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => reject(transaction.error);
     });

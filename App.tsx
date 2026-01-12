@@ -83,7 +83,6 @@ const App: React.FC = () => {
     const newDoc = createInitialDocument(currentProject.id);
     newDoc.visitNumber = nextNum;
     
-    // Autofill premis with previous visits summary
     if (documents.length > 0) {
         const history = documents
             .sort((a, b) => a.visitNumber - b.visitNumber)
