@@ -1,74 +1,55 @@
 
-import { ProjectConstants, DocumentVariables, User, ProjectPermission, PermissionRole, UserStatus, BackupData } from './types';
+import { ProjectConstants, DocumentVariables, User, ProjectPermission, PermissionRole, UserStatus, BackupData, ExternalEvent } from './types';
+import { createEmptyProject, createInitialDocument } from './constants';
 
 const DB_NAME = 'EdilAppDB';
-const DB_VERSION = 3; // Incrementato per nuovo store
+const DB_VERSION = 6; // Incremented version to add external_events store
 const STORE_PROJECTS = 'projects';
 const STORE_DOCUMENTS = 'documents';
 const STORE_USERS = 'users';
 const STORE_PERMISSIONS = 'permissions';
 const STORE_EXTERNAL_EVENTS = 'external_events';
 
-export interface ExternalEvent {
-    id: string;
-    projectName: string;
-    visitNumber: number;
-    date: string;
-    time: string;
-    type: 'visita' | 'scadenza' | 'altro';
-}
+// Exporting ExternalEvent for convenience of components importing from db
+export type { ExternalEvent };
 
 export const db = {
   open: (): Promise<IDBDatabase> => {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
-
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
-        
-        if (!db.objectStoreNames.contains(STORE_PROJECTS)) {
-          db.createObjectStore(STORE_PROJECTS, { keyPath: 'id' });
-        }
-        
+        if (!db.objectStoreNames.contains(STORE_PROJECTS)) db.createObjectStore(STORE_PROJECTS, { keyPath: 'id' });
         if (!db.objectStoreNames.contains(STORE_DOCUMENTS)) {
           const docStore = db.createObjectStore(STORE_DOCUMENTS, { keyPath: 'id' });
           docStore.createIndex('projectId', 'projectId', { unique: false });
         }
-
         if (!db.objectStoreNames.contains(STORE_USERS)) {
           const userStore = db.createObjectStore(STORE_USERS, { keyPath: 'id' });
           userStore.createIndex('email', 'email', { unique: true });
         }
-
         if (!db.objectStoreNames.contains(STORE_PERMISSIONS)) {
           const permStore = db.createObjectStore(STORE_PERMISSIONS, { keyPath: 'id' });
           permStore.createIndex('projectId', 'projectId', { unique: false });
           permStore.createIndex('userEmail', 'userEmail', { unique: false });
         }
-
+        // Added external_events store
         if (!db.objectStoreNames.contains(STORE_EXTERNAL_EVENTS)) {
-            db.createObjectStore(STORE_EXTERNAL_EVENTS, { keyPath: 'id' });
+          db.createObjectStore(STORE_EXTERNAL_EVENTS, { keyPath: 'id' });
         }
       };
-
-      request.onsuccess = (event) => {
-        resolve((event.target as IDBOpenDBRequest).result);
-      };
-
-      request.onerror = (event) => {
-        reject((event.target as IDBOpenDBRequest).error);
-      };
+      request.onsuccess = (event) => resolve((event.target as IDBOpenDBRequest).result);
+      request.onerror = (event) => reject((event.target as IDBOpenDBRequest).error);
     });
   },
 
   ensureAdminExists: async (): Promise<void> => {
       const database = await db.open();
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
           const transaction = database.transaction(STORE_USERS, 'readwrite');
           const store = transaction.objectStore(STORE_USERS);
           const emailIndex = store.index('email');
           const req = emailIndex.get('arch.luigiresta@gmail.com');
-
           req.onsuccess = () => {
               const adminUser: User = {
                   id: req.result ? req.result.id : crypto.randomUUID(),
@@ -80,21 +61,26 @@ export const db = {
               };
               store.put(adminUser);
           };
-          
           transaction.oncomplete = () => resolve();
-          transaction.onerror = () => resolve();
       });
   },
 
-  // Added missing registerUser method for AuthScreen.tsx
+  seedInitialProjects: async (ownerId: string): Promise<void> => {
+      const existingProjects = await db.getProjectsForUser(ownerId, '');
+      if (existingProjects.length === 0) {
+          const firstProject = createEmptyProject(ownerId);
+          firstProject.projectName = "Progetto di Esempio";
+          firstProject.entity = "COMUNE DI ESEMPIO";
+          await db.saveProject(firstProject);
+          await db.saveDocument(createInitialDocument(firstProject.id));
+      }
+  },
+
   registerUser: async (user: User): Promise<void> => {
     const database = await db.open();
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const transaction = database.transaction(STORE_USERS, 'readwrite');
-      const store = transaction.objectStore(STORE_USERS);
-      const request = store.add(user);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
+      transaction.objectStore(STORE_USERS).add(user).onsuccess = () => resolve();
     });
   },
 
@@ -102,48 +88,30 @@ export const db = {
     await db.ensureAdminExists();
     const database = await db.open();
     return new Promise((resolve, reject) => {
-        const transaction = database.transaction(STORE_USERS, 'readonly');
-        const store = transaction.objectStore(STORE_USERS);
-        const index = store.index('email');
-        const request = index.get(email);
-
+        const store = database.transaction(STORE_USERS, 'readonly').objectStore(STORE_USERS);
+        const request = store.index('email').get(email);
         request.onsuccess = () => {
             const user = request.result as User;
-            if (user && user.password === password) {
-                if (user.status === 'pending') {
-                    reject(new Error("Account in attesa di approvazione."));
-                } else if (user.status === 'suspended') {
-                    reject(new Error("Account sospeso."));
-                } else {
-                    resolve(user);
-                }
-            } else {
-                reject(new Error("Credenziali non valide."));
-            }
+            if (user && user.password === password) resolve(user);
+            else reject(new Error("Credenziali non valide."));
         };
-        request.onerror = () => reject(request.error);
     });
   },
 
   getAllUsers: async (): Promise<User[]> => {
       const database = await db.open();
-      return new Promise((resolve, reject) => {
-          const transaction = database.transaction(STORE_USERS, 'readonly');
-          const store = transaction.objectStore(STORE_USERS);
-          const request = store.getAll();
-          request.onsuccess = () => resolve(request.result);
-          request.onerror = () => reject(request.error);
+      return new Promise((resolve) => {
+          database.transaction(STORE_USERS, 'readonly').objectStore(STORE_USERS).getAll().onsuccess = (e) => resolve((e.target as any).result);
       });
   },
 
   updateUserStatus: async (userId: string, status: UserStatus, isSystemAdmin?: boolean): Promise<void> => {
       const database = await db.open();
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
           const transaction = database.transaction(STORE_USERS, 'readwrite');
           const store = transaction.objectStore(STORE_USERS);
-          const request = store.get(userId);
-          request.onsuccess = () => {
-              const user = request.result as User;
+          store.get(userId).onsuccess = (e) => {
+              const user = (e.target as any).result;
               if (user) {
                   user.status = status;
                   if (isSystemAdmin !== undefined) user.isSystemAdmin = isSystemAdmin;
@@ -151,73 +119,59 @@ export const db = {
               }
           };
           transaction.oncomplete = () => resolve();
-          transaction.onerror = () => reject(transaction.error);
       });
   },
 
-  // --- EXTERNAL EVENTS (Per appalti non ancora in app) ---
-  saveExternalEvent: async (event: ExternalEvent): Promise<void> => {
-      const database = await db.open();
-      return new Promise((resolve, reject) => {
-          const transaction = database.transaction(STORE_EXTERNAL_EVENTS, 'readwrite');
-          transaction.objectStore(STORE_EXTERNAL_EVENTS).put(event);
-          transaction.oncomplete = () => resolve();
-      });
-  },
-
-  getExternalEvents: async (): Promise<ExternalEvent[]> => {
-      const database = await db.open();
-      return new Promise((resolve, reject) => {
-          const transaction = database.transaction(STORE_EXTERNAL_EVENTS, 'readonly');
-          const request = transaction.objectStore(STORE_EXTERNAL_EVENTS).getAll();
-          request.onsuccess = () => resolve(request.result);
-      });
-  },
-
-  deleteExternalEvent: async (id: string): Promise<void> => {
-      const database = await db.open();
-      return new Promise((resolve, reject) => {
-          const transaction = database.transaction(STORE_EXTERNAL_EVENTS, 'readwrite');
-          transaction.objectStore(STORE_EXTERNAL_EVENTS).delete(id);
-          transaction.oncomplete = () => resolve();
-      });
-  },
-
-  // --- PROJECTS ---
   getProjectsForUser: async (userId: string, userEmail: string): Promise<ProjectConstants[]> => {
     const database = await db.open();
-    return new Promise(async (resolve, reject) => {
-        const transaction = database.transaction([STORE_PROJECTS, STORE_PERMISSIONS], 'readonly');
-        const pReq = transaction.objectStore(STORE_PROJECTS).getAll();
-        pReq.onsuccess = () => resolve(pReq.result);
+    return new Promise((resolve) => {
+        database.transaction(STORE_PROJECTS, 'readonly').objectStore(STORE_PROJECTS).getAll().onsuccess = (e) => resolve((e.target as any).result);
+    });
+  },
+
+  getUserPermissions: async (email: string): Promise<ProjectPermission[]> => {
+    const database = await db.open();
+    return new Promise((resolve) => {
+        const store = database.transaction(STORE_PERMISSIONS, 'readonly').objectStore(STORE_PERMISSIONS);
+        store.index('userEmail').getAll(email).onsuccess = (e) => resolve((e.target as any).result);
     });
   },
 
   saveProject: async (project: ProjectConstants): Promise<void> => {
     const database = await db.open();
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const transaction = database.transaction(STORE_PROJECTS, 'readwrite');
       transaction.objectStore(STORE_PROJECTS).put(project);
       transaction.oncomplete = () => resolve();
     });
   },
 
+  deleteProject: async (id: string): Promise<void> => {
+      const database = await db.open();
+      return new Promise((resolve) => {
+          const transaction = database.transaction([STORE_PROJECTS, STORE_DOCUMENTS], 'readwrite');
+          transaction.objectStore(STORE_PROJECTS).delete(id);
+          const docStore = transaction.objectStore(STORE_DOCUMENTS);
+          const index = docStore.index('projectId');
+          index.getAllKeys(id).onsuccess = (e) => {
+              const keys = (e.target as any).result;
+              keys.forEach((k: string) => docStore.delete(k));
+          };
+          transaction.oncomplete = () => resolve();
+      });
+  },
+
   getAllDocuments: async (): Promise<DocumentVariables[]> => {
       const database = await db.open();
       return new Promise((resolve) => {
-          const transaction = database.transaction(STORE_DOCUMENTS, 'readonly');
-          const request = transaction.objectStore(STORE_DOCUMENTS).getAll();
-          request.onsuccess = () => resolve(request.result);
+          database.transaction(STORE_DOCUMENTS, 'readonly').objectStore(STORE_DOCUMENTS).getAll().onsuccess = (e) => resolve((e.target as any).result);
       });
   },
 
   getDocumentsByProject: async (projectId: string): Promise<DocumentVariables[]> => {
     const database = await db.open();
     return new Promise((resolve) => {
-      const transaction = database.transaction(STORE_DOCUMENTS, 'readonly');
-      const index = transaction.objectStore(STORE_DOCUMENTS).index('projectId');
-      const request = index.getAll(projectId);
-      request.onsuccess = () => resolve(request.result);
+      database.transaction(STORE_DOCUMENTS, 'readonly').objectStore(STORE_DOCUMENTS).index('projectId').getAll(projectId).onsuccess = (e) => resolve((e.target as any).result);
     });
   },
 
@@ -229,7 +183,7 @@ export const db = {
       transaction.oncomplete = () => resolve();
     });
   },
-  
+
   deleteDocument: async (docId: string): Promise<void> => {
       const database = await db.open();
       return new Promise((resolve) => {
@@ -239,76 +193,91 @@ export const db = {
       });
   },
 
-  // Added missing getProjectPermissions method for ProjectSharing.tsx
   getProjectPermissions: async (projectId: string): Promise<ProjectPermission[]> => {
     const database = await db.open();
-    return new Promise((resolve, reject) => {
-      const transaction = database.transaction(STORE_PERMISSIONS, 'readonly');
-      const store = transaction.objectStore(STORE_PERMISSIONS);
-      const index = store.index('projectId');
-      const request = index.getAll(projectId);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
+    return new Promise((resolve) => {
+      database.transaction(STORE_PERMISSIONS, 'readonly').objectStore(STORE_PERMISSIONS).index('projectId').getAll(projectId).onsuccess = (e) => resolve((e.target as any).result);
     });
   },
 
-  // Added missing shareProject method for ProjectSharing.tsx
   shareProject: async (permission: ProjectPermission): Promise<void> => {
     const database = await db.open();
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const transaction = database.transaction(STORE_PERMISSIONS, 'readwrite');
-      const store = transaction.objectStore(STORE_PERMISSIONS);
-      const request = store.put(permission);
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
+      transaction.objectStore(STORE_PERMISSIONS).put(permission);
+      transaction.oncomplete = () => resolve();
     });
+  },
+
+  // Added ExternalEvent operations
+  getExternalEvents: async (): Promise<ExternalEvent[]> => {
+      const database = await db.open();
+      return new Promise((resolve) => {
+          database.transaction(STORE_EXTERNAL_EVENTS, 'readonly').objectStore(STORE_EXTERNAL_EVENTS).getAll().onsuccess = (e) => resolve((e.target as any).result);
+      });
+  },
+
+  saveExternalEvent: async (event: ExternalEvent): Promise<void> => {
+      const database = await db.open();
+      return new Promise((resolve) => {
+          const transaction = database.transaction(STORE_EXTERNAL_EVENTS, 'readwrite');
+          transaction.objectStore(STORE_EXTERNAL_EVENTS).put(event);
+          transaction.oncomplete = () => resolve();
+      });
+  },
+
+  deleteExternalEvent: async (id: string): Promise<void> => {
+      const database = await db.open();
+      return new Promise((resolve) => {
+          const transaction = database.transaction(STORE_EXTERNAL_EVENTS, 'readwrite');
+          transaction.objectStore(STORE_EXTERNAL_EVENTS).delete(id);
+          transaction.oncomplete = () => resolve();
+      });
   },
 
   getDatabaseBackup: async (): Promise<BackupData> => {
       const database = await db.open();
-      return new Promise((resolve, reject) => {
-          const transaction = database.transaction([STORE_PROJECTS, STORE_DOCUMENTS, STORE_USERS, STORE_PERMISSIONS], 'readonly');
+      return new Promise((resolve) => {
+          const transaction = database.transaction([STORE_PROJECTS, STORE_DOCUMENTS, STORE_USERS, STORE_PERMISSIONS, STORE_EXTERNAL_EVENTS], 'readonly');
           const pReq = transaction.objectStore(STORE_PROJECTS).getAll();
           const dReq = transaction.objectStore(STORE_DOCUMENTS).getAll();
           const uReq = transaction.objectStore(STORE_USERS).getAll();
           const pmReq = transaction.objectStore(STORE_PERMISSIONS).getAll();
+          const eReq = transaction.objectStore(STORE_EXTERNAL_EVENTS).getAll();
           transaction.oncomplete = () => {
-              resolve({
-                  version: 1,
-                  timestamp: Date.now(),
-                  users: uReq.result || [],
-                  projects: pReq.result || [],
-                  documents: dReq.result || [],
-                  permissions: pmReq.result || []
+              resolve({ 
+                  version: 2, 
+                  timestamp: Date.now(), 
+                  users: uReq.result || [], 
+                  projects: pReq.result || [], 
+                  documents: dReq.result || [], 
+                  permissions: pmReq.result || [],
+                  externalEvents: eReq.result || []
               });
           };
       });
   },
 
-  // Added missing restoreDatabaseBackup method for AuthScreen.tsx and AdminPanel.tsx
   restoreDatabaseBackup: async (data: BackupData): Promise<void> => {
     const database = await db.open();
     return new Promise((resolve, reject) => {
-      const transaction = database.transaction(
-        [STORE_PROJECTS, STORE_DOCUMENTS, STORE_USERS, STORE_PERMISSIONS],
-        'readwrite'
-      );
-
-      const clearAndAdd = (storeName: string, items: any[]) => {
-        const store = transaction.objectStore(storeName);
-        store.clear();
-        if (items && Array.isArray(items)) {
-          items.forEach(item => store.put(item));
-        }
-      };
-
-      clearAndAdd(STORE_PROJECTS, data.projects);
-      clearAndAdd(STORE_DOCUMENTS, data.documents);
-      clearAndAdd(STORE_USERS, data.users);
-      clearAndAdd(STORE_PERMISSIONS, data.permissions);
-
+      const transaction = database.transaction([STORE_PROJECTS, STORE_DOCUMENTS, STORE_USERS, STORE_PERMISSIONS, STORE_EXTERNAL_EVENTS], 'readwrite');
+      transaction.objectStore(STORE_PROJECTS).clear();
+      transaction.objectStore(STORE_DOCUMENTS).clear();
+      transaction.objectStore(STORE_USERS).clear();
+      transaction.objectStore(STORE_PERMISSIONS).clear();
+      transaction.objectStore(STORE_EXTERNAL_EVENTS).clear();
+      
+      data.projects.forEach(p => transaction.objectStore(STORE_PROJECTS).put(p));
+      data.documents.forEach(d => transaction.objectStore(STORE_DOCUMENTS).put(d));
+      data.users.forEach(u => transaction.objectStore(STORE_USERS).put(u));
+      data.permissions.forEach(pm => transaction.objectStore(STORE_PERMISSIONS).put(pm));
+      if (data.externalEvents) {
+          data.externalEvents.forEach(e => transaction.objectStore(STORE_EXTERNAL_EVENTS).put(e));
+      }
+      
       transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error);
+      transaction.onerror = (e) => reject((e.target as any).error);
     });
   }
 };

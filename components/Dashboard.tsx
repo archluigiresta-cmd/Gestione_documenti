@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ProjectConstants, User } from '../types';
-import { FolderPlus, Trash2, Shield, Share2, Building2, Calendar, ClipboardList, ChevronUp, ChevronDown, Download, LayoutDashboard } from 'lucide-react';
+import { FolderPlus, Trash2, Shield, Share2, Building2, Download } from 'lucide-react';
 
 interface DashboardProps {
   projects: ProjectConstants[];
@@ -10,8 +10,6 @@ interface DashboardProps {
   onDeleteProject: (id: string) => void;
   onShareProject: (id: string) => void; 
   onOpenAdmin: () => void;
-  onOpenSummary: () => void;
-  onOpenCalendar: () => void;
   onUpdateOrder: (id: string, newOrder: number) => void; 
   onMoveProject: (id: string, direction: 'up' | 'down') => void; 
   onExportData: () => void;
@@ -25,8 +23,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onDeleteProject, 
   onShareProject,
   onOpenAdmin,
-  onOpenSummary,
-  onOpenCalendar,
   onUpdateOrder,
   onMoveProject,
   onExportData,
@@ -37,15 +33,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <div className="flex items-center justify-between mb-12">
         <div>
           <h1 className="text-4xl font-bold text-slate-900 tracking-tight">I Miei Appalti</h1>
-          <p className="text-slate-500 mt-2 font-medium">Benvenuto nel portale di gestione collaudi.</p>
+          <p className="text-slate-500 mt-2 font-medium">Gestione documentale Opere Pubbliche.</p>
         </div>
         <div className="flex gap-3">
-             <button onClick={onOpenCalendar} className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-5 py-3 rounded-xl shadow-sm flex items-center gap-2 font-bold transition-all text-sm">
-                <Calendar className="w-5 h-5 text-blue-500"/> Calendario
-             </button>
-             <button onClick={onOpenSummary} className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 px-5 py-3 rounded-xl shadow-sm flex items-center gap-2 font-bold transition-all text-sm">
-                <ClipboardList className="w-5 h-5 text-blue-500"/> Riepilogo Visite
-             </button>
              {currentUser?.isSystemAdmin && (
                  <button onClick={onOpenAdmin} className="bg-slate-800 hover:bg-slate-950 text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 font-bold transition-all text-sm">
                     <Shield className="w-5 h-5" /> Admin

@@ -1,13 +1,12 @@
 
-
 export interface ContactInfo {
   name: string;
   title?: string;
   role?: string;
   address?: string;
-  zip?: string;      // NEW: CAP
-  city?: string;     // NEW: Città
-  province?: string; // NEW: Provincia
+  zip?: string;      
+  city?: string;     
+  province?: string; 
   email?: string;
   pec?: string;
   phone?: string;
@@ -83,6 +82,18 @@ export interface BackupData {
   projects: ProjectConstants[];
   documents: DocumentVariables[];
   permissions: ProjectPermission[];
+  // Added externalEvents to backup data structure
+  externalEvents?: ExternalEvent[];
+}
+
+// Added ExternalEvent interface
+export interface ExternalEvent {
+  id: string;
+  projectName: string;
+  visitNumber: number;
+  date: string;
+  time: string;
+  type: 'visita' | 'altro';
 }
 
 export interface SALData {
@@ -107,8 +118,8 @@ export interface TesterVisitSummary {
 }
 
 export interface LetterRecipientConfig {
-  id: string;   // 'rup', 'dl', 'contractor', o 'other-0', etc.
-  isPc: boolean; // True se "p.c."
+  id: string;   
+  isPc: boolean; 
 }
 
 export interface ProjectConstants {
@@ -154,7 +165,7 @@ export interface ProjectConstants {
     dlOffice: SubjectProfile[]; 
     cse: DesignerProfile; 
     tester: SubjectProfile; 
-    others: SubjectProfile[]; // NEW
+    others: SubjectProfile[]; 
     testerAppointment: { 
         nominationType: string;
         nominationAuthority: string; 
@@ -205,9 +216,6 @@ export interface ProjectConstants {
   };
 }
 
-/**
- * Interface representing a photo attachment with metadata.
- */
 export interface PhotoAttachment {
   id: string;
   url: string;
@@ -215,9 +223,6 @@ export interface PhotoAttachment {
   description: string;
 }
 
-/**
- * Type representing the different kinds of documents that can be generated.
- */
 export type DocumentType = 
   | 'LETTERA_CONVOCAZIONE' 
   | 'VERBALE_COLLAUDO' 
@@ -254,5 +259,5 @@ export interface DocumentVariables {
   letterIntro: string;
   letterBodyParagraphs: string[];
   letterClosing: string;
-  letterRecipients?: LetterRecipientConfig[]; // NEW: Lista ordinata di destinatari
+  letterRecipients?: LetterRecipientConfig[]; 
 }
