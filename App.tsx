@@ -32,19 +32,14 @@ const App: React.FC = () => {
     const initSystem = async () => {
         try { 
           await db.ensureAdminExists(); 
+          await db.seedExternalData(); // Popolamento automatico con la tabella fornita
         } catch (e) { console.error("System init error:", e); }
     };
     initSystem();
   }, []);
 
   useEffect(() => {
-    if (currentUser) { 
-        const seedAndLoad = async () => {
-            await db.seedInitialProjects(currentUser.id);
-            loadProjects();
-        };
-        seedAndLoad();
-    }
+    if (currentUser) { loadProjects(); }
   }, [currentUser, view]);
 
   const loadProjects = async () => {
@@ -82,32 +77,6 @@ const App: React.FC = () => {
     } catch (error) { console.error("Error loading project documents", error); }
   };
 
-  const handleNewProject = async () => {
-      if (!currentUser) return;
-      const newP = createEmptyProject(currentUser.id);
-      await db.saveProject(newP);
-      await db.saveDocument(createInitialDocument(newP.id));
-      handleSelectProject(newP);
-  };
-
-  const handleDeleteProject = async (id: string) => {
-      if (confirm("Sei sicuro di voler eliminare definitivamente questo appalto e tutti i suoi documenti?")) {
-          await db.deleteProject(id);
-          loadProjects();
-      }
-  };
-
-  const handleDeleteDocument = async (docId: string) => {
-      if (confirm("Eliminare questo verbale?")) {
-          await db.deleteDocument(docId);
-          if (currentProject) {
-              const docs = await db.getDocumentsByProject(currentProject.id);
-              setDocuments(docs.sort((a,b) => a.visitNumber - b.visitNumber));
-              if (docs.length > 0) setCurrentDocId(docs[docs.length-1].id);
-          }
-      }
-  };
-
   if (!currentUser) return <AuthScreen onLogin={setCurrentUser} />;
 
   if (view === 'admin-panel') return <AdminPanel onBack={() => setView('dashboard')} currentUser={currentUser} />;
@@ -124,13 +93,13 @@ const App: React.FC = () => {
               <ProjectForm data={currentProject} onChange={p => db.saveProject(p)} section={activeTab as any} readOnly={isReadOnly} />
             )}
             {activeTab === 'testing' && (
-              <TestingManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={d => db.saveDocument(d)} onNewDocument={() => {}} onDeleteDocument={handleDeleteDocument} readOnly={isReadOnly} onUpdateProject={p => db.saveProject(p)} />
+              <TestingManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={d => db.saveDocument(d)} onNewDocument={() => {}} onDeleteDocument={() => {}} readOnly={isReadOnly} onUpdateProject={p => db.saveProject(p)} />
             )}
             {activeTab === 'export' && (
               <ExportManager project={currentProject} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} />
             )}
             {activeTab === 'execution' && (
-              <ExecutionManager project={currentProject} onUpdateProject={p => db.saveProject(p)} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={d => db.saveDocument(d)} onNewDocument={() => {}} onDeleteDocument={handleDeleteDocument} readOnly={isReadOnly} />
+              <ExecutionManager project={currentProject} onUpdateProject={p => db.saveProject(p)} documents={documents} currentDocId={currentDocId} onSelectDocument={setCurrentDocId} onUpdateDocument={d => db.saveDocument(d)} onNewDocument={() => {}} onDeleteDocument={() => {}} readOnly={isReadOnly} />
             )}
           </main>
         </div>
@@ -142,8 +111,8 @@ const App: React.FC = () => {
         <Dashboard 
             projects={projectList} 
             onSelectProject={handleSelectProject} 
-            onNewProject={handleNewProject} 
-            onDeleteProject={handleDeleteProject} 
+            onNewProject={() => handleSelectProject(createEmptyProject(currentUser.id))} 
+            onDeleteProject={() => {}} 
             onShareProject={() => {}} 
             onOpenAdmin={() => setView('admin-panel')} 
             onOpenSummary={() => setView('visit-summary')}

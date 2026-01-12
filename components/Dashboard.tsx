@@ -70,23 +70,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                         {projects.map((project, index) => (
-                            <tr key={project.id} className="hover:bg-blue-50/50 cursor-pointer transition-colors group">
-                                <td onClick={() => onSelectProject(project)} className="p-5 text-center font-bold text-slate-400 text-sm">{index + 1}</td>
-                                <td onClick={() => onSelectProject(project)} className="p-5">
+                            <tr key={project.id} onClick={() => onSelectProject(project)} className="hover:bg-blue-50/50 cursor-pointer transition-colors group">
+                                <td className="p-5 text-center font-bold text-slate-400 text-sm">{index + 1}</td>
+                                <td className="p-5">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 bg-blue-100 rounded-lg"><Building2 className="w-5 h-5 text-blue-600"/></div>
                                         <span className="font-bold text-slate-700">{project.entity}</span>
                                     </div>
                                 </td>
-                                <td onClick={() => onSelectProject(project)} className="p-5">
+                                <td className="p-5">
                                     <div className="font-bold text-slate-900 line-clamp-1">{project.projectName}</div>
                                     <div className="text-xs text-slate-400 mt-1 uppercase font-bold tracking-widest">CUP: {project.cup || 'N/D'}</div>
                                 </td>
-                                <td className="p-5 text-right flex items-center justify-end gap-2">
-                                    <button onClick={(e) => { e.stopPropagation(); onDeleteProject(project.id); }} className="p-2 text-slate-300 hover:text-red-500 transition-colors">
-                                        <Trash2 className="w-4 h-4" />
-                                    </button>
-                                    <button onClick={() => onSelectProject(project)} className="px-4 py-2 bg-white border border-slate-200 text-slate-800 text-xs font-bold rounded-lg hover:bg-slate-100 shadow-sm transition-all group-hover:border-blue-300 group-hover:text-blue-600">Apri Fascicolo</button>
+                                <td className="p-5 text-right">
+                                    <button className="px-4 py-2 bg-white border border-slate-200 text-slate-800 text-xs font-bold rounded-lg hover:bg-slate-100 shadow-sm transition-all group-hover:border-blue-300 group-hover:text-blue-600">Apri Fascicolo</button>
                                 </td>
                             </tr>
                         ))}

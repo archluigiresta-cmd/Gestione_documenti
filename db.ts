@@ -1,6 +1,5 @@
 
 import { ProjectConstants, DocumentVariables, User, ProjectPermission, PermissionRole, UserStatus, BackupData } from './types';
-import { createEmptyProject, createInitialDocument } from './constants';
 
 const DB_NAME = 'EdilAppDB';
 const DB_VERSION = 3; 
@@ -17,9 +16,9 @@ export interface ExternalEvent {
     city: string;
     assignment: string;
     amount?: string;
-    visitDates: string[];
-    visitNumber?: number;
-    date?: string;
+    visitDates: string[]; // Supporto per multiple date come da tabella
+    visitNumber?: number; // Per compatibilità col vecchio sistema
+    date?: string; // Per compatibilità
     time?: string;
     type: 'visita' | 'scadenza' | 'altro';
 }
@@ -28,6 +27,7 @@ export const db = {
   open: (): Promise<IDBDatabase> => {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
+
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         if (!db.objectStoreNames.contains(STORE_PROJECTS)) db.createObjectStore(STORE_PROJECTS, { keyPath: 'id' });
@@ -46,6 +46,7 @@ export const db = {
         }
         if (!db.objectStoreNames.contains(STORE_EXTERNAL_EVENTS)) db.createObjectStore(STORE_EXTERNAL_EVENTS, { keyPath: 'id' });
       };
+
       request.onsuccess = (event) => resolve((event.target as IDBOpenDBRequest).result);
       request.onerror = (event) => reject((event.target as IDBOpenDBRequest).error);
     });
@@ -58,6 +59,7 @@ export const db = {
           const store = transaction.objectStore(STORE_USERS);
           const emailIndex = store.index('email');
           const req = emailIndex.get('arch.luigiresta@gmail.com');
+
           req.onsuccess = () => {
               const adminUser: User = {
                   id: req.result ? req.result.id : crypto.randomUUID(),
@@ -73,58 +75,39 @@ export const db = {
       });
   },
 
-  seedInitialProjects: async (ownerId: string): Promise<void> => {
-      const existingProjects = await db.getProjectsForUser(ownerId, '');
-      
-      const convertDate = (d: string) => {
-          if (!d) return '';
-          const parts = d.split('/');
-          if (parts.length !== 3) return d;
-          return `${parts[2]}-${parts[1]}-${parts[0]}`;
-      };
+  seedExternalData: async (): Promise<void> => {
+      const current = await db.getExternalEvents();
+      if (current.length > 0) return; // Non sovrascrivere se ci sono già dati
 
-      const tableData = [
-          { n: 1, entity: 'Provincia di Taranto', location: 'Castellaneta', cup: 'D85B18001450002', name: 'Lavori di DEMOLIZIONE E RICOSTRUZIONE IMMOBILE VIALE VERDI N. 12', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['13/11/2024', '31/01/2025', '19/02/2025', '13/03/2025', '07/04/2025', '23/04/2025', '05/06/2025', '02/07/2025', '02/09/2025'] },
-          { n: 2, entity: 'Comune di Torre S. Susanna', location: 'Torre S. Susanna', cup: 'I81B220004100007', name: 'INTERVENTI PER LA RIDUZIONE DEL RISCHIO IDROGEOLOGICO', assignment: 'Collaudo Tecnico Amministrativo', dates: ['31/07/2025', '20/11/2025'] },
-          { n: 3, entity: 'Comune di Ceglie Messapica', location: 'Ceglie Messapica', cup: 'J15F21000340001', name: 'Recupero, restauro e rifunzionalizzazione del Castello Ducale', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['09/05/2025', '10/10/2025'] },
-          { n: 4, entity: 'Comune di Latiano', location: 'Latiano', cup: 'D79I18000110006', name: 'PNRR - Adeguamento Scuola Elementare F. Errico', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['10/10/2024', '20/02/2024', '08/05/2024', '09/10/2025'] },
-          { n: 5, entity: 'Comune di Pulsano', location: 'Pulsano', cup: 'F94D24000750006', name: 'PNRR - Ampliamento Scuola Infanzia Plesso Rodari', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['23/09/2025', '21/11/2025'] },
-          { n: 6, entity: 'Comune di Montemesola', location: 'Montemesola', cup: 'C45B24000150005', name: 'GIOCHI DEL MEDITERRANEO - Parcheggio Palazzetto dello Sport', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['04/07/2025', '28/08/2025', '23/09/2025', '21/11/2025'] },
-          { n: 7, entity: 'Comune di Statte', location: 'Statte', cup: '', name: 'GIOCHI DEL MEDITERRANEO - Pista di Atletica Stadio Comunale', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['28/08/2025', '20/11/2025'] },
-          { n: 8, entity: 'Presidenza del Consiglio dei Ministri', location: 'Taranto', cup: 'F54H22001050005', name: 'GIOCHI DEL MEDITERRANEO - Realizzazione Centro Nautico Area Ex Torpediniere', assignment: 'Collaudo Statico, Tecnico-Amministrativo e Funzionale', dates: [] },
-          { n: 9, entity: 'Comune di Palagiano', location: 'Palagiano', cup: 'E84D18000190002', name: 'Riutilizzo acque reflue affinate depuratori Palagiano e Massafra', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: [] }
+      const initialData: Partial<ExternalEvent>[] = [
+          { entity: 'Provincia di Taranto', city: 'Castellaneta', assignment: 'Collaudo Statico e Tecnico Amministrativo', projectName: 'Lavori Mauro Perrone', visitDates: ['2024-11-13', '2025-01-31', '2025-02-19', '2025-03-13', '2025-04-07', '2025-04-23', '2025-06-05', '2025-07-02', '2025-09-02'] },
+          { entity: 'Comune di Torre S. Susanna', city: 'Torre S. Susanna', assignment: 'Collaudo Tecnico Amministrativo', projectName: 'Interventi Rischio Idrogeologico', visitDates: ['2025-07-31', '2025-11-20'] },
+          { entity: 'Comune di Ceglie Messapica', city: 'Ceglie Messapica', assignment: 'Collaudo Statico', projectName: 'Castello Ducale', visitDates: ['2025-05-09', '2025-10-10'] },
+          { entity: 'Comune di Ceglie Messapica', city: 'Ceglie Messapica', assignment: 'Collaudo Tecnico Amministrativo', projectName: 'Castello Ducale', visitDates: [] },
+          { entity: 'Comune di Latiano', city: 'Latiano', assignment: 'Collaudo Statico e Tecnico Amministrativo', projectName: 'Scuola F. Errico', visitDates: ['2024-10-10', '2024-02-20', '2024-05-08', '2025-10-09'] },
+          { entity: 'Comune di Pulsano', city: 'Pulsano', assignment: 'Collaudo Statico e Tecnico Amministrativo', projectName: 'Scuola Infanzia Rodari', visitDates: ['2025-09-23', '2025-11-21'] },
+          { entity: 'Comune di Montemesola', city: 'Montemesola', assignment: 'Collaudo Statico e Tecnico Amministrativo', projectName: 'Parcheggio Palazzetto Sport', visitDates: ['2025-07-04', '2025-08-28', '2025-09-23', '2025-11-21'] },
+          { entity: 'Comune di Statte', city: 'Statte', assignment: 'Collaudo Statico e Tecnico Amministrativo', projectName: 'Pista Atletica Stadio', visitDates: ['2025-08-28', '2025-11-20'] },
+          { entity: 'Presidenza Consiglio Ministri', city: 'Taranto', assignment: 'Collaudo Statico, Tecnico-Amm. e Funzionale', projectName: 'Centro Nautico Taranto', visitDates: [] },
+          { entity: 'Comune di Palagiano', city: 'Palagiano', assignment: 'Collaudo Statico e Tecnico Amministrativo', projectName: 'Riutilizzo Acque Reflue', visitDates: [] }
       ];
 
-      for (const item of tableData) {
-          // Se l'appalto non esiste, lo creo
-          if (!existingProjects.some(p => p.projectName === item.name)) {
-              const newProject = createEmptyProject(ownerId);
-              newProject.entity = item.entity.toUpperCase();
-              newProject.location = item.location;
-              newProject.cup = item.cup;
-              newProject.projectName = item.name;
-              newProject.displayOrder = item.n;
-              newProject.subjects.testerAppointment.nominationType = item.assignment;
-              
-              await db.saveProject(newProject);
-
-              if (item.dates.length > 0) {
-                  for (let i = 0; i < item.dates.length; i++) {
-                      const doc = createInitialDocument(newProject.id);
-                      doc.visitNumber = i + 1;
-                      doc.date = convertDate(item.dates[i]);
-                      await db.saveDocument(doc);
-                  }
-              } else {
-                  await db.saveDocument(createInitialDocument(newProject.id));
-              }
-          }
+      for (const item of initialData) {
+          await db.saveExternalEvent({
+              id: crypto.randomUUID(),
+              projectName: item.projectName || '',
+              entity: item.entity || '',
+              city: item.city || '',
+              assignment: item.assignment || '',
+              visitDates: item.visitDates || [],
+              type: 'visita'
+          });
       }
   },
 
   registerUser: async (user: User): Promise<void> => {
     const database = await db.open();
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       const transaction = database.transaction(STORE_USERS, 'readwrite');
       transaction.objectStore(STORE_USERS).add(user).onsuccess = () => resolve();
     });
@@ -207,21 +190,6 @@ export const db = {
     });
   },
 
-  deleteProject: async (id: string): Promise<void> => {
-      const database = await db.open();
-      return new Promise((resolve) => {
-          const transaction = database.transaction([STORE_PROJECTS, STORE_DOCUMENTS], 'readwrite');
-          transaction.objectStore(STORE_PROJECTS).delete(id);
-          const docStore = transaction.objectStore(STORE_DOCUMENTS);
-          const index = docStore.index('projectId');
-          index.getAllKeys(id).onsuccess = (e) => {
-              const keys = (e.target as any).result;
-              keys.forEach((k: string) => docStore.delete(k));
-          };
-          transaction.oncomplete = () => resolve();
-      });
-  },
-
   getAllDocuments: async (): Promise<DocumentVariables[]> => {
       const database = await db.open();
       return new Promise((resolve) => {
@@ -245,15 +213,6 @@ export const db = {
     });
   },
 
-  deleteDocument: async (docId: string): Promise<void> => {
-      const database = await db.open();
-      return new Promise((resolve) => {
-        const transaction = database.transaction(STORE_DOCUMENTS, 'readwrite');
-        transaction.objectStore(STORE_DOCUMENTS).delete(docId);
-        transaction.oncomplete = () => resolve();
-      });
-  },
-
   getProjectPermissions: async (projectId: string): Promise<ProjectPermission[]> => {
     const database = await db.open();
     return new Promise((resolve) => {
@@ -264,6 +223,7 @@ export const db = {
   shareProject: async (permission: ProjectPermission): Promise<void> => {
     const database = await db.open();
     return new Promise((resolve) => {
+      // Corrected: set oncomplete on the transaction object instead of the request object returned by put()
       const transaction = database.transaction(STORE_PERMISSIONS, 'readwrite');
       transaction.objectStore(STORE_PERMISSIONS).put(permission);
       transaction.oncomplete = () => resolve();
