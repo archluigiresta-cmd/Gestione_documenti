@@ -8,12 +8,11 @@ import { ExportManager } from './components/ExportManager';
 import { Dashboard } from './components/Dashboard';
 import { AuthScreen } from './components/AuthScreen';
 import { AdminPanel } from './components/AdminPanel';
-import { VisitSummary } from './components/VisitSummary';
 import { ProjectConstants, DocumentVariables, User, PermissionRole } from './types';
 import { createEmptyProject, createInitialDocument } from './constants';
 import { db } from './db';
 
-type ViewType = 'dashboard' | 'workspace' | 'admin-panel' | 'summary';
+type ViewType = 'dashboard' | 'workspace' | 'admin-panel';
 type TabType = 'general' | 'design' | 'subjects' | 'tender' | 'contractor' | 'execution' | 'testing' | 'export';
 
 const App: React.FC = () => {
@@ -79,10 +78,6 @@ const App: React.FC = () => {
 
   if (!currentUser) return <AuthScreen onLogin={handleLogin} />;
   
-  if (view === 'summary') {
-      return <VisitSummary projects={projectList} onBack={() => setView('dashboard')} />;
-  }
-
   if (view === 'workspace' && currentProject && currentDocId) {
       return (
         <div className="flex bg-slate-100 min-h-screen">
@@ -110,7 +105,7 @@ const App: React.FC = () => {
         {view === 'admin-panel' ? (
             <AdminPanel onBack={() => setView('dashboard')} currentUser={currentUser} />
         ) : (
-            <Dashboard projects={projectList} onSelectProject={handleSelectProject} onNewProject={async () => {}} onDeleteProject={() => {}} onShareProject={() => {}} onOpenAdmin={() => setView('admin-panel')} onUpdateOrder={() => {}} onMoveProject={() => {}} onExportData={() => {}} onOpenSummary={() => setView('summary')} currentUser={currentUser} />
+            <Dashboard projects={projectList} onSelectProject={handleSelectProject} onNewProject={() => {}} onDeleteProject={() => {}} onShareProject={() => {}} onOpenAdmin={() => setView('admin-panel')} onUpdateOrder={() => {}} onMoveProject={() => {}} onExportData={() => {}} currentUser={currentUser} />
         )}
     </div>
   );
