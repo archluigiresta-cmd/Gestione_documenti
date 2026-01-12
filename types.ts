@@ -76,17 +76,6 @@ export interface ProjectPermission {
   role: PermissionRole;
 }
 
-// Added ExternalEvent interface for tracking external projects visits
-export interface ExternalEvent {
-  id: string;
-  projectName: string;
-  entity: string;
-  city: string;
-  assignment: string;
-  visitDates: string[];
-  type: string;
-}
-
 export interface BackupData {
   version: number;
   timestamp: number;
@@ -94,8 +83,6 @@ export interface BackupData {
   projects: ProjectConstants[];
   documents: DocumentVariables[];
   permissions: ProjectPermission[];
-  // Added externalEvents to BackupData to ensure full system backup
-  externalEvents?: ExternalEvent[];
 }
 
 export interface SALData {
