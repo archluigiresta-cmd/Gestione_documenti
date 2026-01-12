@@ -75,16 +75,14 @@ export const db = {
 
   seedInitialProjects: async (ownerId: string): Promise<void> => {
       const existingProjects = await db.getProjectsForUser(ownerId, '');
-      // Se abbiamo già i 9 appalti, non duplichiamo
-      if (existingProjects.length >= 9) return;
-
+      
       const convertDate = (d: string) => {
           if (!d) return '';
           const parts = d.split('/');
+          if (parts.length !== 3) return d;
           return `${parts[2]}-${parts[1]}-${parts[0]}`;
       };
 
-      // Tabella Reale a 9 Appalti (Ceglie accorpato)
       const tableData = [
           { n: 1, entity: 'Provincia di Taranto', location: 'Castellaneta', cup: 'D85B18001450002', name: 'Lavori di DEMOLIZIONE E RICOSTRUZIONE IMMOBILE VIALE VERDI N. 12', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['13/11/2024', '31/01/2025', '19/02/2025', '13/03/2025', '07/04/2025', '23/04/2025', '05/06/2025', '02/07/2025', '02/09/2025'] },
           { n: 2, entity: 'Comune di Torre S. Susanna', location: 'Torre S. Susanna', cup: 'I81B220004100007', name: 'INTERVENTI PER LA RIDUZIONE DEL RISCHIO IDROGEOLOGICO', assignment: 'Collaudo Tecnico Amministrativo', dates: ['31/07/2025', '20/11/2025'] },
@@ -98,28 +96,28 @@ export const db = {
       ];
 
       for (const item of tableData) {
-          // Verifica se l'appalto esiste già per nome
-          if (existingProjects.some(p => p.projectName === item.name)) continue;
+          // Se l'appalto non esiste, lo creo
+          if (!existingProjects.some(p => p.projectName === item.name)) {
+              const newProject = createEmptyProject(ownerId);
+              newProject.entity = item.entity.toUpperCase();
+              newProject.location = item.location;
+              newProject.cup = item.cup;
+              newProject.projectName = item.name;
+              newProject.displayOrder = item.n;
+              newProject.subjects.testerAppointment.nominationType = item.assignment;
+              
+              await db.saveProject(newProject);
 
-          const newProject = createEmptyProject(ownerId);
-          newProject.entity = item.entity.toUpperCase();
-          newProject.location = item.location;
-          newProject.cup = item.cup;
-          newProject.projectName = item.name;
-          newProject.displayOrder = item.n;
-          newProject.subjects.testerAppointment.nominationType = item.assignment;
-          
-          await db.saveProject(newProject);
-
-          if (item.dates.length > 0) {
-              for (let i = 0; i < item.dates.length; i++) {
-                  const doc = createInitialDocument(newProject.id);
-                  doc.visitNumber = i + 1;
-                  doc.date = convertDate(item.dates[i]);
-                  await db.saveDocument(doc);
+              if (item.dates.length > 0) {
+                  for (let i = 0; i < item.dates.length; i++) {
+                      const doc = createInitialDocument(newProject.id);
+                      doc.visitNumber = i + 1;
+                      doc.date = convertDate(item.dates[i]);
+                      await db.saveDocument(doc);
+                  }
+              } else {
+                  await db.saveDocument(createInitialDocument(newProject.id));
               }
-          } else {
-              await db.saveDocument(createInitialDocument(newProject.id));
           }
       }
   },

@@ -53,34 +53,35 @@ export const VisitSummary: React.FC<VisitSummaryProps> = ({ projects, onBack }) 
     };
 
     // Uniamo i dati: priorità agli appalti in App (Dashboard)
-    const rows = [
-        ...projects.map(p => {
-            const projectDocs = allDocs
-                .filter(d => d.projectId === p.id)
-                .sort((a, b) => a.visitNumber - b.visitNumber);
-            return {
-                id: p.id,
-                entity: p.entity || 'SENZA NOME',
-                city: p.location || 'N.D.',
-                projectName: p.projectName || 'Oggetto Mancante',
-                assignment: p.subjects?.testerAppointment?.nominationType || 'Incarico in App',
-                visitDates: projectDocs.map(d => d.date),
-                isExternal: false
-            };
-        }),
-        ...externalEvents.map(e => ({
-            id: e.id,
-            entity: e.entity || 'ESTERNO',
-            city: e.city || 'N.D.',
-            projectName: e.projectName || 'Oggetto Mancante',
-            assignment: e.assignment || 'N.D.',
-            visitDates: e.visitDates || [],
-            isExternal: true
-        }))
-    ];
+    const rows = (projects || []).map(p => {
+        const projectDocs = (allDocs || [])
+            .filter(d => d.projectId === p.id)
+            .sort((a, b) => (a.visitNumber || 0) - (b.visitNumber || 0));
+        return {
+            id: p.id,
+            entity: p.entity || 'SENZA NOME',
+            city: p.location || 'N.D.',
+            projectName: p.projectName || 'Oggetto Mancante',
+            assignment: p.subjects?.testerAppointment?.nominationType || 'Incarico in App',
+            visitDates: projectDocs.map(d => d.date),
+            isExternal: false
+        };
+    });
+
+    const externalRows = (externalEvents || []).map(e => ({
+        id: e.id,
+        entity: e.entity || 'ESTERNO',
+        city: e.city || 'N.D.',
+        projectName: e.projectName || 'Oggetto Mancante',
+        assignment: e.assignment || 'N.D.',
+        visitDates: e.visitDates || [],
+        isExternal: true
+    }));
+
+    const combinedRows = [...rows, ...externalRows];
 
     // Ordinamento sicuro per ente
-    const sortedRows = [...rows].sort((a, b) => {
+    const sortedRows = combinedRows.sort((a, b) => {
         const entityA = (a.entity || '').toLowerCase();
         const entityB = (b.entity || '').toLowerCase();
         return entityA.localeCompare(entityB);
@@ -194,7 +195,7 @@ export const VisitSummary: React.FC<VisitSummaryProps> = ({ projects, onBack }) 
                             <div className="col-span-2">
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Date Sopralluoghi (YYYY-MM-DD, una per riga)</label>
                                 <textarea 
-                                    className="w-full p-3 border border-slate-200 rounded-xl h-32 focus:ring-2 focus:ring-blue-500/20 outline-none font-mono text-sm" 
+                                    className="w-full p-3 border border-slate-300 rounded-xl h-32 focus:ring-2 focus:ring-blue-500/20 outline-none font-mono text-sm" 
                                     placeholder="2024-11-13&#10;2025-01-31"
                                     value={newEvent.visitDates?.join('\n')} 
                                     onChange={e => setNewEvent({...newEvent, visitDates: e.target.value.split('\n').filter(d => d.trim())})} 
