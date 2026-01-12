@@ -74,34 +74,39 @@ export const db = {
   },
 
   seedInitialProjects: async (ownerId: string): Promise<void> => {
-      const projects = await db.getProjectsForUser(ownerId, '');
-      if (projects.length > 4) return; // Se ci sono già più dei 4 iniziali, non facciamo nulla
+      const existingProjects = await db.getProjectsForUser(ownerId, '');
+      if (existingProjects.length > 0) return; // Popola solo se il database è vuoto
 
       const convertDate = (d: string) => {
+          if (!d) return '';
           const parts = d.split('/');
           return `${parts[2]}-${parts[1]}-${parts[0]}`;
       };
 
-      const dataToSeed = [
-          { entity: 'Provincia di Taranto', location: 'Castellaneta', cup: 'D85B18001450002', name: 'Lavori di DEMOLIZIONE E RICOSTRUZIONE IMMOBILE VIALE VERDI N. 12', dates: ['13/11/2024', '31/01/2025', '19/02/2025', '13/03/2025', '07/04/2025', '23/04/2025', '05/06/2025', '02/07/2025', '02/09/2025'], assignment: 'Collaudo Statico e Tecnico Amministrativo' },
-          { entity: 'Comune di Torre S. Susanna', location: 'Torre S. Susanna', cup: 'I81B220004100007', name: 'INTERVENTI PER LA RIDUZIONE DEL RISCHIO IDROGEOLOGICO', dates: ['31/07/2025', '20/11/2025'], assignment: 'Collaudo Tecnico Amministrativo' },
-          { entity: 'Comune di Ceglie Messapica', location: 'Ceglie Messapica', cup: 'J15F21000340001', name: 'Recupero, restauro e rifunzionalizzazione del Castello Ducale (Statico)', dates: ['09/05/2025', '10/10/2025'], assignment: 'Collaudo Statico' },
-          { entity: 'Comune di Ceglie Messapica', location: 'Ceglie Messapica', cup: 'J15F21000340001', name: 'Recupero, restauro e rifunzionalizzazione del Castello Ducale (T.A.)', dates: [], assignment: 'Collaudo Tecnico Amministrativo' },
-          { entity: 'Comune di Statte', location: 'Statte', cup: '', name: 'Lavori di Adeguamento Normativo Pista di Atletica - Stadio Comunale', dates: ['28/08/2025', '20/11/2025'], assignment: 'Collaudo Statico e Tecnico Amministrativo' },
-          { entity: 'Comune di Palagiano', location: 'Palagiano', cup: 'E84D18000190002', name: 'Riutilizzo ai fini irrigui delle acque reflue affinate depuratori', dates: [], assignment: 'Collaudo Statico e Tecnico Amministrativo' }
+      const tableData = [
+          { n: 1, entity: 'Provincia di Taranto', location: 'Castellaneta', cup: 'D85B18001450002', name: 'Lavori di DEMOLIZIONE E RICOSTRUZIONE IMMOBILE VIALE VERDI N. 12', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['13/11/2024', '31/01/2025', '19/02/2025', '13/03/2025', '07/04/2025', '23/04/2025', '05/06/2025', '02/07/2025', '02/09/2025'] },
+          { n: 2, entity: 'Comune di Torre S. Susanna', location: 'Torre S. Susanna', cup: 'I81B220004100007', name: 'INTERVENTI PER LA RIDUZIONE DEL RISCHIO IDROGEOLOGICO', assignment: 'Collaudo Tecnico Amministrativo', dates: ['31/07/2025', '20/11/2025'] },
+          { n: 3, entity: 'Comune di Ceglie Messapica', location: 'Ceglie Messapica', cup: 'J15F21000340001', name: 'Recupero, restauro e rifunzionalizzazione del Castello Ducale (Incarico Statico)', assignment: 'Collaudo Statico', dates: ['09/05/2025', '10/10/2025'] },
+          { n: 4, entity: 'Comune di Ceglie Messapica', location: 'Ceglie Messapica', cup: 'J15F21000340001', name: 'Recupero, restauro e rifunzionalizzazione del Castello Ducale (Incarico T.A.)', assignment: 'Collaudo Tecnico Amministrativo', dates: [] },
+          { n: 5, entity: 'Comune di Latiano', location: 'Latiano', cup: 'D79I18000110006', name: 'PNRR - Adeguamento Scuola Elementare F. Errico', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['10/10/2024', '20/02/2024', '08/05/2024', '09/10/2025'] },
+          { n: 6, entity: 'Comune di Pulsano', location: 'Pulsano', cup: 'F94D24000750006', name: 'PNRR - Ampliamento Scuola Infanzia Plesso Rodari', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['23/09/2025', '21/11/2025'] },
+          { n: 7, entity: 'Comune di Montemesola', location: 'Montemesola', cup: 'C45B24000150005', name: 'GIOCHI DEL MEDITERRANEO - Parcheggio Palazzetto dello Sport', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['04/07/2025', '28/08/2025', '23/09/2025', '21/11/2025'] },
+          { n: 8, entity: 'Comune di Statte', location: 'Statte', cup: '', name: 'GIOCHI DEL MEDITERRANEO - Pista di Atletica Stadio Comunale', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['28/08/2025', '20/11/2025'] },
+          { n: 9, entity: 'Presidenza del Consiglio dei Ministri', location: 'Taranto', cup: 'F54H22001050005', name: 'GIOCHI DEL MEDITERRANEO - Realizzazione Centro Nautico Area Ex Torpediniere', assignment: 'Collaudo Statico, Tecnico-Amministrativo e Funzionale', dates: [] },
+          { n: 10, entity: 'Comune di Palagiano', location: 'Palagiano', cup: 'E84D18000190002', name: 'Riutilizzo acque reflue affinate depuratori Palagiano e Massafra', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: [] }
       ];
 
-      for (const item of dataToSeed) {
+      for (const item of tableData) {
           const newProject = createEmptyProject(ownerId);
           newProject.entity = item.entity.toUpperCase();
           newProject.location = item.location;
           newProject.cup = item.cup;
           newProject.projectName = item.name;
+          newProject.displayOrder = item.n;
           newProject.subjects.testerAppointment.nominationType = item.assignment;
           
           await db.saveProject(newProject);
 
-          // Creiamo i verbali per ogni data
           if (item.dates.length > 0) {
               for (let i = 0; i < item.dates.length; i++) {
                   const doc = createInitialDocument(newProject.id);
@@ -110,17 +115,13 @@ export const db = {
                   await db.saveDocument(doc);
               }
           } else {
-              // Almeno un documento iniziale se non ci sono date
               await db.saveDocument(createInitialDocument(newProject.id));
           }
       }
   },
 
   seedExternalData: async (): Promise<void> => {
-      // Questa funzione rimane per mantenere il Calendario popolato anche con eventi fuori app
-      const current = await db.getExternalEvents();
-      if (current.length > 0) return;
-      // ... (rimossa logica duplicata, ora gestita da seedInitialProjects)
+      // Funzione mantenuta per retrocompatibilità eventi esterni non legati a fascicoli
   },
 
   registerUser: async (user: User): Promise<void> => {
@@ -213,7 +214,6 @@ export const db = {
       return new Promise((resolve) => {
           const transaction = database.transaction([STORE_PROJECTS, STORE_DOCUMENTS], 'readwrite');
           transaction.objectStore(STORE_PROJECTS).delete(id);
-          // Eliminiamo anche i documenti associati
           const docStore = transaction.objectStore(STORE_DOCUMENTS);
           const index = docStore.index('projectId');
           index.getAllKeys(id).onsuccess = (e) => {
