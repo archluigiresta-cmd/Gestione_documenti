@@ -1,16 +1,15 @@
+
 import React, { useState } from 'react';
 import { ProjectConstants, DocumentVariables, DocumentType } from '../types';
 import { DocumentPreview } from './DocumentPreview';
-import { Printer, FileCheck, FileDown, Search, FileText, Calendar, ChevronRight, Trash2, Pencil, Mail, Plus } from 'lucide-react';
+import { Printer, FileCheck, FileDown, Search, FileText, Calendar, Plus, Mail, Settings2 } from 'lucide-react';
 
 interface ExportManagerProps {
   project: ProjectConstants;
   documents: DocumentVariables[];
   currentDocId: string;
   onSelectDocument: (id: string) => void;
-  onDeleteDocument?: (id: string) => void;
-  onEdit?: (id: string) => void;
-  onNewDocument?: () => void; // Passata da App.tsx
+  onNewDocument?: () => void;
 }
 
 export const ExportManager: React.FC<ExportManagerProps> = ({
@@ -18,8 +17,6 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
   documents,
   currentDocId,
   onSelectDocument,
-  onDeleteDocument,
-  onEdit,
   onNewDocument
 }) => {
   const [activeTab, setActiveTab] = useState<'convocazione' | 'verbali'>('convocazione');
@@ -33,64 +30,32 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
     .filter(d => d.visitNumber.toString().includes(searchTerm) || d.date.includes(searchTerm))
     .sort((a, b) => b.visitNumber - a.visitNumber);
 
-  if (!currentDoc) return <div className="p-8 text-center text-slate-500">Nessun documento disponibile.</div>;
+  if (!currentDoc) return <div className="p-32 text-center text-slate-400 italic">Nessun documento disponibile per l'esportazione.</div>;
 
   const handlePrint = () => { 
     const element = document.getElementById('document-preview-container');
     if (!element) return;
-
-    const printWindow = window.open('', '_blank', 'width=1000,height=800');
-    if (!printWindow) {
-        alert("Per favore, abilita i popup per stampare il documento.");
-        return;
-    }
-
-    const content = element.innerHTML;
-    
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
     printWindow.document.write(`
       <html>
         <head>
-          <title>${effectiveDocType} - N. ${currentDoc.visitNumber}</title>
+          <title>${effectiveDocType} N. ${currentDoc.visitNumber}</title>
           <style>
-            @import url('https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap');
-            
-            @page { 
-              size: A4; 
-              margin: 1.5cm 1cm; 
-            }
-            
-            body { 
-              background: white !important; 
-              margin: 0; 
-              padding: 0; 
-              font-family: 'Noto Serif', serif;
-              color: black;
-              line-height: 1.2;
-              -webkit-print-color-adjust: exact;
-            }
-
-            #print-container { width: 100%; }
-            .no-print { display: none !important; }
-            .underline { text-decoration: underline; }
-            .font-bold { font-weight: bold; }
+            @import url('https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&display=swap');
+            @page { size: A4; margin: 2cm 1.5cm; }
+            body { font-family: 'Noto Serif', serif; line-height: 1.35; color: black; background: white; margin: 0; padding: 0; }
             .uppercase { text-transform: uppercase; }
+            .font-bold { font-weight: bold; }
             .text-right { text-align: right; }
             .text-justify { text-align: justify; }
             .italic { font-style: italic; }
+            .underline { text-decoration: underline; }
+            #document-preview-container { width: 100%; }
           </style>
         </head>
-        <body>
-          <div id="print-container">
-            ${content}
-          </div>
-          <script>
-            window.onload = () => {
-              setTimeout(() => {
-                window.print();
-              }, 500);
-            };
-          </script>
-        </body>
+        <body>${element.innerHTML}</body>
+        <script>window.onload = () => { window.print(); window.close(); };</script>
       </html>
     `);
     printWindow.document.close();
@@ -99,25 +64,7 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
   const handleDownloadWord = () => {
     const element = document.getElementById('document-preview-container');
     if (!element) return;
-    let content = element.innerHTML;
-    const htmlDoc = `
-      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head>
-        <meta charset="utf-8">
-        <style>
-          @page { size: A4; margin: 2.0cm; }
-          body { font-family: 'Times New Roman', serif; font-size: 11pt; line-height: 1.2; text-align: justify; }
-          .text-center { text-align: center; }
-          .font-bold { font-weight: bold; }
-          .uppercase { text-transform: uppercase; }
-          .text-right { text-align: right; }
-          .underline { text-decoration: underline; }
-        </style>
-      </head>
-      <body>${content}</body>
-      </html>
-    `;
-    const blob = new Blob(['\ufeff', htmlDoc], { type: 'application/msword' });
+    const blob = new Blob(['\ufeff', `<html><body>${element.innerHTML}</body></html>`], { type: 'application/msword' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -126,71 +73,63 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-6rem)] no-print">
+    <div className="flex flex-col h-[calc(100vh-6rem)] no-print animate-in fade-in">
       
-      <div className="flex bg-white border border-slate-200 rounded-xl mb-4 p-1 shadow-sm">
+      <div className="flex bg-white border border-slate-200 rounded-2xl mb-6 p-1.5 shadow-sm max-w-2xl">
         <button 
           onClick={() => setActiveTab('convocazione')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-lg font-bold text-sm transition-all ${activeTab === 'convocazione' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+          className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'convocazione' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:bg-slate-50'}`}
         >
           <Mail className="w-5 h-5"/> Lettera Convocazione
         </button>
         <button 
           onClick={() => setActiveTab('verbali')}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 px-6 rounded-lg font-bold text-sm transition-all ${activeTab === 'verbali' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+          className={`flex-1 flex items-center justify-center gap-3 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === 'verbali' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'text-slate-500 hover:bg-slate-50'}`}
         >
-          <FileText className="w-5 h-5"/> Verbali
+          <FileText className="w-5 h-5"/> Verbali Sopralluogo
         </button>
       </div>
 
-      <div className="flex flex-1 gap-6 overflow-hidden">
+      <div className="flex flex-1 gap-8 overflow-hidden">
         
-        <div className="w-80 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden shrink-0">
-          <div className="p-4 border-b border-slate-100 bg-slate-50">
-            <div className="flex justify-between items-center mb-3">
-                <h3 className="font-bold text-slate-800 flex items-center gap-2 text-sm">
-                    <FileCheck className="w-4 h-4 text-blue-600"/> Archivio
+        <div className="w-80 flex flex-col bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden shrink-0">
+          <div className="p-6 border-b border-slate-100 bg-slate-50">
+            <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-slate-800 flex items-center gap-2 text-sm uppercase tracking-wider">
+                    <FileCheck className="w-4 h-4 text-blue-600"/> Archivio Verbali
                 </h3>
                 {onNewDocument && (
-                    <button 
-                        onClick={onNewDocument}
-                        className="p-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors shadow-sm"
-                        title="Nuova Convocazione / Visita"
-                    >
+                    <button onClick={onNewDocument} className="p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors" title="Crea nuova visita">
                         <Plus className="w-4 h-4"/>
                     </button>
                 )}
             </div>
             <div className="relative">
-              <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400"/>
+              <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400"/>
               <input 
                 type="text" 
-                placeholder="Cerca per numero o data..." 
-                className="w-full pl-9 pr-3 py-2 text-xs border border-slate-300 rounded-lg outline-none"
+                placeholder="Cerca verbale..." 
+                className="w-full pl-10 pr-4 py-2.5 text-xs border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
               />
             </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-2 space-y-2">
+          <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-hide">
             {filteredDocs.map(doc => (
               <div
                 key={doc.id}
                 onClick={() => onSelectDocument(doc.id)}
-                className={`w-full p-3 rounded-lg border transition-all group relative cursor-pointer ${currentDocId === doc.id ? 'bg-blue-50 border-blue-500' : 'bg-white border-slate-100 hover:border-blue-200'}`}
+                className={`w-full p-4 rounded-2xl border transition-all cursor-pointer ${currentDocId === doc.id ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500/20' : 'bg-white border-slate-100 hover:border-blue-200 shadow-sm'}`}
               >
-                <div className="flex justify-between items-start mb-1">
-                  <span className={`text-[10px] font-bold uppercase tracking-wider ${currentDocId === doc.id ? 'text-blue-700' : 'text-slate-500'}`}>
+                <div className="flex justify-between items-start mb-2">
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${currentDocId === doc.id ? 'text-blue-700' : 'text-slate-400'}`}>
                     VISITA N. {doc.visitNumber}
                   </span>
-                  <div className="flex items-center gap-1">
-                    {onEdit && <button onClick={(e) => { e.stopPropagation(); onEdit(doc.id); }} title="Modifica" className="p-1 text-slate-400 hover:text-blue-600 opacity-0 group-hover:opacity-100"><Pencil className="w-3.5 h-3.5"/></button>}
-                    {onDeleteDocument && <button onClick={(e) => { e.stopPropagation(); onDeleteDocument(doc.id); }} title="Elimina" className="p-1 text-slate-400 hover:text-red-600 opacity-0 group-hover:opacity-100"><Trash2 className="w-3.5 h-3.5"/></button>}
-                  </div>
                 </div>
                 <div className="flex items-center gap-2 text-sm font-bold text-slate-800">
-                  <Calendar className="w-3.5 h-3.5 text-slate-400"/>
+                  <Calendar className="w-4 h-4 text-slate-300"/>
                   {new Date(doc.date).toLocaleDateString('it-IT')}
                 </div>
               </div>
@@ -199,40 +138,41 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
         </div>
 
         <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-4 flex items-center justify-between gap-4 shrink-0">
+          <div className="bg-white p-5 rounded-3xl shadow-xl border border-slate-200 mb-6 flex items-center justify-between gap-6 shrink-0">
             <div className="flex items-center gap-4">
-              <div className="bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
-                <span className="text-xs font-bold text-slate-800">
-                  {activeTab === 'verbali' ? 'Verbale' : 'Convocazione'} N. {currentDoc.visitNumber}
+              <div className="bg-slate-100 px-4 py-2 rounded-xl border border-slate-200 flex items-center gap-2">
+                <Settings2 className="w-4 h-4 text-slate-400" />
+                <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">
+                  {activeTab === 'verbali' ? 'Formato Verbale' : 'Formato Lettera'}
                 </span>
               </div>
               {activeTab === 'verbali' && (
                 <select 
-                  className="p-2 border border-blue-300 bg-blue-50 rounded font-bold text-blue-900 text-xs w-56 outline-none"
+                  className="p-2.5 border border-blue-200 bg-blue-50 rounded-xl font-bold text-blue-900 text-xs w-64 outline-none focus:ring-2 focus:ring-blue-500/20"
                   value={docType}
                   onChange={(e) => setDocType(e.target.value as DocumentType)}
                 >
                   <option value="VERBALE_COLLAUDO">Verbale di Collaudo</option>
                   <option value="VERBALE_CONSEGNA">Verbale di Consegna</option>
-                  <option value="SOSPENSIONE_LAVORI">Verbale Sospensione</option>
-                  <option value="RIPRESA_LAVORI">Verbale Ripresa</option>
-                  <option value="SAL">SAL</option>
+                  <option value="SOSPENSIONE_LAVORI">Verbale di Sospensione</option>
+                  <option value="RIPRESA_LAVORI">Verbale di Ripresa</option>
+                  <option value="SAL">S.A.L.</option>
                   <option value="RELAZIONE_COLLAUDO">Relazione Collaudo</option>
-                  <option value="CERTIFICATO_ULTIMAZIONE">Cert. Ultimazione</option>
+                  <option value="CERTIFICATO_ULTIMAZIONE">Certificato Ultimazione</option>
                 </select>
               )}
             </div>
-            <div className="flex gap-2">
-              <button onClick={handleDownloadWord} className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all shadow-sm">
-                <FileDown className="w-4 h-4 text-blue-600" /> Word (.doc)
+            <div className="flex gap-3">
+              <button onClick={handleDownloadWord} className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-sm">
+                <FileDown className="w-4 h-4 text-blue-600" /> Esporta Word
               </button>
-              <button onClick={handlePrint} className="bg-slate-900 hover:bg-black text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center gap-2 transition-all shadow-md">
+              <button onClick={handlePrint} className="bg-slate-900 hover:bg-black text-white px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-xl shadow-slate-900/20">
                 <Printer className="w-4 h-4" /> Stampa / PDF
               </button>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto bg-slate-200 rounded-xl p-8 border border-slate-300 shadow-inner">
+          <div className="flex-1 overflow-y-auto bg-slate-100 rounded-3xl p-10 border border-slate-300 shadow-inner">
             <div className="flex justify-center min-h-full">
               <DocumentPreview project={project} doc={currentDoc} type={effectiveDocType} allDocuments={documents} />
             </div>

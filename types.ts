@@ -4,9 +4,9 @@ export interface ContactInfo {
   title?: string;
   role?: string;
   address?: string;
-  zip?: string;
-  city?: string;
-  province?: string;
+  zip?: string;      
+  city?: string;     
+  province?: string; 
   email?: string;
   pec?: string;
   phone?: string;
@@ -97,14 +97,6 @@ export interface SALData {
     notes: string;
 }
 
-export interface TesterVisitSummary {
-    id: string;
-    startDate: string;
-    endDate: string;
-    works: string[]; 
-    notes: string;
-}
-
 export interface LetterRecipientConfig {
   id: string;
   isPc: boolean;
@@ -182,7 +174,6 @@ export interface ProjectConstants {
     resumptions: { id: string; date: string; minutesNumber?: string }[];
     sals: SALData[]; 
     variants: { id: string; date: string; approvalAct: string }[]; 
-    testerVisitSummaries: TesterVisitSummary[]; 
     completionDate: string; 
     handoverDocs: {
         projectApprovalType: string;
