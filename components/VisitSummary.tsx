@@ -23,10 +23,14 @@ export const VisitSummary: React.FC<VisitSummaryProps> = ({ projects, onBack }) 
     }, [projects]);
 
     const loadData = async () => {
-        const docs = await db.getAllDocuments();
-        const externals = await db.getExternalEvents();
-        setAllDocs(docs);
-        setExternalEvents(externals);
+        try {
+            const docs = await db.getAllDocuments();
+            const externals = await db.getExternalEvents();
+            setAllDocs(docs || []);
+            setExternalEvents(externals || []);
+        } catch (e) {
+            console.error("Error loading VisitSummary data", e);
+        }
     };
 
     const handleSaveExternal = async () => {
@@ -56,24 +60,31 @@ export const VisitSummary: React.FC<VisitSummaryProps> = ({ projects, onBack }) 
                 .sort((a, b) => a.visitNumber - b.visitNumber);
             return {
                 id: p.id,
-                entity: p.entity,
-                city: p.location,
-                projectName: p.projectName,
-                assignment: p.subjects.testerAppointment.nominationType || 'Incarico in App',
+                entity: p.entity || 'SENZA NOME',
+                city: p.location || 'N.D.',
+                projectName: p.projectName || 'Oggetto Mancante',
+                assignment: p.subjects?.testerAppointment?.nominationType || 'Incarico in App',
                 visitDates: projectDocs.map(d => d.date),
                 isExternal: false
             };
         }),
         ...externalEvents.map(e => ({
             id: e.id,
-            entity: e.entity,
-            city: e.city,
-            projectName: e.projectName,
-            assignment: e.assignment,
+            entity: e.entity || 'ESTERNO',
+            city: e.city || 'N.D.',
+            projectName: e.projectName || 'Oggetto Mancante',
+            assignment: e.assignment || 'N.D.',
             visitDates: e.visitDates || [],
             isExternal: true
         }))
     ];
+
+    // Ordinamento sicuro per ente
+    const sortedRows = [...rows].sort((a, b) => {
+        const entityA = (a.entity || '').toLowerCase();
+        const entityB = (b.entity || '').toLowerCase();
+        return entityA.localeCompare(entityB);
+    });
 
     return (
         <div className="max-w-[98%] mx-auto p-6 animate-in fade-in">
@@ -112,8 +123,8 @@ export const VisitSummary: React.FC<VisitSummaryProps> = ({ projects, onBack }) 
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 text-[11px]">
-                            {rows.sort((a, b) => a.entity.localeCompare(b.entity)).map((row, idx) => (
-                                <tr key={idx} className={`hover:bg-blue-50/30 transition-colors ${row.isExternal ? 'bg-amber-50/10' : ''}`}>
+                            {sortedRows.map((row, idx) => (
+                                <tr key={row.id + idx} className={`hover:bg-blue-50/30 transition-colors ${row.isExternal ? 'bg-amber-50/10' : ''}`}>
                                     <td className="p-4 border-r text-center font-bold text-slate-400">{idx + 1}</td>
                                     <td className="p-4 border-r font-bold text-slate-800 uppercase leading-tight">{row.entity}</td>
                                     <td className="p-4 border-r font-medium text-slate-600">{row.city}</td>
@@ -136,7 +147,7 @@ export const VisitSummary: React.FC<VisitSummaryProps> = ({ projects, onBack }) 
                                     <td className="p-4 text-center">
                                         {row.isExternal && (
                                             <div className="flex flex-col gap-1">
-                                                <button onClick={() => { setEditingId(row.id); setNewEvent(externalEvents.find(e => e.id === row.id) || {}); setShowModal(true); }} className="text-slate-400 hover:text-blue-600">
+                                                <button onClick={() => { setEditingId(row.id); const event = externalEvents.find(e => e.id === row.id); if(event) setNewEvent(event); setShowModal(true); }} className="text-slate-400 hover:text-blue-600">
                                                     <Pencil className="w-3.5 h-3.5"/>
                                                 </button>
                                                 <button onClick={() => handleDeleteExternal(row.id)} className="text-slate-400 hover:text-red-500">
@@ -147,6 +158,11 @@ export const VisitSummary: React.FC<VisitSummaryProps> = ({ projects, onBack }) 
                                     </td>
                                 </tr>
                             ))}
+                            {sortedRows.length === 0 && (
+                                <tr>
+                                    <td colSpan={18} className="p-10 text-center text-slate-400 font-medium">Nessun appalto caricato nel sistema.</td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

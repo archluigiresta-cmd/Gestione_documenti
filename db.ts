@@ -75,7 +75,8 @@ export const db = {
 
   seedInitialProjects: async (ownerId: string): Promise<void> => {
       const existingProjects = await db.getProjectsForUser(ownerId, '');
-      if (existingProjects.length > 0) return; // Popola solo se il database è vuoto
+      // Se abbiamo già i 9 appalti, non duplichiamo
+      if (existingProjects.length >= 9) return;
 
       const convertDate = (d: string) => {
           if (!d) return '';
@@ -83,20 +84,23 @@ export const db = {
           return `${parts[2]}-${parts[1]}-${parts[0]}`;
       };
 
+      // Tabella Reale a 9 Appalti (Ceglie accorpato)
       const tableData = [
           { n: 1, entity: 'Provincia di Taranto', location: 'Castellaneta', cup: 'D85B18001450002', name: 'Lavori di DEMOLIZIONE E RICOSTRUZIONE IMMOBILE VIALE VERDI N. 12', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['13/11/2024', '31/01/2025', '19/02/2025', '13/03/2025', '07/04/2025', '23/04/2025', '05/06/2025', '02/07/2025', '02/09/2025'] },
           { n: 2, entity: 'Comune di Torre S. Susanna', location: 'Torre S. Susanna', cup: 'I81B220004100007', name: 'INTERVENTI PER LA RIDUZIONE DEL RISCHIO IDROGEOLOGICO', assignment: 'Collaudo Tecnico Amministrativo', dates: ['31/07/2025', '20/11/2025'] },
-          { n: 3, entity: 'Comune di Ceglie Messapica', location: 'Ceglie Messapica', cup: 'J15F21000340001', name: 'Recupero, restauro e rifunzionalizzazione del Castello Ducale (Incarico Statico)', assignment: 'Collaudo Statico', dates: ['09/05/2025', '10/10/2025'] },
-          { n: 4, entity: 'Comune di Ceglie Messapica', location: 'Ceglie Messapica', cup: 'J15F21000340001', name: 'Recupero, restauro e rifunzionalizzazione del Castello Ducale (Incarico T.A.)', assignment: 'Collaudo Tecnico Amministrativo', dates: [] },
-          { n: 5, entity: 'Comune di Latiano', location: 'Latiano', cup: 'D79I18000110006', name: 'PNRR - Adeguamento Scuola Elementare F. Errico', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['10/10/2024', '20/02/2024', '08/05/2024', '09/10/2025'] },
-          { n: 6, entity: 'Comune di Pulsano', location: 'Pulsano', cup: 'F94D24000750006', name: 'PNRR - Ampliamento Scuola Infanzia Plesso Rodari', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['23/09/2025', '21/11/2025'] },
-          { n: 7, entity: 'Comune di Montemesola', location: 'Montemesola', cup: 'C45B24000150005', name: 'GIOCHI DEL MEDITERRANEO - Parcheggio Palazzetto dello Sport', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['04/07/2025', '28/08/2025', '23/09/2025', '21/11/2025'] },
-          { n: 8, entity: 'Comune di Statte', location: 'Statte', cup: '', name: 'GIOCHI DEL MEDITERRANEO - Pista di Atletica Stadio Comunale', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['28/08/2025', '20/11/2025'] },
-          { n: 9, entity: 'Presidenza del Consiglio dei Ministri', location: 'Taranto', cup: 'F54H22001050005', name: 'GIOCHI DEL MEDITERRANEO - Realizzazione Centro Nautico Area Ex Torpediniere', assignment: 'Collaudo Statico, Tecnico-Amministrativo e Funzionale', dates: [] },
-          { n: 10, entity: 'Comune di Palagiano', location: 'Palagiano', cup: 'E84D18000190002', name: 'Riutilizzo acque reflue affinate depuratori Palagiano e Massafra', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: [] }
+          { n: 3, entity: 'Comune di Ceglie Messapica', location: 'Ceglie Messapica', cup: 'J15F21000340001', name: 'Recupero, restauro e rifunzionalizzazione del Castello Ducale', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['09/05/2025', '10/10/2025'] },
+          { n: 4, entity: 'Comune di Latiano', location: 'Latiano', cup: 'D79I18000110006', name: 'PNRR - Adeguamento Scuola Elementare F. Errico', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['10/10/2024', '20/02/2024', '08/05/2024', '09/10/2025'] },
+          { n: 5, entity: 'Comune di Pulsano', location: 'Pulsano', cup: 'F94D24000750006', name: 'PNRR - Ampliamento Scuola Infanzia Plesso Rodari', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['23/09/2025', '21/11/2025'] },
+          { n: 6, entity: 'Comune di Montemesola', location: 'Montemesola', cup: 'C45B24000150005', name: 'GIOCHI DEL MEDITERRANEO - Parcheggio Palazzetto dello Sport', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['04/07/2025', '28/08/2025', '23/09/2025', '21/11/2025'] },
+          { n: 7, entity: 'Comune di Statte', location: 'Statte', cup: '', name: 'GIOCHI DEL MEDITERRANEO - Pista di Atletica Stadio Comunale', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: ['28/08/2025', '20/11/2025'] },
+          { n: 8, entity: 'Presidenza del Consiglio dei Ministri', location: 'Taranto', cup: 'F54H22001050005', name: 'GIOCHI DEL MEDITERRANEO - Realizzazione Centro Nautico Area Ex Torpediniere', assignment: 'Collaudo Statico, Tecnico-Amministrativo e Funzionale', dates: [] },
+          { n: 9, entity: 'Comune di Palagiano', location: 'Palagiano', cup: 'E84D18000190002', name: 'Riutilizzo acque reflue affinate depuratori Palagiano e Massafra', assignment: 'Collaudo Statico e Tecnico Amministrativo', dates: [] }
       ];
 
       for (const item of tableData) {
+          // Verifica se l'appalto esiste già per nome
+          if (existingProjects.some(p => p.projectName === item.name)) continue;
+
           const newProject = createEmptyProject(ownerId);
           newProject.entity = item.entity.toUpperCase();
           newProject.location = item.location;
@@ -118,10 +122,6 @@ export const db = {
               await db.saveDocument(createInitialDocument(newProject.id));
           }
       }
-  },
-
-  seedExternalData: async (): Promise<void> => {
-      // Funzione mantenuta per retrocompatibilità eventi esterni non legati a fascicoli
   },
 
   registerUser: async (user: User): Promise<void> => {
