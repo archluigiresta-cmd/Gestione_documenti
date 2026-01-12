@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ProjectConstants, User } from '../types';
-import { FolderPlus, Trash2, Shield, Share2, Building2, Calendar, ChevronUp, ChevronDown, Download } from 'lucide-react';
+import { FolderPlus, Trash2, Shield, Share2, Building2, Calendar, ChevronUp, ChevronDown, Download, ClipboardList } from 'lucide-react';
 
 interface DashboardProps {
   projects: ProjectConstants[];
@@ -12,7 +12,8 @@ interface DashboardProps {
   onOpenAdmin: () => void;
   onUpdateOrder: (id: string, newOrder: number) => void; 
   onMoveProject: (id: string, direction: 'up' | 'down') => void; 
-  onExportData: () => void; // New Prop
+  onExportData: () => void;
+  onOpenSummary: () => void; // Aggiunta prop
   currentUser: User | null;
 }
 
@@ -26,6 +27,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onUpdateOrder,
   onMoveProject,
   onExportData,
+  onOpenSummary,
   currentUser
 }) => {
 
@@ -47,12 +49,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
         <div className="flex gap-3">
              <button
+                onClick={onOpenSummary}
+                className="bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100 px-4 py-3 rounded-lg shadow-sm flex items-center gap-2 font-bold transition-colors text-sm"
+             >
+                <ClipboardList className="w-5 h-5"/>
+                Riepilogo Visite
+             </button>
+             <button
                 onClick={onExportData}
                 className="bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 px-4 py-3 rounded-lg shadow-sm flex items-center gap-2 font-medium transition-colors text-sm"
-                title="Scarica tutti i dati in JSON per trasferirli su un altro dispositivo"
              >
                 <Download className="w-5 h-5"/>
-                Scarica Backup
+                Backup
              </button>
              {currentUser?.isSystemAdmin && (
                  <button 
@@ -60,7 +68,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                    className="bg-slate-800 hover:bg-slate-900 text-white px-4 py-3 rounded-lg shadow-md flex items-center gap-2 font-medium transition-colors text-sm"
                  >
                     <Shield className="w-5 h-5" />
-                    Pannello Admin
+                    Admin
                  </button>
              )}
             <button
@@ -68,24 +76,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
               className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-3 rounded-lg shadow-md flex items-center gap-2 font-medium transition-colors text-sm"
             >
               <FolderPlus className="w-5 h-5" />
-              Nuovo Intervento
+              Nuovo
             </button>
         </div>
       </div>
 
       {projects.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-xl shadow border border-slate-200">
-          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FolderPlus className="w-8 h-8 text-slate-400" />
-          </div>
           <h3 className="text-xl font-semibold text-slate-700">Nessun progetto presente</h3>
-          <p className="text-slate-500 mt-2 mb-6">Inizia creando un nuovo fascicolo per un appalto.</p>
-          <button
-            onClick={onNewProject}
-            className="text-blue-600 font-medium hover:underline"
-          >
-            Crea il primo progetto
-          </button>
+          <p className="text-slate-500 mt-2 mb-6">Caricamento dei 9 appalti predefiniti in corso...</p>
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -97,8 +96,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider">Ente Appaltante</th>
                             <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider w-1/3">Intervento</th>
                             <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider">Consegna</th>
-                            <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider">Ultimazione</th>
-                            <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider w-1/4">Note</th>
                             <th className="p-4 font-bold text-xs text-slate-500 uppercase tracking-wider text-right">Azioni</th>
                         </tr>
                     </thead>
@@ -109,107 +106,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
                             const isLast = index === projects.length - 1;
 
                             return (
-                                <tr 
-                                    key={project.id} 
-                                    onClick={() => onSelectProject(project)}
-                                    className="hover:bg-blue-50 cursor-pointer transition-colors group"
-                                >
+                                <tr key={project.id} onClick={() => onSelectProject(project)} className="hover:bg-blue-50 cursor-pointer transition-colors group">
                                     <td className="p-4 align-top" onClick={e => e.stopPropagation()}>
                                         <div className="flex flex-col items-center gap-1">
-                                            <input 
-                                              type="number" 
-                                              className="w-12 p-1 text-center border border-slate-200 rounded font-bold text-slate-700 text-xs focus:ring-2 focus:ring-blue-500 outline-none"
-                                              value={project.displayOrder || 0}
-                                              onChange={(e) => onUpdateOrder(project.id, parseInt(e.target.value) || 0)}
-                                            />
-                                            <div className="flex flex-col gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button 
-                                                  disabled={isFirst}
-                                                  onClick={() => onMoveProject(project.id, 'up')}
-                                                  className="p-0.5 hover:bg-slate-200 rounded text-slate-500 disabled:opacity-20"
-                                                >
-                                                    <ChevronUp className="w-3 h-3"/>
-                                                </button>
-                                                <button 
-                                                  disabled={isLast}
-                                                  onClick={() => onMoveProject(project.id, 'down')}
-                                                  className="p-0.5 hover:bg-slate-200 rounded text-slate-500 disabled:opacity-20"
-                                                >
-                                                    <ChevronDown className="w-3 h-3"/>
-                                                </button>
-                                            </div>
+                                            <input type="number" className="w-12 p-1 text-center border border-slate-200 rounded font-bold text-slate-700 text-xs outline-none" value={project.displayOrder || 0} onChange={(e) => onUpdateOrder(project.id, parseInt(e.target.value) || 0)}/>
                                         </div>
                                     </td>
-                                    <td className="p-4 align-top">
-                                        <div className="flex items-center gap-2">
-                                            <Building2 className="w-4 h-4 text-blue-500 shrink-0"/>
-                                            <span className="font-semibold text-slate-700 line-clamp-2" title={project.entity}>
-                                                {project.entity || 'N/D'}
-                                                {project.entityProvince && <span className="text-slate-400 font-normal ml-1">({project.entityProvince})</span>}
-                                            </span>
-                                        </div>
-                                        <div className="text-xs text-slate-400 mt-1 pl-6">
-                                            CUP: {project.cup || '-'}
-                                        </div>
-                                    </td>
-                                    <td className="p-4 align-top">
-                                        <div className="font-medium text-slate-900 line-clamp-2" title={project.projectName}>
-                                            {project.projectName || 'Nuovo Progetto'}
-                                        </div>
-                                        <div className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                                            <Shield className="w-3 h-3"/>
-                                            {isOwner ? 'Proprietario' : 'Condiviso'}
-                                        </div>
-                                    </td>
-                                    <td className="p-4 align-top whitespace-nowrap">
-                                        <div className="flex items-center gap-2 text-slate-600">
-                                            <Calendar className="w-3 h-3 text-slate-400"/>
-                                            {formatDate(project.executionPhase?.deliveryDate)}
-                                        </div>
-                                    </td>
-                                    <td className="p-4 align-top whitespace-nowrap">
-                                        <div className="flex items-center gap-2 text-slate-600">
-                                            <Calendar className="w-3 h-3 text-slate-400"/>
-                                            {formatDate(project.executionPhase?.completionDate)}
-                                        </div>
-                                    </td>
-                                    <td className="p-4 align-top">
-                                        <div className="text-slate-500 italic line-clamp-2 text-xs" title={project.generalNotes}>
-                                            {project.generalNotes || '-'}
-                                        </div>
-                                    </td>
+                                    <td className="p-4 align-top font-bold uppercase text-slate-700">{project.entity || 'N/D'}</td>
+                                    <td className="p-4 align-top font-medium text-slate-900">{project.projectName || 'Nuovo Progetto'}</td>
+                                    <td className="p-4 align-top whitespace-nowrap">{formatDate(project.executionPhase?.deliveryDate)}</td>
                                     <td className="p-4 align-top text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            {isOwner && (
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        onShareProject(project.id);
-                                                    }}
-                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                                                    title="Condividi"
-                                                >
-                                                    <Share2 className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                            {isOwner && (
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        if(confirm('Sei sicuro di voler eliminare questo appalto?')) {
-                                                            onDeleteProject(project.id);
-                                                        }
-                                                    }}
-                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                                    title="Elimina"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            )}
-                                            <button className="px-3 py-1 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded hover:bg-slate-50 hover:text-blue-600">
-                                                Apri
-                                            </button>
-                                        </div>
+                                        <button className="px-3 py-1 bg-white border border-slate-200 text-slate-600 text-xs font-bold rounded">Apri</button>
                                     </td>
                                 </tr>
                             );
