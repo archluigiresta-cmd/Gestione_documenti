@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { DocumentVariables, ProjectConstants } from '../types';
-import { Calendar, Clock, Mail, ClipboardCheck, Users, Plus, Trash2, ListChecks, ArrowRight, ArrowLeft, MessageSquare, Bell, FileCheck2, Info, Wand2, Loader2 } from 'lucide-react';
+import { Calendar, Clock, Mail, ClipboardCheck, Users, Plus, Trash2, ListChecks, ArrowRight, ArrowLeft, MessageSquare, Bell, FileCheck2, Info, Wand2, Loader2, Hash } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
 
 interface TestingManagerProps {
@@ -133,7 +133,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
        </div>
 
        <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide">
-          <NavButton id="info" label="Data e Ora" icon={Calendar} />
+          <NavButton id="info" label="Num. e Data" icon={Calendar} />
           <NavButton id="convocation" label="Convocazione" icon={Mail} />
           <NavButton id="present" label="Presenti" icon={Users} />
           <NavButton id="works" label="Lavorazioni" icon={ListChecks} />
@@ -155,19 +155,36 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
           )}
 
           {step === 'info' && (
-              <div className="animate-in fade-in slide-in-from-right-4">
-                  <h3 className="text-xl font-bold text-slate-900 mb-8 border-b border-slate-100 pb-4">Dati Cronologici della Visita</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="animate-in fade-in slide-in-from-right-4 space-y-8">
+                  <h3 className="text-xl font-bold text-slate-900 mb-8 border-b border-slate-100 pb-4 flex items-center gap-2">
+                    <Calendar className="w-6 h-6 text-blue-600"/> Dati Cronologici del Verbale
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Data Sopralluogo</label>
+                          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                            <Hash className="w-3.5 h-3.5 text-blue-500"/> Numero Verbale
+                          </label>
+                          <input disabled={readOnly} type="number" className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none font-bold text-lg" 
+                            value={currentDoc.visitNumber} 
+                            onChange={e => handleUpdate({...currentDoc, visitNumber: parseInt(e.target.value) || 1})} 
+                          />
+                      </div>
+                      <div className="space-y-2">
+                          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-blue-500"/> Data Sopralluogo
+                          </label>
                           <input disabled={readOnly} type="date" className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none" value={currentDoc.date} onChange={e => handleUpdate({...currentDoc, date: e.target.value})} />
                       </div>
                       <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ora Inizio</label>
+                          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-blue-500"/> Ora Inizio
+                          </label>
                           <input disabled={readOnly} type="time" className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none" value={currentDoc.time} onChange={e => handleUpdate({...currentDoc, time: e.target.value})} />
                       </div>
                       <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Ora Fine Presunta</label>
+                          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-blue-500"/> Ora Fine Presunta
+                          </label>
                           <input disabled={readOnly} type="time" className="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none" value={currentDoc.endTime || ''} onChange={e => handleUpdate({...currentDoc, endTime: e.target.value})} />
                       </div>
                   </div>

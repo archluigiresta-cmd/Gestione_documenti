@@ -229,7 +229,7 @@ const TechnicalStaffList: React.FC<TechnicalStaffListProps> = ({ label, staff, r
                 <input 
                     disabled={readOnly}
                     type="text" 
-                    placeholder="Nome e Qualifica Tecnico (es. Ing. Rossi - Progettista indicato)" 
+                    placeholder="Nome e Qualifica Tecnico incaricato..." 
                     className="flex-1 p-2.5 border border-blue-200 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-blue-500/20 outline-none" 
                     value={tech.name} 
                     onChange={e => {
@@ -257,7 +257,7 @@ const TechnicalStaffList: React.FC<TechnicalStaffListProps> = ({ label, staff, r
                 onClick={() => onChange([...staff, { name: '' }])} 
                 className="text-sm text-blue-700 font-bold hover:bg-blue-100 px-3 py-1.5 rounded-lg flex items-center gap-2 transition-all"
             >
-                <PlusCircle className="w-4 h-4"/> Aggiungi Tecnico Incaricato
+                <PlusCircle className="w-4 h-4"/> Aggiungi Tecnico Operativo
             </button>
         )}
     </div>
