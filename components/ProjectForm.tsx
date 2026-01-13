@@ -31,52 +31,59 @@ const SubNav: React.FC<SubNavProps> = ({ items, activeTab, onTabChange }) => (
 );
 
 interface DesignPhaseFieldsProps {
-    data: DesignPhaseData;
+    data: DesignPhaseData | undefined;
     path: string;
     readOnly: boolean;
     onChange: (path: string, value: any) => void;
 }
 
-const DesignPhaseFields: React.FC<DesignPhaseFieldsProps> = ({ data, path, readOnly, onChange }) => (
-    <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Protocollo Consegna</label>
-                <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg" value={data.deliveryProtocol || ''} onChange={e => onChange(`${path}.deliveryProtocol`, e.target.value)} />
+const DesignPhaseFields: React.FC<DesignPhaseFieldsProps> = ({ data, path, readOnly, onChange }) => {
+    const d = data || {
+        deliveryProtocol: '', deliveryDate: '', economicFramework: '',
+        approvalType: '', approvalNumber: '', approvalDate: '', localFolderLink: ''
+    } as DesignPhaseData;
+
+    return (
+        <div className="space-y-6 animate-in fade-in duration-300">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Protocollo Consegna</label>
+                    <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20" value={d.deliveryProtocol || ''} onChange={e => onChange(`${path}.deliveryProtocol`, e.target.value)} />
+                </div>
+                <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Data Consegna</label>
+                    <input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20" value={d.deliveryDate || ''} onChange={e => onChange(`${path}.deliveryDate`, e.target.value)} />
+                </div>
+                <div className="md:col-span-2">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">Quadro Economico (€)</label>
+                    <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20" value={d.economicFramework || ''} onChange={e => onChange(`${path}.economicFramework`, e.target.value)} />
+                </div>
             </div>
-            <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Data Consegna</label>
-                <input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg" value={data.deliveryDate || ''} onChange={e => onChange(`${path}.deliveryDate`, e.target.value)} />
-            </div>
-            <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Quadro Economico (€)</label>
-                <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg" value={data.economicFramework || ''} onChange={e => onChange(`${path}.economicFramework`, e.target.value)} />
+            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-inner">
+                <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><FileCheck2 className="w-4 h-4 text-blue-500"/> Atto di Approvazione Progetto</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo Atto</label>
+                        <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded" value={d.approvalType || ''} onChange={e => onChange(`${path}.approvalType`, e.target.value)} />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Numero</label>
+                        <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded" value={d.approvalNumber || ''} onChange={e => onChange(`${path}.approvalNumber`, e.target.value)} />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Data</label>
+                        <input disabled={readOnly} type="date" className="w-full p-2 border border-slate-300 rounded" value={d.approvalDate || ''} onChange={e => onChange(`${path}.approvalDate`, e.target.value)} />
+                    </div>
+                </div>
             </div>
         </div>
-        <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
-            <h4 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><FileCheck2 className="w-4 h-4 text-blue-500"/> Atto di Approvazione</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tipo Atto</label>
-                    <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded" value={data.approvalType || ''} onChange={e => onChange(`${path}.approvalType`, e.target.value)} />
-                </div>
-                <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Numero</label>
-                    <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded" value={data.approvalNumber || ''} onChange={e => onChange(`${path}.approvalNumber`, e.target.value)} />
-                </div>
-                <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Data</label>
-                    <input disabled={readOnly} type="date" className="w-full p-2 border border-slate-300 rounded" value={data.approvalDate || ''} onChange={e => onChange(`${path}.approvalDate`, e.target.value)} />
-                </div>
-            </div>
-        </div>
-    </div>
-);
+    );
+};
 
 interface ContactCardProps {
     label: string;
     path: string;
-    contact: ContactInfo;
+    contact: ContactInfo | undefined;
     readOnly: boolean;
     onChange: (path: string, value: any) => void;
     showRepInfo?: boolean; 
@@ -88,20 +95,21 @@ const ContactCard: React.FC<ContactCardProps> = ({
     label, path, contact, readOnly, onChange,
     showRepInfo = false, roleLabel = "Ruolo / Titolo", isCompany = false
 }) => {
-    const currentTitle = contact.title || '';
+    const c = contact || { name: '', title: '', pec: '', email: '', address: '', zip: '', city: '', province: '', professionalOrder: '', registrationNumber: '', vat: '', repName: '', repTitle: '', role: '' } as ContactInfo;
+    const currentTitle = c.title || '';
     const isStandardTitle = TITLES.includes(currentTitle);
     const showCustomInput = !isStandardTitle && currentTitle !== '';
 
     return (
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-4">
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-4 animate-in fade-in zoom-in-95 duration-300">
         <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-3">
             <User className="w-5 h-5 text-blue-500 bg-blue-50 p-1 rounded-full"/> {label}
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="md:col-span-2">
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Nome / Ragione Sociale</label>
-                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100 font-semibold" 
-                    value={contact.name || ''} onChange={e => onChange(`${path}.name`, e.target.value)} />
+                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100 font-semibold focus:ring-2 focus:ring-blue-500/20 outline-none" 
+                    value={c.name || ''} onChange={e => onChange(`${path}.name`, e.target.value)} />
             </div>
             
             {!isCompany && (
@@ -110,7 +118,7 @@ const ContactCard: React.FC<ContactCardProps> = ({
                     <div className="flex gap-2 mt-1">
                         <select 
                             disabled={readOnly}
-                            className="flex-1 p-2.5 border border-slate-300 rounded-lg bg-white disabled:bg-slate-100"
+                            className="flex-1 p-2.5 border border-slate-300 rounded-lg bg-white disabled:bg-slate-100 outline-none"
                             value={showCustomInput ? 'Altro' : currentTitle}
                             onChange={(e) => {
                                 const val = e.target.value;
@@ -122,7 +130,7 @@ const ContactCard: React.FC<ContactCardProps> = ({
                             <option value="Altro">Altro...</option>
                         </select>
                         {showCustomInput && (
-                            <input disabled={readOnly} type="text" placeholder="Specifica..." className="flex-1 p-2.5 border border-slate-300 rounded-lg" value={contact.title || ''} onChange={e => onChange(`${path}.title`, e.target.value)} />
+                            <input disabled={readOnly} type="text" placeholder="Specifica..." className="flex-1 p-2.5 border border-slate-300 rounded-lg" value={c.title || ''} onChange={e => onChange(`${path}.title`, e.target.value)} />
                         )}
                     </div>
                 </div>
@@ -130,20 +138,20 @@ const ContactCard: React.FC<ContactCardProps> = ({
 
             <div>
                 <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">P.IVA / C.F.</label>
-                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                    value={contact.vat || ''} onChange={e => onChange(`${path}.vat`, e.target.value)} />
+                <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100 font-mono" 
+                    value={c.vat || ''} onChange={e => onChange(`${path}.vat`, e.target.value)} />
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:col-span-2">
                 <div>
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1"><Mail className="w-3 h-3"/> PEC</label>
                     <input disabled={readOnly} type="email" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100 lowercase" 
-                        value={contact.pec || ''} onChange={e => onChange(`${path}.pec`, e.target.value)} placeholder="esempio@pec.it" />
+                        value={c.pec || ''} onChange={e => onChange(`${path}.pec`, e.target.value)} placeholder="esempio@pec.it" />
                 </div>
                 <div>
                     <label className="text-xs font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1"><AtSign className="w-3 h-3"/> Email Ordinaria</label>
                     <input disabled={readOnly} type="email" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100 lowercase" 
-                        value={contact.email || ''} onChange={e => onChange(`${path}.email`, e.target.value)} placeholder="esempio@email.it" />
+                        value={c.email || ''} onChange={e => onChange(`${path}.email`, e.target.value)} placeholder="esempio@email.it" />
                 </div>
             </div>
 
@@ -151,22 +159,22 @@ const ContactCard: React.FC<ContactCardProps> = ({
                 <div className="col-span-12">
                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Indirizzo (Via/Piazza)</label>
                    <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                       value={contact.address || ''} onChange={e => onChange(`${path}.address`, e.target.value)} />
+                       value={c.address || ''} onChange={e => onChange(`${path}.address`, e.target.value)} />
                 </div>
                 <div className="col-span-3">
                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">CAP</label>
                    <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                       value={contact.zip || ''} onChange={e => onChange(`${path}.zip`, e.target.value)} />
+                       value={c.zip || ''} onChange={e => onChange(`${path}.zip`, e.target.value)} />
                 </div>
                 <div className="col-span-6">
                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Città</label>
                    <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                       value={contact.city || ''} onChange={e => onChange(`${path}.city`, e.target.value)} />
+                       value={c.city || ''} onChange={e => onChange(`${path}.city`, e.target.value)} />
                 </div>
                 <div className="col-span-3">
                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Prov.</label>
                    <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100 uppercase" 
-                       value={contact.province || ''} onChange={e => onChange(`${path}.province`, e.target.value)} />
+                       value={c.province || ''} onChange={e => onChange(`${path}.province`, e.target.value)} />
                 </div>
             </div>
 
@@ -175,12 +183,12 @@ const ContactCard: React.FC<ContactCardProps> = ({
                     <div>
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Albo / Ordine</label>
                         <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                            value={contact.professionalOrder || ''} onChange={e => onChange(`${path}.professionalOrder`, e.target.value)} />
+                            value={c.professionalOrder || ''} onChange={e => onChange(`${path}.professionalOrder`, e.target.value)} />
                     </div>
                     <div>
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">N. Iscrizione</label>
                         <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 disabled:bg-slate-100" 
-                            value={contact.registrationNumber || ''} onChange={e => onChange(`${path}.registrationNumber`, e.target.value)} />
+                            value={c.registrationNumber || ''} onChange={e => onChange(`${path}.registrationNumber`, e.target.value)} />
                     </div>
                 </>
             )}
@@ -189,15 +197,15 @@ const ContactCard: React.FC<ContactCardProps> = ({
                 <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-slate-100 mt-2">
                     <div>
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Rappresentante Legale (Nome)</label>
-                        <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" value={contact.repName || ''} onChange={e => onChange(`${path}.repName`, e.target.value)} />
+                        <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" value={c.repName || ''} onChange={e => onChange(`${path}.repName`, e.target.value)} />
                     </div>
                     <div>
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Titolo Rappresentante (es. Sig.)</label>
-                        <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" value={contact.repTitle || ''} onChange={e => onChange(`${path}.repTitle`, e.target.value)} />
+                        <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" value={c.repTitle || ''} onChange={e => onChange(`${path}.repTitle`, e.target.value)} />
                     </div>
                     <div className="md:col-span-2">
                         <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">{roleLabel}</label>
-                        <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" value={contact.role || ''} onChange={e => onChange(`${path}.role`, e.target.value)} />
+                        <input disabled={readOnly} type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1" value={c.role || ''} onChange={e => onChange(`${path}.role`, e.target.value)} />
                     </div>
                 </div>
             )}
@@ -221,7 +229,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
         case 'subjects': return 'rup';
         case 'tender': return 'minutes';
         case 'contractor': return 'main'; 
-        default: return 'default';
+        default: return 'info';
     }
   };
 
@@ -255,13 +263,21 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
   };
 
   return (
-    <div className="max-w-5xl mx-auto pb-20">
+    <div className="max-w-5xl mx-auto pb-20 animate-in fade-in duration-500">
       <div className="flex items-center justify-between mb-8">
           <h2 className="text-2xl font-bold text-slate-800 capitalize">
-              {section === 'general' ? 'Dati Generali' : section === 'design' ? 'Progettazione' : section === 'subjects' ? 'Soggetti Responsabili' : section === 'tender' ? 'Fase di Gara' : 'Impresa Appaltatrice'}
+              {section === 'general' ? 'Dati Generali' : section === 'design' ? 'Fase Progettazione' : section === 'subjects' ? 'Soggetti Responsabili' : section === 'tender' ? 'Fase di Gara' : 'Impresa Appaltatrice'}
           </h2>
           <div className="flex items-center gap-2">
-             {readOnly ? <span className="text-xs text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100 flex items-center gap-1"><Lock className="w-3 h-3"/> Solo Lettura</span> : <span className="text-xs text-green-600 bg-green-50 px-2.5 py-1 rounded-full border border-green-100 flex items-center gap-1"><Save className="w-3 h-3"/> Auto-save</span>}
+             {readOnly ? (
+                 <span className="text-xs text-amber-600 bg-amber-50 px-2.5 py-1.5 rounded-full border border-amber-100 flex items-center gap-1.5 font-bold shadow-sm">
+                    <Lock className="w-3.5 h-3.5"/> Modalità Sola Lettura
+                 </span>
+             ) : (
+                 <span className="text-xs text-green-600 bg-green-50 px-2.5 py-1.5 rounded-full border border-green-100 flex items-center gap-1.5 font-bold shadow-sm">
+                    <Save className="w-3.5 h-3.5"/> Salvataggio Automatico
+                 </span>
+             )}
           </div>
       </div>
 
@@ -273,82 +289,80 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                 { id: 'registration', label: 'Registrazione', icon: Stamp },
             ]} />
             {subTab === 'info' && (
-                <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 space-y-6">
-                    <div className="p-4 bg-slate-50 rounded-lg border border-dashed border-slate-300 flex items-center justify-between">
-                        <div>
-                            <label className="block text-sm font-bold text-slate-700">Logo Ente</label>
-                            <p className="text-xs text-slate-500">Immagine per l'intestazione dei documenti.</p>
+                <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 space-y-8 animate-in slide-in-from-right-4 duration-300">
+                    <div className="p-5 bg-slate-50 rounded-xl border border-dashed border-slate-300 flex items-center justify-between shadow-inner">
+                        <div className="flex-1">
+                            <label className="block text-sm font-bold text-slate-700">Logo Ente Appaltante</label>
+                            <p className="text-xs text-slate-500">Immagine visualizzata nelle intestazioni ufficiali.</p>
                         </div>
-                        <div className="flex items-center gap-4">
-                            {data.headerLogo && <div className="h-12 border bg-white p-1 rounded relative"><img src={data.headerLogo} className="h-full w-auto" /><button onClick={() => handleChange('headerLogo', '')} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-0.5"><X className="w-3 h-3"/></button></div>}
-                            {!readOnly && <label className="cursor-pointer bg-white border border-slate-300 px-3 py-2 rounded text-sm font-medium flex items-center gap-2"><ImagePlus className="w-4 h-4"/> Carica...<input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} /></label>}
+                        <div className="flex items-center gap-6">
+                            {data.headerLogo && (
+                                <div className="h-14 border bg-white p-1 rounded-lg shadow-sm relative group">
+                                    <img src={data.headerLogo} className="h-full w-auto" alt="logo" />
+                                    <button onClick={() => handleChange('headerLogo', '')} className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"><X className="w-3 h-3"/></button>
+                                </div>
+                            )}
+                            {!readOnly && (
+                                <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2 transition-all shadow-lg shadow-blue-500/20">
+                                    <ImagePlus className="w-4 h-4"/> Carica Logo
+                                    <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+                                </label>
+                            )}
                         </div>
                     </div>
                     <div className="grid grid-cols-4 gap-6">
                         <div className="col-span-3">
-                            <label className="block text-sm font-semibold mb-2">Ente Appaltante</label>
+                            <label className="block text-sm font-semibold mb-2">Denominazione Ente</label>
                             <textarea 
                               disabled={readOnly} 
-                              className="w-full p-3 border border-slate-300 rounded-lg uppercase font-bold min-h-[120px]" 
+                              className="w-full p-4 border border-slate-300 rounded-lg uppercase font-bold min-h-[100px] focus:ring-2 focus:ring-blue-500/20 outline-none" 
                               value={data.entity || ''} 
                               onChange={e => handleChange('entity', e.target.value)} 
                             />
                         </div>
                         <div>
                             <label className="block text-sm font-semibold mb-2">Provincia</label>
-                            <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg uppercase" value={data.entityProvince || ''} onChange={e => handleChange('entityProvince', e.target.value)} />
+                            <input disabled={readOnly} type="text" className="w-full p-4 border border-slate-300 rounded-lg uppercase font-bold focus:ring-2 focus:ring-blue-500/20 outline-none" value={data.entityProvince || ''} onChange={e => handleChange('entityProvince', e.target.value)} />
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-semibold mb-2">Oggetto Lavori</label>
-                        <textarea disabled={readOnly} className="w-full p-3 border border-slate-300 rounded-lg h-32" value={data.projectName || ''} onChange={e => handleChange('projectName', e.target.value)} />
+                        <label className="block text-sm font-semibold mb-2">Oggetto dell'Intervento</label>
+                        <textarea disabled={readOnly} className="w-full p-4 border border-slate-300 rounded-lg h-32 focus:ring-2 focus:ring-blue-500/20 outline-none leading-relaxed" value={data.projectName || ''} onChange={e => handleChange('projectName', e.target.value)} />
                     </div>
                     <div className="grid grid-cols-4 gap-6">
                         <div className="col-span-2">
-                            <label className="block text-sm font-semibold mb-2">Luogo</label>
-                            <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg" value={data.location || ''} onChange={e => handleChange('location', e.target.value)} />
+                            <label className="block text-sm font-semibold mb-2">Luogo dei Lavori</label>
+                            <input disabled={readOnly} type="text" className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none" value={data.location || ''} onChange={e => handleChange('location', e.target.value)} />
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold mb-2 flex items-center gap-1"><Hash className="w-3 h-3 text-blue-500"/> CUP</label>
-                            <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg uppercase font-mono" value={data.cup || ''} onChange={e => handleChange('cup', e.target.value)} />
+                            <label className="block text-sm font-semibold mb-2 flex items-center gap-1.5"><Hash className="w-3.5 h-3.5 text-blue-500"/> CUP</label>
+                            <input disabled={readOnly} type="text" className="w-full p-4 border border-slate-300 rounded-lg uppercase font-mono font-bold focus:ring-2 focus:ring-blue-500/20 outline-none" value={data.cup || ''} onChange={e => handleChange('cup', e.target.value)} />
                         </div>
                         <div>
-                            <label className="block text-sm font-semibold mb-2 flex items-center gap-1"><Hash className="w-3 h-3 text-blue-500"/> CIG</label>
-                            <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg uppercase font-mono" value={data.cig || ''} onChange={e => handleChange('cig', e.target.value)} />
+                            <label className="block text-sm font-semibold mb-2 flex items-center gap-1.5"><Hash className="w-3.5 h-3.5 text-blue-500"/> CIG</label>
+                            <input disabled={readOnly} type="text" className="w-full p-4 border border-slate-300 rounded-lg uppercase font-mono font-bold focus:ring-2 focus:ring-blue-500/20 outline-none" value={data.cig || ''} onChange={e => handleChange('cig', e.target.value)} />
                         </div>
                     </div>
                 </div>
             )}
             {subTab === 'contract' && (
-                <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 grid grid-cols-2 gap-6">
-                    <div><label className="block text-sm font-semibold mb-2">Data Stipula</label><input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg" value={data.contract.date || ''} onChange={e => handleChange('contract.date', e.target.value)} /></div>
-                    <div><label className="block text-sm font-semibold mb-2">Repertorio N.</label><input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg" value={data.contract.repNumber || ''} onChange={e => handleChange('contract.repNumber', e.target.value)} /></div>
-                    <div><label className="block text-sm font-semibold mb-2">Importo Totale (€)</label><input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg" value={data.contract.totalAmount || ''} onChange={e => handleChange('contract.totalAmount', e.target.value)} /></div>
-                    <div><label className="block text-sm font-semibold mb-2">Oneri Sicurezza (€)</label><input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg" value={data.contract.securityCosts || ''} onChange={e => handleChange('contract.securityCosts', e.target.value)} /></div>
+                <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 grid grid-cols-2 gap-8 animate-in slide-in-from-right-4">
+                    <div><label className="block text-sm font-semibold mb-2">Data Stipula Contratto</label><input disabled={readOnly} type="date" className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none" value={data.contract?.date || ''} onChange={e => handleChange('contract.date', e.target.value)} /></div>
+                    <div><label className="block text-sm font-semibold mb-2">N. Repertorio</label><input disabled={readOnly} type="text" className="w-full p-4 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none" value={data.contract?.repNumber || ''} onChange={e => handleChange('contract.repNumber', e.target.value)} /></div>
+                    <div><label className="block text-sm font-semibold mb-2">Importo Contrattuale Netto (€)</label><input disabled={readOnly} type="text" className="w-full p-4 border border-slate-300 rounded-lg font-bold focus:ring-2 focus:ring-blue-500/20 outline-none" value={data.contract?.totalAmount || ''} onChange={e => handleChange('contract.totalAmount', e.target.value)} /></div>
+                    <div><label className="block text-sm font-semibold mb-2">Oneri per la Sicurezza (€)</label><input disabled={readOnly} type="text" className="w-full p-4 border border-slate-300 rounded-lg font-bold focus:ring-2 focus:ring-blue-500/20 outline-none" value={data.contract?.securityCosts || ''} onChange={e => handleChange('contract.securityCosts', e.target.value)} /></div>
                 </div>
             )}
             {subTab === 'registration' && (
-                <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 grid grid-cols-2 gap-6">
+                <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 grid grid-cols-2 gap-8 animate-in slide-in-from-right-4">
                     <div className="col-span-2">
-                        <h3 className="font-bold text-slate-800 mb-2">Dati Registrazione Contratto</h3>
-                        <p className="text-xs text-slate-500 mb-4">Informazioni relative alla registrazione dell'atto presso l'Agenzia delle Entrate.</p>
+                        <h3 className="font-bold text-slate-800 mb-2">Dati di Registrazione</h3>
+                        <p className="text-sm text-slate-500 mb-4">Informazioni sull'atto depositato presso l'Ufficio delle Entrate.</p>
                     </div>
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">Luogo Registrazione</label>
-                        <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg" value={data.contract.regPlace || ''} onChange={e => handleChange('contract.regPlace', e.target.value)} />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">Data Registrazione</label>
-                        <input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg" value={data.contract.regDate || ''} onChange={e => handleChange('contract.regDate', e.target.value)} />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">Numero Registrazione</label>
-                        <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg" value={data.contract.regNumber || ''} onChange={e => handleChange('contract.regNumber', e.target.value)} />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-semibold mb-2">Serie</label>
-                        <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg" value={data.contract.regSeries || ''} onChange={e => handleChange('contract.regSeries', e.target.value)} />
-                    </div>
+                    <div><label className="block text-sm font-semibold mb-2">Luogo di Registrazione</label><input disabled={readOnly} type="text" className="w-full p-4 border border-slate-300 rounded-lg" value={data.contract?.regPlace || ''} onChange={e => handleChange('contract.regPlace', e.target.value)} /></div>
+                    <div><label className="block text-sm font-semibold mb-2">Data Registrazione</label><input disabled={readOnly} type="date" className="w-full p-4 border border-slate-300 rounded-lg" value={data.contract?.regDate || ''} onChange={e => handleChange('contract.regDate', e.target.value)} /></div>
+                    <div><label className="block text-sm font-semibold mb-2">Numero Atto</label><input disabled={readOnly} type="text" className="w-full p-4 border border-slate-300 rounded-lg font-mono font-bold" value={data.contract?.regNumber || ''} onChange={e => handleChange('contract.regNumber', e.target.value)} /></div>
+                    <div><label className="block text-sm font-semibold mb-2">Serie</label><input disabled={readOnly} type="text" className="w-full p-4 border border-slate-300 rounded-lg font-mono font-bold" value={data.contract?.regSeries || ''} onChange={e => handleChange('contract.regSeries', e.target.value)} /></div>
                 </div>
             )}
         </>
@@ -362,8 +376,13 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                 { id: 'pfte', label: 'PFTE', icon: PencilRuler },
                 { id: 'executive', label: 'Esecutivo', icon: Hammer },
             ]} />
-            <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200">
-                <DesignPhaseFields data={data.designPhase[subTab as keyof typeof data.designPhase]} path={`designPhase.${subTab}`} readOnly={readOnly} onChange={handleChange} />
+            <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 min-h-[400px]">
+                <DesignPhaseFields 
+                    data={data.designPhase ? (data.designPhase as any)[subTab] : undefined} 
+                    path={`designPhase.${subTab}`} 
+                    readOnly={readOnly} 
+                    onChange={handleChange} 
+                />
             </div>
         </>
       )}
@@ -379,137 +398,136 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                 { id: 'dlOffice', label: 'Ufficio D.L.', icon: Users },
                 { id: 'cse', label: 'CSE', icon: ShieldAlert },
                 { id: 'tester', label: 'Collaudatore', icon: Stamp },
-                { id: 'others', label: 'Altri', icon: PlusCircle },
+                { id: 'others', label: 'Altre Figure', icon: PlusCircle },
             ]} />
             
-            {subTab === 'rup' && <ContactCard label="Responsabile Unico del Progetto" path="subjects.rup.contact" contact={data.subjects.rup.contact} readOnly={readOnly} onChange={handleChange} />}
+            {subTab === 'rup' && <ContactCard label="Responsabile Unico del Progetto" path="subjects.rup.contact" contact={data.subjects?.rup?.contact} readOnly={readOnly} onChange={handleChange} />}
             
             {subTab === 'designers' && (
                 <div className="space-y-6">
-                    {(data.subjects.designers || []).map((designer, idx) => (
+                    {(data.subjects?.designers || []).map((designer, idx) => (
                         <div key={idx} className="relative group">
                              <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-4">
                                 <div className="flex justify-between items-center mb-6 border-b pb-3">
                                     <h4 className="font-bold text-slate-800 flex items-center gap-2">
-                                        <PencilRuler className="w-5 h-5 text-blue-500"/> Progettista {idx+1}
+                                        <PencilRuler className="w-5 h-5 text-blue-500"/> Progettista / RTP n. {idx+1}
                                     </h4>
                                     {!readOnly && <button onClick={() => {
-                                        const list = [...data.subjects.designers];
+                                        const list = [...(data.subjects?.designers || [])];
                                         list.splice(idx, 1);
                                         handleChange('subjects.designers', list);
-                                    }} className="text-red-500 hover:bg-red-50 p-1.5 rounded"><Trash2 className="w-4 h-4"/></button>}
+                                    }} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>}
                                 </div>
-                                
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="md:col-span-2">
-                                        <label className="flex items-center gap-2 cursor-pointer mb-2">
-                                            <input type="checkbox" checked={designer.isLegalEntity} onChange={e => {
-                                                const list = [...data.subjects.designers];
+                                        <label className="flex items-center gap-3 cursor-pointer mb-2 bg-slate-50 p-3 rounded-lg border border-slate-100 w-fit pr-6">
+                                            <input type="checkbox" className="w-5 h-5 rounded text-blue-600" checked={designer.isLegalEntity} onChange={e => {
+                                                const list = [...(data.subjects?.designers || [])];
                                                 list[idx].isLegalEntity = e.target.checked;
                                                 handleChange('subjects.designers', list);
                                             }} />
-                                            <span className="text-sm font-bold text-slate-700">RTP / Società di Ingegneria (Entità Legale)</span>
+                                            <span className="text-sm font-bold text-slate-700 uppercase tracking-tight">RTP / Società (Entità Giuridica)</span>
                                         </label>
                                     </div>
                                     <div className="md:col-span-2">
-                                        <label className="text-xs font-bold text-slate-500 uppercase">Ragione Sociale / Nome</label>
-                                        <input type="text" className="w-full p-2 border border-slate-300 rounded mt-1" value={designer.contact.name || ''} onChange={e => {
-                                            const list = [...data.subjects.designers];
+                                        <label className="text-xs font-bold text-slate-500 uppercase">Nome / Denominazione</label>
+                                        <input type="text" className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 font-bold" value={designer.contact?.name || ''} onChange={e => {
+                                            const list = [...(data.subjects?.designers || [])];
                                             list[idx].contact.name = e.target.value;
                                             handleChange('subjects.designers', list);
                                         }} />
                                     </div>
                                     {designer.isLegalEntity && (
-                                        <div className="md:col-span-2 bg-slate-50 p-4 rounded-lg border">
-                                            <p className="text-xs font-bold text-slate-500 uppercase mb-3">Tecnici Operativi / Incaricati</p>
+                                        <div className="md:col-span-2 bg-blue-50/50 p-5 rounded-xl border border-blue-100 shadow-inner">
+                                            <p className="text-xs font-bold text-blue-800 uppercase mb-4 tracking-widest">Tecnici Incaricati / Operativi</p>
                                             {(designer.operatingDesigners || []).map((op, oIdx) => (
-                                                <div key={oIdx} className="flex gap-2 mb-2">
-                                                    <input type="text" placeholder="Nome Tecnico" className="flex-1 p-2 border border-slate-300 rounded text-sm" value={op.name} onChange={e => {
-                                                        const list = [...data.subjects.designers];
+                                                <div key={oIdx} className="flex gap-3 mb-3">
+                                                    <input type="text" placeholder="Nome e Qualifica Tecnico" className="flex-1 p-2.5 border border-blue-200 rounded-lg text-sm shadow-sm" value={op.name} onChange={e => {
+                                                        const list = [...(data.subjects?.designers || [])];
                                                         list[idx].operatingDesigners[oIdx].name = e.target.value;
                                                         handleChange('subjects.designers', list);
                                                     }} />
-                                                    <button onClick={() => {
-                                                        const list = [...data.subjects.designers];
+                                                    {!readOnly && <button onClick={() => {
+                                                        const list = [...(data.subjects?.designers || [])];
                                                         list[idx].operatingDesigners.splice(oIdx, 1);
                                                         handleChange('subjects.designers', list);
-                                                    }} className="text-slate-400 hover:text-red-500"><X className="w-4 h-4"/></button>
+                                                    }} className="text-blue-400 hover:text-red-500 transition-colors p-2"><X className="w-5 h-5"/></button>}
                                                 </div>
                                             ))}
                                             <button onClick={() => {
-                                                const list = [...data.subjects.designers];
+                                                const list = [...(data.subjects?.designers || [])];
                                                 list[idx].operatingDesigners = [...(list[idx].operatingDesigners || []), { name: '' }];
                                                 handleChange('subjects.designers', list);
-                                            }} className="text-xs text-blue-600 font-bold hover:underline">+ Aggiungi Tecnico</button>
+                                            }} className="text-sm text-blue-700 font-bold hover:bg-blue-100 px-3 py-1.5 rounded-lg flex items-center gap-2 transition-all">+ Aggiungi Nominativo</button>
                                         </div>
                                     )}
                                 </div>
                              </div>
                         </div>
                     ))}
-                    {!readOnly && <button onClick={() => handleChange('subjects.designers', [...(data.subjects.designers || []), { contact: { name: '' }, isLegalEntity: false, operatingDesigners: [] }])} className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2"><Plus className="w-5 h-5"/> Aggiungi Progettista / RTP</button>}
+                    {!readOnly && <button onClick={() => handleChange('subjects.designers', [...(data.subjects?.designers || []), { contact: { name: '' }, isLegalEntity: false, operatingDesigners: [] }])} className="w-full py-6 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400 hover:text-blue-600 hover:bg-blue-50/50 hover:border-blue-300 transition-all flex items-center justify-center gap-3 font-bold uppercase tracking-widest text-xs"><PlusCircle className="w-6 h-6"/> Aggiungi Nuova Anagrafica Progettista</button>}
                 </div>
             )}
 
-            {subTab === 'csp' && <ContactCard label="Coordinatore Sicurezza Progettazione (CSP)" path="subjects.csp.contact" contact={data.subjects.csp.contact} readOnly={readOnly} onChange={handleChange} />}
-            {subTab === 'verifier' && <ContactCard label="Soggetto Verificatore Progetto" path="subjects.verifier.contact" contact={data.subjects.verifier.contact} readOnly={readOnly} onChange={handleChange} />}
-            {subTab === 'dl' && <ContactCard label="Direttore dei Lavori" path="subjects.dl.contact" contact={data.subjects.dl.contact} readOnly={readOnly} onChange={handleChange} isCompany={data.subjects.dl.isLegalEntity} showRepInfo={data.subjects.dl.isLegalEntity} />}
+            {subTab === 'csp' && <ContactCard label="Coordinatore Sicurezza Progettazione (CSP)" path="subjects.csp.contact" contact={data.subjects?.csp?.contact} readOnly={readOnly} onChange={handleChange} />}
+            {subTab === 'verifier' && <ContactCard label="Verificatore del Progetto" path="subjects.verifier.contact" contact={data.subjects?.verifier?.contact} readOnly={readOnly} onChange={handleChange} />}
+            {subTab === 'dl' && <ContactCard label="Direttore dei Lavori" path="subjects.dl.contact" contact={data.subjects?.dl?.contact} readOnly={readOnly} onChange={handleChange} isCompany={data.subjects?.dl?.isLegalEntity} showRepInfo={data.subjects?.dl?.isLegalEntity} />}
             
             {subTab === 'dlOffice' && (
                 <div className="space-y-4">
-                    {(data.subjects.dlOffice || []).map((member, idx) => (
+                    {(data.subjects?.dlOffice || []).map((member, idx) => (
                         <div key={idx} className="relative group">
-                            <ContactCard label={`Membro Ufficio DL ${idx+1}`} path={`subjects.dlOffice.${idx}.contact`} contact={member.contact} readOnly={readOnly} onChange={handleChange} showRepInfo={true} roleLabel="Qualifica (es. Ispettore di Cantiere)" />
+                            <ContactCard label={`Componente Ufficio Direzione Lavori n. ${idx+1}`} path={`subjects.dlOffice.${idx}.contact`} contact={member.contact} readOnly={readOnly} onChange={handleChange} showRepInfo={true} roleLabel="Qualifica Professionale (es. Ispettore, Assistente...)" />
                             {!readOnly && <button onClick={() => {
-                                const list = [...data.subjects.dlOffice];
+                                const list = [...(data.subjects?.dlOffice || [])];
                                 list.splice(idx, 1);
                                 handleChange('subjects.dlOffice', list);
-                            }} className="absolute top-4 right-4 text-red-400 hover:text-red-600"><Trash2 className="w-5 h-5"/></button>}
+                            }} className="absolute top-6 right-6 text-slate-300 hover:text-red-500 transition-colors"><Trash2 className="w-5 h-5"/></button>}
                         </div>
                     ))}
-                    {!readOnly && <button onClick={() => handleChange('subjects.dlOffice', [...(data.subjects.dlOffice || []), { contact: { name: '', role: '' } }])} className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2"><Plus className="w-5 h-5"/> Aggiungi Membro Ufficio DL</button>}
+                    {!readOnly && <button onClick={() => handleChange('subjects.dlOffice', [...(data.subjects?.dlOffice || []), { contact: { name: '', role: '' } }])} className="w-full py-6 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400 hover:bg-blue-50/50 hover:border-blue-300 transition-all flex items-center justify-center gap-3 font-bold uppercase tracking-widest text-xs"><PlusCircle className="w-6 h-6"/> Aggiungi Membro Ufficio D.L.</button>}
                 </div>
             )}
 
-            {subTab === 'cse' && <ContactCard label="Coordinatore Sicurezza Esecuzione (CSE)" path="subjects.cse.contact" contact={data.subjects.cse.contact} readOnly={readOnly} onChange={handleChange} />}
+            {subTab === 'cse' && <ContactCard label="Coordinatore Sicurezza Esecuzione (CSE)" path="subjects.cse.contact" contact={data.subjects?.cse?.contact} readOnly={readOnly} onChange={handleChange} />}
 
             {subTab === 'tester' && (
-                <div className="space-y-6">
-                    <ContactCard label="Anagrafica Collaudatore" path="subjects.tester.contact" contact={data.subjects.tester.contact} readOnly={readOnly} onChange={handleChange} />
+                <div className="space-y-8 animate-in slide-in-from-right-4">
+                    <ContactCard label="Anagrafica Collaudatore" path="subjects.tester.contact" contact={data.subjects?.tester?.contact} readOnly={readOnly} onChange={handleChange} />
                     
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                       <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 border-b pb-3"><Stamp className="w-5 h-5 text-blue-500"/> Nomina Collaudatore</h4>
-                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm relative">
+                       <h4 className="font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-3"><Stamp className="w-5 h-5 text-blue-500"/> Atto di Nomina del Collaudatore</h4>
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                            <div className="md:col-span-2">
-                               <label className="text-xs font-bold text-slate-500 uppercase">Soggetto Emittente Atto (es. Commissario Straordinario / Dirigente...)</label>
-                               <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded mt-1" value={data.subjects.testerAppointment.nominationAuthority || ''} onChange={e => handleChange('subjects.testerAppointment.nominationAuthority', e.target.value)} />
+                               <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Autorità Emanante (es. Commissario / Dirigente...)</label>
+                               <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg mt-1 font-bold focus:ring-2 focus:ring-blue-500/20 outline-none" value={data.subjects?.testerAppointment?.nominationAuthority || ''} onChange={e => handleChange('subjects.testerAppointment.nominationAuthority', e.target.value)} />
                            </div>
                            <div>
-                               <label className="text-xs font-bold text-slate-500 uppercase">Tipo Atto (es. Decreto / Determina Dirigenziale)</label>
-                               <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded mt-1" value={data.subjects.testerAppointment.nominationType || ''} onChange={e => handleChange('subjects.testerAppointment.nominationType', e.target.value)} />
+                               <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Tipologia Atto (es. Decreto / Det. Dirigenziale)</label>
+                               <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg mt-1 focus:ring-2 focus:ring-blue-500/20 outline-none" value={data.subjects?.testerAppointment?.nominationType || ''} onChange={e => handleChange('subjects.testerAppointment.nominationType', e.target.value)} />
                            </div>
                            <div>
-                               <label className="text-xs font-bold text-slate-500 uppercase">Numero e Data Atto</label>
-                               <div className="flex gap-2">
-                                   <input disabled={readOnly} type="text" placeholder="Num." className="w-1/2 p-2 border border-slate-300 rounded mt-1" value={data.subjects.testerAppointment.nominationNumber || ''} onChange={e => handleChange('subjects.testerAppointment.nominationNumber', e.target.value)} />
-                                   <input disabled={readOnly} type="date" className="w-1/2 p-2 border border-slate-300 rounded mt-1" value={data.subjects.testerAppointment.nominationDate || ''} onChange={e => handleChange('subjects.testerAppointment.nominationDate', e.target.value)} />
+                               <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Estremi Atto (Numero e Data)</label>
+                               <div className="flex gap-3">
+                                   <input disabled={readOnly} type="text" placeholder="N." className="w-1/3 p-3 border border-slate-300 rounded-lg mt-1 font-bold focus:ring-2 focus:ring-blue-500/20 outline-none" value={data.subjects?.testerAppointment?.nominationNumber || ''} onChange={e => handleChange('subjects.testerAppointment.nominationNumber', e.target.value)} />
+                                   <input disabled={readOnly} type="date" className="w-2/3 p-3 border border-slate-300 rounded-lg mt-1 focus:ring-2 focus:ring-blue-500/20 outline-none" value={data.subjects?.testerAppointment?.nominationDate || ''} onChange={e => handleChange('subjects.testerAppointment.nominationDate', e.target.value)} />
                                </div>
                            </div>
-                           <div className="md:col-span-2 bg-slate-50 p-4 rounded-lg border border-slate-200">
-                               <p className="text-xs font-bold text-slate-500 uppercase mb-3">Tipologia Incarico (per titolo verbale e premesse)</p>
-                               <div className="flex gap-6">
-                                   <label className="flex items-center gap-2 cursor-pointer"><input disabled={readOnly} type="checkbox" checked={data.subjects.testerAppointment.isAdmin} onChange={e => handleChange('subjects.testerAppointment.isAdmin', e.target.checked)} /> <span className="text-sm">Tecnico-Amministrativo</span></label>
-                                   <label className="flex items-center gap-2 cursor-pointer"><input disabled={readOnly} type="checkbox" checked={data.subjects.testerAppointment.isStatic} onChange={e => handleChange('subjects.testerAppointment.isStatic', e.target.checked)} /> <span className="text-sm">Statico</span></label>
-                                   <label className="flex items-center gap-2 cursor-pointer"><input disabled={readOnly} type="checkbox" checked={data.subjects.testerAppointment.isFunctional} onChange={e => handleChange('subjects.testerAppointment.isFunctional', e.target.checked)} /> <span className="text-sm">Funzionale</span></label>
+                           <div className="md:col-span-2 bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-inner">
+                               <p className="text-xs font-bold text-slate-500 uppercase mb-4 tracking-widest">Ambito dell'Incarico (per testi automatici)</p>
+                               <div className="flex flex-wrap gap-8">
+                                   <label className="flex items-center gap-3 cursor-pointer group"><input disabled={readOnly} type="checkbox" className="w-5 h-5 text-blue-600 rounded" checked={data.subjects?.testerAppointment?.isAdmin || false} onChange={e => handleChange('subjects.testerAppointment.isAdmin', e.target.checked)} /> <span className="text-sm font-bold text-slate-700 group-hover:text-blue-600 transition-colors">Tecnico-Amministrativo</span></label>
+                                   <label className="flex items-center gap-3 cursor-pointer group"><input disabled={readOnly} type="checkbox" className="w-5 h-5 text-blue-600 rounded" checked={data.subjects?.testerAppointment?.isStatic || false} onChange={e => handleChange('subjects.testerAppointment.isStatic', e.target.checked)} /> <span className="text-sm font-bold text-slate-700 group-hover:text-blue-600 transition-colors">Statico</span></label>
+                                   <label className="flex items-center gap-3 cursor-pointer group"><input disabled={readOnly} type="checkbox" className="w-5 h-5 text-blue-600 rounded" checked={data.subjects?.testerAppointment?.isFunctional || false} onChange={e => handleChange('subjects.testerAppointment.isFunctional', e.target.checked)} /> <span className="text-sm font-bold text-slate-700 group-hover:text-blue-600 transition-colors">Funzionale</span></label>
                                </div>
                            </div>
                            <div>
-                               <label className="text-xs font-bold text-slate-500 uppercase">Rep. Convenzione/Incarico</label>
-                               <input disabled={readOnly} type="text" className="w-full p-2 border border-slate-300 rounded mt-1" value={data.subjects.testerAppointment.contractRepNumber || ''} onChange={e => handleChange('subjects.testerAppointment.contractRepNumber', e.target.value)} />
+                               <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Repertorio Convenzione</label>
+                               <input disabled={readOnly} type="text" className="w-full p-3 border border-slate-300 rounded-lg mt-1 font-mono focus:ring-2 focus:ring-blue-500/20 outline-none" value={data.subjects?.testerAppointment?.contractRepNumber || ''} onChange={e => handleChange('subjects.testerAppointment.contractRepNumber', e.target.value)} />
                            </div>
                            <div>
-                               <label className="text-xs font-bold text-slate-500 uppercase">Data Convenzione</label>
-                               <input disabled={readOnly} type="date" className="w-full p-2 border border-slate-300 rounded mt-1" value={data.subjects.testerAppointment.contractDate || ''} onChange={e => handleChange('subjects.testerAppointment.contractDate', e.target.value)} />
+                               <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Data Convenzione</label>
+                               <input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg mt-1 focus:ring-2 focus:ring-blue-500/20 outline-none" value={data.subjects?.testerAppointment?.contractDate || ''} onChange={e => handleChange('subjects.testerAppointment.contractDate', e.target.value)} />
                            </div>
                        </div>
                     </div>
@@ -518,36 +536,36 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
 
             {subTab === 'others' && (
                 <div className="space-y-6">
-                    {(data.subjects.others || []).map((other, idx) => (
+                    {(data.subjects?.others || []).map((other, idx) => (
                         <div key={idx} className="relative group">
                             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-4">
                                 <div className="flex justify-between items-center mb-6 border-b pb-3">
                                     <h4 className="font-bold text-slate-800 flex items-center gap-2">
-                                        <PlusCircle className="w-5 h-5 text-blue-500"/> Altra Figura / Ente Interessato {idx+1}
+                                        <PlusCircle className="w-5 h-5 text-blue-500"/> Soggetto / Ente Interessato n. {idx+1}
                                     </h4>
                                     {!readOnly && <button onClick={() => {
-                                        const list = [...data.subjects.others];
+                                        const list = [...(data.subjects?.others || [])];
                                         list.splice(idx, 1);
                                         handleChange('subjects.others', list);
-                                    }} className="text-red-500 hover:bg-red-50 p-1.5 rounded"><Trash2 className="w-4 h-4"/></button>}
+                                    }} className="text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"><Trash2 className="w-4 h-4"/></button>}
                                 </div>
                                 <div className="mb-6">
-                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Chi è questa figura / Ente? (es. Soprintendenza, Consulente...)</label>
+                                    <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Qualifica dell'Ente (es. Soprintendenza, Genio Civile...)</label>
                                     <input 
                                         disabled={readOnly} 
                                         type="text" 
-                                        className="w-full p-2.5 border border-slate-300 rounded-lg mt-1 font-bold" 
-                                        value={other.contact.role || ''} 
+                                        className="w-full p-3 border border-slate-300 rounded-lg mt-1 font-bold focus:ring-2 focus:ring-blue-500/20 outline-none" 
+                                        value={other.contact?.role || ''} 
                                         onChange={e => {
-                                            const list = [...data.subjects.others];
+                                            const list = [...(data.subjects?.others || [])];
                                             list[idx].contact.role = e.target.value;
                                             handleChange('subjects.others', list);
                                         }} 
-                                        placeholder="Inserisci descrizione ruolo..."
+                                        placeholder="Specifica il ruolo o il nome dell'Ente..."
                                     />
                                 </div>
                                 <ContactCard 
-                                    label="Dati di Contatto" 
+                                    label="Dettagli Anagrafici e di Contatto" 
                                     path={`subjects.others.${idx}.contact`} 
                                     contact={other.contact} 
                                     readOnly={readOnly} 
@@ -556,23 +574,25 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                             </div>
                         </div>
                     ))}
-                    {!readOnly && <button onClick={() => handleChange('subjects.others', [...(data.subjects.others || []), { contact: { name: '', role: '' }, appointment: { type: '', number: '', date: '' } }])} className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2"><Plus className="w-5 h-5"/> Aggiungi Altra Figura / Ente</button>}
+                    {!readOnly && <button onClick={() => handleChange('subjects.others', [...(data.subjects?.others || []), { contact: { name: '', role: '' }, appointment: { type: '', number: '', date: '' } }])} className="w-full py-6 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400 hover:bg-blue-50/50 hover:border-blue-300 transition-all flex items-center justify-center gap-3 font-bold uppercase tracking-widest text-xs"><PlusCircle className="w-6 h-6"/> Aggiungi Altra Figura o Ente Esterno</button>}
                 </div>
             )}
         </>
       )}
 
       {section === 'tender' && (
-        <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 space-y-8">
-            <h3 className="text-lg font-bold text-slate-800 mb-6 flex items-center gap-2"><Gavel className="w-5 h-5 text-blue-500"/> Fasi di Gara</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                    <label className="block text-sm font-semibold mb-2">Verbale di Verifica Progetto (Data)</label>
-                    <input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg" value={data.tenderPhase.verificationMinutesDate || ''} onChange={e => handleChange('tenderPhase.verificationMinutesDate', e.target.value)} />
+        <div className="bg-white p-10 rounded-2xl shadow-sm border border-slate-200 space-y-10 animate-in slide-in-from-right-4 duration-300">
+            <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-3"><Gavel className="w-6 h-6 text-blue-600 bg-blue-50 p-1 rounded-lg"/> Monitoraggio Fasi di Gara</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="p-6 bg-slate-50 rounded-xl border border-slate-100 shadow-inner">
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Verbale di Verifica del Progetto (Data)</label>
+                    <input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none" value={data.tenderPhase?.verificationMinutesDate || ''} onChange={e => handleChange('tenderPhase.verificationMinutesDate', e.target.value)} />
+                    <p className="text-[10px] text-slate-400 mt-2 italic uppercase">Verifica ai sensi dell'art. 42 del Codice Appalti.</p>
                 </div>
-                <div>
-                    <label className="block text-sm font-semibold mb-2">Verbale di Validazione Progetto (Data)</label>
-                    <input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg" value={data.tenderPhase.validationMinutesDate || ''} onChange={e => handleChange('tenderPhase.validationMinutesDate', e.target.value)} />
+                <div className="p-6 bg-slate-50 rounded-xl border border-slate-100 shadow-inner">
+                    <label className="block text-sm font-bold text-slate-700 mb-2">Verbale di Validazione del Progetto (Data)</label>
+                    <input disabled={readOnly} type="date" className="w-full p-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 outline-none" value={data.tenderPhase?.validationMinutesDate || ''} onChange={e => handleChange('tenderPhase.validationMinutesDate', e.target.value)} />
+                    <p className="text-[10px] text-slate-400 mt-2 italic uppercase">Validazione a supporto del R.U.P.</p>
                 </div>
             </div>
         </div>
@@ -581,39 +601,39 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
       {section === 'contractor' && (
         <>
             <SubNav activeTab={subTab} onTabChange={setSubTab} items={[
-                { id: 'main', label: 'Capogruppo', icon: BriefcaseBusiness },
-                { id: 'structure', label: data.contractor.type === 'consortium' ? 'Consorziate' : 'Mandanti', icon: Network },
+                { id: 'main', label: 'Capogruppo / Mandataria', icon: BriefcaseBusiness },
+                { id: 'structure', label: data.contractor?.type === 'consortium' ? 'Imprese Consorziate' : 'Imprese Mandanti', icon: Network },
             ]} />
             {subTab === 'main' && (
-                <div className="space-y-6">
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex gap-4">
+                <div className="space-y-8 animate-in slide-in-from-right-4">
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-wrap gap-4 shadow-inner bg-slate-50/30">
                         {['single', 'ati', 'consortium'].map(t => (
-                            <label key={t} className={`flex-1 flex items-center gap-3 p-4 rounded-lg border cursor-pointer transition-all ${data.contractor.type === t ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500' : 'bg-white border-slate-200'}`}>
-                                <input disabled={readOnly} type="radio" checked={data.contractor.type === t} onChange={() => handleChange('contractor.type', t)} />
-                                <span className="font-medium text-sm">{t === 'single' ? 'Impresa Singola' : t === 'ati' ? 'ATI / RTI' : 'Consorzio'}</span>
+                            <label key={t} className={`flex-1 min-w-[150px] flex items-center gap-4 p-5 rounded-xl border cursor-pointer transition-all ${data.contractor?.type === t ? 'bg-blue-600 border-blue-600 text-white shadow-xl shadow-blue-500/20' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}`}>
+                                <input disabled={readOnly} type="radio" className="w-5 h-5 accent-white" checked={data.contractor?.type === t} onChange={() => handleChange('contractor.type', t)} />
+                                <span className="font-bold text-sm uppercase tracking-tight">{t === 'single' ? 'Impresa Singola' : t === 'ati' ? 'A.T.I. / R.T.I.' : 'Consorzio'}</span>
                             </label>
                         ))}
                     </div>
-                    <ContactCard label="Impresa Capogruppo" path="contractor.mainCompany" contact={data.contractor.mainCompany} readOnly={readOnly} onChange={handleChange} isCompany={true} showRepInfo={true} />
+                    <ContactCard label="Dati Impresa Principale" path="contractor.mainCompany" contact={data.contractor?.mainCompany} readOnly={readOnly} onChange={handleChange} isCompany={true} showRepInfo={true} />
                 </div>
             )}
-            {subTab === 'structure' && data.contractor.type !== 'single' && (
-                <div className="space-y-6">
-                    {(data.contractor.type === 'ati' ? data.contractor.mandants : data.contractor.executors).map((comp, idx) => (
+            {subTab === 'structure' && data.contractor?.type !== 'single' && (
+                <div className="space-y-6 animate-in slide-in-from-right-4">
+                    {(data.contractor?.type === 'ati' ? data.contractor?.mandants : data.contractor?.executors || []).map((comp, idx) => (
                         <div key={idx} className="relative group">
-                            <ContactCard label={data.contractor.type === 'ati' ? `Mandante ${idx+1}` : `Consorziata ${idx+1}`} path={data.contractor.type === 'ati' ? `contractor.mandants.${idx}` : `contractor.executors.${idx}`} contact={comp} readOnly={readOnly} onChange={handleChange} isCompany={true} showRepInfo={true} />
+                            <ContactCard label={data.contractor?.type === 'ati' ? `Mandante n. ${idx+1}` : `Impresa Consorziata n. ${idx+1}`} path={data.contractor?.type === 'ati' ? `contractor.mandants.${idx}` : `contractor.executors.${idx}`} contact={comp} readOnly={readOnly} onChange={handleChange} isCompany={true} showRepInfo={true} />
                             {!readOnly && <button onClick={() => {
-                                const field = data.contractor.type === 'ati' ? 'mandants' : 'executors';
-                                const list = [...data.contractor[field]];
+                                const field = data.contractor?.type === 'ati' ? 'mandants' : 'executors';
+                                const list = [...(data.contractor ? (data.contractor as any)[field] : [])];
                                 list.splice(idx, 1);
                                 handleChange(`contractor.${field}`, list);
-                            }} className="absolute top-4 right-4 text-slate-400 hover:text-red-500"><Trash2 className="w-5 h-5"/></button>}
+                            }} className="absolute top-6 right-6 text-slate-300 hover:text-red-500 p-2 rounded-lg transition-colors"><Trash2 className="w-5 h-5"/></button>}
                         </div>
                     ))}
                     {!readOnly && <button onClick={() => {
-                        const field = data.contractor.type === 'ati' ? 'mandants' : 'executors';
-                        handleChange(`contractor.${field}`, [...(data.contractor[field] || []), { name: '' }]);
-                    }} className="w-full py-4 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:bg-slate-50 flex items-center justify-center gap-2"><Plus className="w-5 h-5"/> Aggiungi</button>}
+                        const field = data.contractor?.type === 'ati' ? 'mandants' : 'executors';
+                        handleChange(`contractor.${field}`, [...(data.contractor ? (data.contractor as any)[field] : []), { name: '' }]);
+                    }} className="w-full py-8 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400 hover:bg-blue-50/50 hover:border-blue-300 transition-all flex items-center justify-center gap-3 font-bold uppercase tracking-widest text-xs"><PlusCircle className="w-6 h-6"/> Aggiungi Nuova Impresa al Gruppo</button>}
                 </div>
             )}
         </>

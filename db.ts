@@ -2,7 +2,7 @@
 import { ProjectConstants, DocumentVariables, User, ProjectPermission, PermissionRole, UserStatus, BackupData, ExternalEvent } from './types';
 
 const DB_NAME = 'EdilAppDB';
-const DB_VERSION = 13; // Incremented version to add external_events store
+const DB_VERSION = 14; 
 const STORE_PROJECTS = 'projects';
 const STORE_DOCUMENTS = 'documents';
 const STORE_USERS = 'users';
@@ -17,7 +17,6 @@ export const db = {
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         
-        // Crea gli store solo se non esistono, garantendo la persistenza dei dati
         if (!db.objectStoreNames.contains(STORE_PROJECTS)) {
           db.createObjectStore(STORE_PROJECTS, { keyPath: 'id' });
         }
@@ -38,7 +37,6 @@ export const db = {
           permStore.createIndex('userEmail', 'userEmail', { unique: false });
         }
 
-        // Add external_events store
         if (!db.objectStoreNames.contains(STORE_EXTERNAL_EVENTS)) {
           db.createObjectStore(STORE_EXTERNAL_EVENTS, { keyPath: 'id' });
         }
@@ -199,7 +197,6 @@ export const db = {
       });
   },
 
-  // Fix: Added getExternalEvents method to support VisitSummary and CalendarView
   getExternalEvents: async (): Promise<ExternalEvent[]> => {
     const database = await db.open();
     return new Promise((resolve) => {
@@ -207,7 +204,6 @@ export const db = {
     });
   },
 
-  // Fix: Added saveExternalEvent method
   saveExternalEvent: async (event: ExternalEvent): Promise<void> => {
     const database = await db.open();
     return new Promise((resolve) => {
@@ -217,11 +213,10 @@ export const db = {
     });
   },
 
-  // Fix: Added deleteExternalEvent method
   deleteExternalEvent: async (id: string): Promise<void> => {
     const database = await db.open();
     return new Promise((resolve) => {
-      database.transaction(STORE_EXTERNAL_EVENTS, 'readwrite').objectStore(STORE_EXTERNAL_EVENTS).delete(id).onsuccess = () => resolve();
+      const transaction = database.transaction(STORE_EXTERNAL_EVENTS, 'readwrite').objectStore(STORE_EXTERNAL_EVENTS).delete(id).onsuccess = () => resolve();
     });
   },
 

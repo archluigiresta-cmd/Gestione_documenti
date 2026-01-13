@@ -75,9 +75,6 @@ export interface ProjectPermission {
   role: PermissionRole;
 }
 
-/**
- * Interface for events recorded outside of a specific project structure
- */
 export interface ExternalEvent {
     id: string;
     projectName: string;

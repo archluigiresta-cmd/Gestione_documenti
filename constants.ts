@@ -1,7 +1,11 @@
 
 import { ProjectConstants, DocumentVariables, SubjectProfile, DesignPhaseData, ContactInfo, DesignerProfile } from './types';
 
-const emptyContact: ContactInfo = { name: '', title: '', address: '', zip: '', city: '', province: '', email: '', pec: '', phone: '', professionalOrder: '', registrationNumber: '' };
+const emptyContact: ContactInfo = { 
+    name: '', title: '', address: '', zip: '', city: '', province: '', email: '', pec: '', phone: '', vat: '', 
+    professionalOrder: '', registrationNumber: '', repName: '', repTitle: '', role: '' 
+};
+
 const emptyAppointment = { type: 'Determina', number: '', date: '' };
 
 const createEmptySubject = (): SubjectProfile => ({
@@ -21,7 +25,7 @@ const createEmptyDesignPhase = (): DesignPhaseData => ({
     deliveryProtocol: '',
     deliveryDate: '',
     economicFramework: '',
-    approvalType: 'Delibera/Determina',
+    approvalType: 'Delibera / Determina',
     approvalNumber: '',
     approvalDate: '',
     localFolderLink: ''
@@ -33,7 +37,7 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
   lastModified: Date.now(),
   displayOrder: 0,
   entity: 'PROVINCIA DI TARANTO', 
-  entityProvince: '', 
+  entityProvince: 'TA', 
   headerLogo: '',
   projectName: '',
   location: '',
@@ -70,7 +74,7 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
     dlOffice: [],
     cse: createEmptyDesignerProfile(),
     tester: { 
-        contact: { ...emptyContact, title: 'Arch.' },
+        contact: { ...emptyContact, title: 'Arch.', name: 'LUIGI RESTA' },
         appointment: { ...emptyAppointment }
     },
     others: [],
@@ -112,9 +116,7 @@ export const createEmptyProject = (ownerId: string = ''): ProjectConstants => ({
     resumptions: [],
     sals: [],
     variants: [],
-    // Fixed: Removed testerVisitSummaries as it does not exist in the ProjectConstants interface
     completionDate: '',
-    
     handoverDocs: {
         projectApprovalType: 'Determina',
         projectApprovalNumber: '',
@@ -141,24 +143,27 @@ export const createInitialDocument = (projectId: string): DocumentVariables => (
   createdAt: Date.now(),
   visitNumber: 1,
   date: new Date().toISOString().split('T')[0],
-  time: '12:00',
-  endTime: '',
+  time: '10:00',
+  endTime: '12:00',
   convocationMethod: 'PEC',
   convocationDate: '',
-  convocationDetails: '',
+  convocationDetails: 'via PEC',
   attendees: '', 
   premis: '',
   worksExecuted: [],
   worksInProgress: '', 
   upcomingWorks: '',
-  worksIntroText: '',
+  worksIntroText: 'Il sottoscritto Collaudatore procede alla verifica delle opere...',
   testerRequests: '',
   testerInvitations: '',
   commonParts: '',
   observations: '',
   photos: [],
-  letterIntro: '',
-  letterBodyParagraphs: [],
+  letterIntro: 'Il sottoscritto Collaudatore, con riferimento all\'incarico in oggetto, convoca le parti...',
+  letterBodyParagraphs: [
+      "Si rammenta alla D.L. l'obbligo di presenziare con tutta la documentazione tecnica aggiornata.",
+      "L'Impresa dovrà garantire l'accesso sicuro a tutti i luoghi di cantiere."
+  ],
   letterClosing: 'Distinti saluti.',
   letterRecipients: [
       { id: 'rup', isPc: false },
