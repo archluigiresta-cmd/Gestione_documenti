@@ -32,8 +32,8 @@ export interface SubjectProfile {
 export interface DesignerProfile extends SubjectProfile {
   designLevels: string[];
   roles: string[];
-  isLegalEntity: boolean;
-  operatingDesigners: ContactInfo[];
+  isLegalEntity: boolean; // Flag per RTP / Società
+  operatingDesigners: ContactInfo[]; // Lista tecnici incaricati (es. i professionisti dell'RTP)
 }
 
 export type CompanyType = 'single' | 'ati' | 'consortium';

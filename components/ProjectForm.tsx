@@ -214,6 +214,55 @@ const ContactCard: React.FC<ContactCardProps> = ({
     );
 };
 
+interface TechnicalStaffListProps {
+    label: string;
+    staff: ContactInfo[];
+    readOnly: boolean;
+    onChange: (newStaff: ContactInfo[]) => void;
+}
+
+const TechnicalStaffList: React.FC<TechnicalStaffListProps> = ({ label, staff, readOnly, onChange }) => (
+    <div className="md:col-span-2 bg-blue-50/50 p-5 rounded-xl border border-blue-100 shadow-inner">
+        <p className="text-xs font-bold text-blue-800 uppercase mb-4 tracking-widest">{label}</p>
+        {(staff || []).map((tech, tIdx) => (
+            <div key={tIdx} className="flex gap-3 mb-3 animate-in slide-in-from-left-2 duration-200">
+                <input 
+                    disabled={readOnly}
+                    type="text" 
+                    placeholder="Nome e Qualifica Tecnico (es. Ing. Rossi - Progettista indicato)" 
+                    className="flex-1 p-2.5 border border-blue-200 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-blue-500/20 outline-none" 
+                    value={tech.name} 
+                    onChange={e => {
+                        const newList = [...staff];
+                        newList[tIdx].name = e.target.value;
+                        onChange(newList);
+                    }} 
+                />
+                {!readOnly && (
+                    <button 
+                        onClick={() => {
+                            const newList = [...staff];
+                            newList.splice(tIdx, 1);
+                            onChange(newList);
+                        }} 
+                        className="text-blue-400 hover:text-red-500 transition-colors p-2"
+                    >
+                        <X className="w-5 h-5"/>
+                    </button>
+                )}
+            </div>
+        ))}
+        {!readOnly && (
+            <button 
+                onClick={() => onChange([...staff, { name: '' }])} 
+                className="text-sm text-blue-700 font-bold hover:bg-blue-100 px-3 py-1.5 rounded-lg flex items-center gap-2 transition-all"
+            >
+                <PlusCircle className="w-4 h-4"/> Aggiungi Tecnico Incaricato
+            </button>
+        )}
+    </div>
+);
+
 interface ProjectFormProps {
   data: ProjectConstants;
   onChange: (data: ProjectConstants) => void;
@@ -420,13 +469,13 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="md:col-span-2">
-                                        <label className="flex items-center gap-3 cursor-pointer mb-2 bg-slate-50 p-3 rounded-lg border border-slate-100 w-fit pr-6">
+                                        <label className="flex items-center gap-3 cursor-pointer mb-2 bg-slate-50 p-3 rounded-lg border border-slate-100 w-fit pr-6 shadow-inner">
                                             <input type="checkbox" className="w-5 h-5 rounded text-blue-600" checked={designer.isLegalEntity} onChange={e => {
                                                 const list = [...(data.subjects?.designers || [])];
                                                 list[idx].isLegalEntity = e.target.checked;
                                                 handleChange('subjects.designers', list);
                                             }} />
-                                            <span className="text-sm font-bold text-slate-700 uppercase tracking-tight">RTP / Società (Entità Giuridica)</span>
+                                            <span className="text-sm font-bold text-slate-700 uppercase tracking-tight">RTP / Società (Soggetto Affidatario)</span>
                                         </label>
                                     </div>
                                     <div className="md:col-span-2">
@@ -437,41 +486,67 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                                             handleChange('subjects.designers', list);
                                         }} />
                                     </div>
+                                    
                                     {designer.isLegalEntity && (
-                                        <div className="md:col-span-2 bg-blue-50/50 p-5 rounded-xl border border-blue-100 shadow-inner">
-                                            <p className="text-xs font-bold text-blue-800 uppercase mb-4 tracking-widest">Tecnici Incaricati / Operativi</p>
-                                            {(designer.operatingDesigners || []).map((op, oIdx) => (
-                                                <div key={oIdx} className="flex gap-3 mb-3">
-                                                    <input type="text" placeholder="Nome e Qualifica Tecnico" className="flex-1 p-2.5 border border-blue-200 rounded-lg text-sm shadow-sm" value={op.name} onChange={e => {
-                                                        const list = [...(data.subjects?.designers || [])];
-                                                        list[idx].operatingDesigners[oIdx].name = e.target.value;
-                                                        handleChange('subjects.designers', list);
-                                                    }} />
-                                                    {!readOnly && <button onClick={() => {
-                                                        const list = [...(data.subjects?.designers || [])];
-                                                        list[idx].operatingDesigners.splice(oIdx, 1);
-                                                        handleChange('subjects.designers', list);
-                                                    }} className="text-blue-400 hover:text-red-500 transition-colors p-2"><X className="w-5 h-5"/></button>}
-                                                </div>
-                                            ))}
-                                            <button onClick={() => {
+                                        <TechnicalStaffList 
+                                            label="Tecnici Incaricati (Professionisti RTP/Società)"
+                                            staff={designer.operatingDesigners || []}
+                                            readOnly={readOnly}
+                                            onChange={(newList) => {
                                                 const list = [...(data.subjects?.designers || [])];
-                                                list[idx].operatingDesigners = [...(list[idx].operatingDesigners || []), { name: '' }];
+                                                list[idx].operatingDesigners = newList;
                                                 handleChange('subjects.designers', list);
-                                            }} className="text-sm text-blue-700 font-bold hover:bg-blue-100 px-3 py-1.5 rounded-lg flex items-center gap-2 transition-all">+ Aggiungi Nominativo</button>
-                                        </div>
+                                            }}
+                                        />
                                     )}
                                 </div>
                              </div>
                         </div>
                     ))}
-                    {!readOnly && <button onClick={() => handleChange('subjects.designers', [...(data.subjects?.designers || []), { contact: { name: '' }, isLegalEntity: false, operatingDesigners: [] }])} className="w-full py-6 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400 hover:text-blue-600 hover:bg-blue-50/50 hover:border-blue-300 transition-all flex items-center justify-center gap-3 font-bold uppercase tracking-widest text-xs"><PlusCircle className="w-6 h-6"/> Aggiungi Nuova Anagrafica Progettista</button>}
+                    {!readOnly && <button onClick={() => handleChange('subjects.designers', [...(data.subjects?.designers || []), { contact: { name: '' }, isLegalEntity: false, operatingDesigners: [], appointment: {type:'', number:'', date:''}, designLevels:[], roles:[] }])} className="w-full py-6 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400 hover:text-blue-600 hover:bg-blue-50/50 hover:border-blue-300 transition-all flex items-center justify-center gap-3 font-bold uppercase tracking-widest text-xs"><PlusCircle className="w-6 h-6"/> Aggiungi Nuova Anagrafica Progettista</button>}
                 </div>
             )}
 
             {subTab === 'csp' && <ContactCard label="Coordinatore Sicurezza Progettazione (CSP)" path="subjects.csp.contact" contact={data.subjects?.csp?.contact} readOnly={readOnly} onChange={handleChange} />}
             {subTab === 'verifier' && <ContactCard label="Verificatore del Progetto" path="subjects.verifier.contact" contact={data.subjects?.verifier?.contact} readOnly={readOnly} onChange={handleChange} />}
-            {subTab === 'dl' && <ContactCard label="Direttore dei Lavori" path="subjects.dl.contact" contact={data.subjects?.dl?.contact} readOnly={readOnly} onChange={handleChange} isCompany={data.subjects?.dl?.isLegalEntity} showRepInfo={data.subjects?.dl?.isLegalEntity} />}
+            
+            {subTab === 'dl' && (
+                <div className="space-y-6">
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center gap-6 mb-4">
+                        <label className="flex items-center gap-3 cursor-pointer bg-slate-50 p-4 rounded-xl border border-slate-100 flex-1 shadow-inner group">
+                            <input disabled={readOnly} type="checkbox" className="w-6 h-6 rounded text-blue-600 border-slate-300" 
+                                checked={data.subjects?.dl?.isLegalEntity || false} 
+                                onChange={e => handleChange('subjects.dl.isLegalEntity', e.target.checked)} 
+                            />
+                            <div>
+                                <span className="text-sm font-bold text-slate-800 uppercase block">Affidamento a RTP / Società</span>
+                                <span className="text-xs text-slate-500">Spunta se la Direzione Lavori è affidata ad una persona giuridica.</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <ContactCard 
+                        label={data.subjects?.dl?.isLegalEntity ? "Denominazione RTP / Società Direzione Lavori" : "Direttore dei Lavori"} 
+                        path="subjects.dl.contact" 
+                        contact={data.subjects?.dl?.contact} 
+                        readOnly={readOnly} 
+                        onChange={handleChange} 
+                        isCompany={data.subjects?.dl?.isLegalEntity} 
+                        showRepInfo={data.subjects?.dl?.isLegalEntity} 
+                    />
+
+                    {data.subjects?.dl?.isLegalEntity && (
+                        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                            <TechnicalStaffList 
+                                label="Professionisti Incaricati dalla Società/RTP (es. Direttore Lavori indicato)"
+                                staff={data.subjects?.dl?.operatingDesigners || []}
+                                readOnly={readOnly}
+                                onChange={(newList) => handleChange('subjects.dl.operatingDesigners', newList)}
+                            />
+                        </div>
+                    )}
+                </div>
+            )}
             
             {subTab === 'dlOffice' && (
                 <div className="space-y-4">
@@ -485,7 +560,7 @@ export const ProjectForm: React.FC<ProjectFormProps> = ({ data, onChange, sectio
                             }} className="absolute top-6 right-6 text-slate-300 hover:text-red-500 transition-colors"><Trash2 className="w-5 h-5"/></button>}
                         </div>
                     ))}
-                    {!readOnly && <button onClick={() => handleChange('subjects.dlOffice', [...(data.subjects?.dlOffice || []), { contact: { name: '', role: '' } }])} className="w-full py-6 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400 hover:bg-blue-50/50 hover:border-blue-300 transition-all flex items-center justify-center gap-3 font-bold uppercase tracking-widest text-xs"><PlusCircle className="w-6 h-6"/> Aggiungi Membro Ufficio D.L.</button>}
+                    {!readOnly && <button onClick={() => handleChange('subjects.dlOffice', [...(data.subjects?.dlOffice || []), { contact: { name: '', role: '' }, appointment: {type:'', number:'', date:''} }])} className="w-full py-6 border-2 border-dashed border-slate-300 rounded-2xl text-slate-400 hover:bg-blue-50/50 hover:border-blue-300 transition-all flex items-center justify-center gap-3 font-bold uppercase tracking-widest text-xs"><PlusCircle className="w-6 h-6"/> Aggiungi Membro Ufficio D.L.</button>}
                 </div>
             )}
 
