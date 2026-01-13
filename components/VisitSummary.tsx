@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { db, ExternalEvent } from '../db';
-import { ProjectConstants, DocumentVariables } from '../types';
+import { db } from '../db';
+import { ProjectConstants, DocumentVariables, ExternalEvent } from '../types';
 import { ClipboardList, Plus, Trash2, Calendar, Clock, Building, ArrowLeft } from 'lucide-react';
 
 interface VisitSummaryProps {
@@ -22,6 +22,7 @@ export const VisitSummary: React.FC<VisitSummaryProps> = ({ projects, onBack }) 
     }, []);
 
     const loadData = async () => {
+        // Fix: getExternalEvents and getAllDocuments are methods in updated db.ts
         const docs = await db.getAllDocuments();
         const externals = await db.getExternalEvents();
         setAllDocs(docs);
@@ -30,6 +31,7 @@ export const VisitSummary: React.FC<VisitSummaryProps> = ({ projects, onBack }) 
 
     const handleAddExternal = async () => {
         if (!newEvent.projectName || !newEvent.date) return;
+        // Fix: saveExternalEvent is method in updated db.ts
         await db.saveExternalEvent({
             ...newEvent as ExternalEvent,
             id: crypto.randomUUID()
@@ -41,6 +43,7 @@ export const VisitSummary: React.FC<VisitSummaryProps> = ({ projects, onBack }) 
 
     const handleDeleteExternal = async (id: string) => {
         if (confirm("Eliminare questa registrazione?")) {
+            // Fix: deleteExternalEvent is method in updated db.ts
             await db.deleteExternalEvent(id);
             loadData();
         }
@@ -137,6 +140,11 @@ export const VisitSummary: React.FC<VisitSummaryProps> = ({ projects, onBack }) 
                                 </td>
                             </tr>
                         ))}
+                        {combinedVisits.length === 0 && (
+                            <tr>
+                                <td colSpan={5} className="p-20 text-center text-slate-400 italic text-sm">Nessuna visita registrata in archivio.</td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>
@@ -157,7 +165,7 @@ export const VisitSummary: React.FC<VisitSummaryProps> = ({ projects, onBack }) 
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Visita N.</label>
-                                    <input type="number" className="w-full p-3 border border-slate-300 rounded-lg" value={newEvent.visitNumber} onChange={e => setNewEvent({...newEvent, visitNumber: parseInt(e.target.value)})} />
+                                    <input type="number" className="w-full p-3 border border-slate-300 rounded-lg" value={newEvent.visitNumber} onChange={e => setNewEvent({...newEvent, visitNumber: parseInt(e.target.value) || 1})} />
                                 </div>
                             </div>
                         </div>

@@ -44,14 +44,29 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
           <style>
             @import url('https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&display=swap');
             @page { size: A4; margin: 2cm 1.5cm; }
-            body { font-family: 'Noto Serif', serif; line-height: 1.35; color: black; background: white; margin: 0; padding: 0; }
+            body { 
+              font-family: 'Noto Serif', serif; 
+              line-height: 1.4; 
+              color: black; 
+              background: white; 
+              margin: 0; 
+              padding: 0; 
+              font-size: 11pt;
+            }
             .uppercase { text-transform: uppercase; }
             .font-bold { font-weight: bold; }
             .text-right { text-align: right; }
             .text-justify { text-align: justify; }
             .italic { font-style: italic; }
             .underline { text-decoration: underline; }
-            #document-preview-container { width: 100%; }
+            #document-preview-container { 
+              width: 100%; 
+              max-width: 18cm; 
+              margin: 0 auto;
+            }
+            p { margin-bottom: 0.8em; }
+            h1, h2, h3 { line-height: 1.2; margin-bottom: 0.5em; }
+            ul { margin-left: 2em; margin-bottom: 1em; }
           </style>
         </head>
         <body>${element.innerHTML}</body>
@@ -98,11 +113,6 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
                 <h3 className="font-bold text-slate-800 flex items-center gap-2 text-sm uppercase tracking-wider">
                     <FileCheck className="w-4 h-4 text-blue-600"/> Archivio Verbali
                 </h3>
-                {onNewDocument && (
-                    <button onClick={onNewDocument} className="p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors" title="Crea nuova visita">
-                        <Plus className="w-4 h-4"/>
-                    </button>
-                )}
             </div>
             <div className="relative">
               <Search className="absolute left-3 top-3 w-4 h-4 text-slate-400"/>
@@ -143,7 +153,7 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
               <div className="bg-slate-100 px-4 py-2 rounded-xl border border-slate-200 flex items-center gap-2">
                 <Settings2 className="w-4 h-4 text-slate-400" />
                 <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">
-                  {activeTab === 'verbali' ? 'Formato Verbale' : 'Formato Lettera'}
+                  Formato
                 </span>
               </div>
               {activeTab === 'verbali' && (
@@ -164,7 +174,7 @@ export const ExportManager: React.FC<ExportManagerProps> = ({
             </div>
             <div className="flex gap-3">
               <button onClick={handleDownloadWord} className="bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 px-5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-sm">
-                <FileDown className="w-4 h-4 text-blue-600" /> Esporta Word
+                <FileDown className="w-4 h-4 text-blue-600" /> Word
               </button>
               <button onClick={handlePrint} className="bg-slate-900 hover:bg-black text-white px-6 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-xl shadow-slate-900/20">
                 <Printer className="w-4 h-4" /> Stampa / PDF

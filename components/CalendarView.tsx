@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
-import { db, ExternalEvent } from '../db';
-import { ProjectConstants, DocumentVariables } from '../types';
+import { db } from '../db';
+import { ProjectConstants, DocumentVariables, ExternalEvent } from '../types';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, ArrowLeft } from 'lucide-react';
 
 interface CalendarViewProps {
@@ -18,6 +18,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({ projects, onBack }) 
     }, []);
 
     const loadEvents = async () => {
+        // Fix: getExternalEvents and getAllDocuments are methods in updated db.ts
         const docs = await db.getAllDocuments();
         const externals = await db.getExternalEvents();
         

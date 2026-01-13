@@ -1,16 +1,13 @@
 
 import { ProjectConstants, DocumentVariables, User, ProjectPermission, PermissionRole, UserStatus, BackupData, ExternalEvent } from './types';
 
-// Export type for components using it from db.ts
-export type { ExternalEvent };
-
 const DB_NAME = 'EdilAppDB';
-const DB_VERSION = 11; 
+const DB_VERSION = 13; // Incremented version to add external_events store
 const STORE_PROJECTS = 'projects';
 const STORE_DOCUMENTS = 'documents';
 const STORE_USERS = 'users';
 const STORE_PERMISSIONS = 'permissions';
-const STORE_EXTERNAL_EVENTS = 'externalEvents';
+const STORE_EXTERNAL_EVENTS = 'external_events';
 
 export const db = {
   open: (): Promise<IDBDatabase> => {
@@ -20,7 +17,7 @@ export const db = {
       request.onupgradeneeded = (event) => {
         const db = (event.target as IDBOpenDBRequest).result;
         
-        // Crea gli store solo se non esistono, SENZA cancellare quelli esistenti
+        // Crea gli store solo se non esistono, garantendo la persistenza dei dati
         if (!db.objectStoreNames.contains(STORE_PROJECTS)) {
           db.createObjectStore(STORE_PROJECTS, { keyPath: 'id' });
         }
@@ -41,6 +38,7 @@ export const db = {
           permStore.createIndex('userEmail', 'userEmail', { unique: false });
         }
 
+        // Add external_events store
         if (!db.objectStoreNames.contains(STORE_EXTERNAL_EVENTS)) {
           db.createObjectStore(STORE_EXTERNAL_EVENTS, { keyPath: 'id' });
         }
@@ -138,9 +136,6 @@ export const db = {
     });
   },
 
-  /**
-   * Returns all document records across all projects.
-   */
   getAllDocuments: async (): Promise<DocumentVariables[]> => {
     const database = await db.open();
     return new Promise((resolve) => {
@@ -164,9 +159,6 @@ export const db = {
       });
   },
 
-  /**
-   * Retrieves specific project permissions by ID.
-   */
   getProjectPermissions: async (projectId: string): Promise<ProjectPermission[]> => {
     const database = await db.open();
     return new Promise((resolve) => {
@@ -174,47 +166,12 @@ export const db = {
     });
   },
 
-  /**
-   * Adds or updates project sharing permissions.
-   */
   shareProject: async (permission: ProjectPermission): Promise<void> => {
     const database = await db.open();
     return new Promise((resolve) => {
         const transaction = database.transaction(STORE_PERMISSIONS, 'readwrite');
         transaction.objectStore(STORE_PERMISSIONS).put(permission);
         transaction.oncomplete = () => resolve();
-    });
-  },
-
-  /**
-   * Retrieves all external event records.
-   */
-  getExternalEvents: async (): Promise<ExternalEvent[]> => {
-    const database = await db.open();
-    return new Promise((resolve) => {
-        database.transaction(STORE_EXTERNAL_EVENTS, 'readonly').objectStore(STORE_EXTERNAL_EVENTS).getAll().onsuccess = (e) => resolve((e.target as any).result);
-    });
-  },
-
-  /**
-   * Saves or updates an external event record.
-   */
-  saveExternalEvent: async (event: ExternalEvent): Promise<void> => {
-    const database = await db.open();
-    return new Promise((resolve) => {
-        const transaction = database.transaction(STORE_EXTERNAL_EVENTS, 'readwrite');
-        transaction.objectStore(STORE_EXTERNAL_EVENTS).put(event);
-        transaction.oncomplete = () => resolve();
-    });
-  },
-
-  /**
-   * Deletes a specific external event by ID.
-   */
-  deleteExternalEvent: async (id: string): Promise<void> => {
-    const database = await db.open();
-    return new Promise((resolve) => {
-        database.transaction(STORE_EXTERNAL_EVENTS, 'readwrite').objectStore(STORE_EXTERNAL_EVENTS).delete(id).onsuccess = () => resolve();
     });
   },
 
@@ -242,6 +199,32 @@ export const db = {
       });
   },
 
+  // Fix: Added getExternalEvents method to support VisitSummary and CalendarView
+  getExternalEvents: async (): Promise<ExternalEvent[]> => {
+    const database = await db.open();
+    return new Promise((resolve) => {
+      database.transaction(STORE_EXTERNAL_EVENTS, 'readonly').objectStore(STORE_EXTERNAL_EVENTS).getAll().onsuccess = (e) => resolve((e.target as any).result);
+    });
+  },
+
+  // Fix: Added saveExternalEvent method
+  saveExternalEvent: async (event: ExternalEvent): Promise<void> => {
+    const database = await db.open();
+    return new Promise((resolve) => {
+      const transaction = database.transaction(STORE_EXTERNAL_EVENTS, 'readwrite');
+      transaction.objectStore(STORE_EXTERNAL_EVENTS).put(event);
+      transaction.oncomplete = () => resolve();
+    });
+  },
+
+  // Fix: Added deleteExternalEvent method
+  deleteExternalEvent: async (id: string): Promise<void> => {
+    const database = await db.open();
+    return new Promise((resolve) => {
+      database.transaction(STORE_EXTERNAL_EVENTS, 'readwrite').objectStore(STORE_EXTERNAL_EVENTS).delete(id).onsuccess = () => resolve();
+    });
+  },
+
   getDatabaseBackup: async (): Promise<BackupData> => {
       const database = await db.open();
       return new Promise((resolve) => {
@@ -250,7 +233,7 @@ export const db = {
           const dReq = transaction.objectStore(STORE_DOCUMENTS).getAll();
           const uReq = transaction.objectStore(STORE_USERS).getAll();
           const pmReq = transaction.objectStore(STORE_PERMISSIONS).getAll();
-          const eReq = transaction.objectStore(STORE_EXTERNAL_EVENTS).getAll();
+          const exReq = transaction.objectStore(STORE_EXTERNAL_EVENTS).getAll();
           transaction.oncomplete = () => {
               resolve({
                   version: 1,
@@ -259,7 +242,7 @@ export const db = {
                   projects: pReq.result || [],
                   documents: dReq.result || [],
                   permissions: pmReq.result || [],
-                  externalEvents: eReq.result || []
+                  externalEvents: exReq.result || []
               });
           };
       });

@@ -83,7 +83,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
   };
 
   const addTextToField = (field: 'testerRequests' | 'testerInvitations' | 'commonParts', text: string) => {
-      const current = currentDoc[field] || '';
+      const current = (currentDoc as any)[field] || '';
       const separator = current.trim() ? '\n' : '';
       handleUpdate({ ...currentDoc, [field]: current + separator + "- " + text });
   };
@@ -203,7 +203,7 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                            <div key={idx} className="flex gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100 group transition-all hover:border-blue-200">
                               <p className="flex-1 text-sm text-slate-700 italic">"{p}"</p>
                               {!readOnly && <button onClick={() => {
-                                  const newList = [...currentDoc.letterBodyParagraphs]; newList.splice(idx, 1); handleUpdate({...currentDoc, letterBodyParagraphs: newList});
+                                  const newList = [...(currentDoc.letterBodyParagraphs || [])]; newList.splice(idx, 1); handleUpdate({...currentDoc, letterBodyParagraphs: newList});
                               }} className="text-slate-300 hover:text-red-500 transition-colors"><Trash2 className="w-4 h-4"/></button>}
                            </div>
                         ))}
@@ -215,7 +215,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
           {step === 'present' && (
               <div className="animate-in fade-in slide-in-from-right-4">
                   <h3 className="text-xl font-bold text-slate-900 mb-6 border-b border-slate-100 pb-4">Elenco dei Presenti</h3>
-                  <p className="text-sm text-slate-500 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100">Indicare nome, cognome e carica dei partecipanti al sopralluogo tecnico.</p>
                   <textarea disabled={readOnly} className="w-full p-6 border border-slate-200 rounded-2xl h-[400px] text-sm leading-relaxed font-mono focus:ring-2 focus:ring-blue-500/20 outline-none" value={currentDoc.attendees || ''} onChange={e => handleUpdate({...currentDoc, attendees: e.target.value})} placeholder="Es:&#10;Per il RUP: Ing. Mario Rossi&#10;Per la D.L.: Arch. Giovanni Bianchi&#10;Per l'Impresa: Sig. Roberto Verdi..." />
               </div>
           )}
@@ -232,11 +231,11 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">Opere in Corso <span className="text-[10px] text-slate-300 font-normal italic">(Verifiche attuali)</span></label>
+                          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">Opere in Corso</label>
                           <textarea disabled={readOnly} className="w-full p-4 border border-slate-200 rounded-xl h-48 text-sm shadow-inner" value={currentDoc.worksInProgress || ''} onChange={e => handleUpdate({...currentDoc, worksInProgress: e.target.value})} />
                       </div>
                       <div className="space-y-2">
-                          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">Prossime Attività <span className="text-[10px] text-slate-300 font-normal italic">(Programmazione)</span></label>
+                          <label className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">Prossime Attività</label>
                           <textarea disabled={readOnly} className="w-full p-4 border border-slate-200 rounded-xl h-48 text-sm shadow-inner" value={currentDoc.upcomingWorks || ''} onChange={e => handleUpdate({...currentDoc, upcomingWorks: e.target.value})} />
                       </div>
                   </div>
@@ -255,7 +254,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                       )}
                   </div>
                   <div className="space-y-4">
-                      <p className="text-xs text-slate-400 italic">Inserire i quesiti posti alla Direzione Lavori o all'Impresa durante il sopralluogo.</p>
                       <textarea disabled={readOnly} className="w-full p-6 border border-slate-200 rounded-2xl h-[400px] text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none" value={currentDoc.testerRequests || ''} onChange={e => handleUpdate({...currentDoc, testerRequests: e.target.value})} />
                   </div>
               </div>
@@ -273,7 +271,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                       )}
                   </div>
                   <div className="space-y-4">
-                      <p className="text-xs text-slate-400 italic">Indicazioni vincolanti e raccomandazioni fornite dal collaudatore alle parti.</p>
                       <textarea disabled={readOnly} className="w-full p-6 border border-slate-200 rounded-2xl h-[400px] text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none" value={currentDoc.testerInvitations || ''} onChange={e => handleUpdate({...currentDoc, testerInvitations: e.target.value})} />
                   </div>
               </div>
@@ -291,7 +288,6 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                       )}
                   </div>
                   <div className="space-y-4">
-                      <p className="text-xs text-slate-400 italic">Disposizioni finali riguardanti rilievi fotografici e chiusura del verbale.</p>
                       <textarea disabled={readOnly} className="w-full p-6 border border-slate-200 rounded-2xl h-[400px] text-sm leading-relaxed focus:ring-2 focus:ring-blue-500/20 outline-none" value={currentDoc.commonParts || ''} onChange={e => handleUpdate({...currentDoc, commonParts: e.target.value})} />
                   </div>
               </div>
@@ -302,15 +298,9 @@ export const TestingManager: React.FC<TestingManagerProps> = ({
                   <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                       <div className="flex items-center gap-3">
                         <ClipboardCheck className="w-8 h-8 text-purple-600"/>
-                        <h3 className="text-xl font-bold text-slate-900">Valutazioni Finali del Collaudatore</h3>
+                        <h3 className="text-xl font-bold text-slate-900">Valutazioni Finali</h3>
                       </div>
                       <button onClick={() => polishText('observations')} className="text-xs font-bold text-purple-600 flex items-center gap-1 hover:bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-100"><Wand2 className="w-3.5 h-3.5"/> IA Assist</button>
-                  </div>
-                  <div className="bg-amber-50 p-5 rounded-2xl border border-amber-100 flex items-start gap-4 mb-6">
-                      <Info className="w-6 h-6 text-amber-500 shrink-0 mt-0.5" />
-                      <div className="text-sm text-amber-900 leading-relaxed">
-                          <strong>Importante:</strong> Queste osservazioni costituiscono il corpo centrale del verbale dove il collaudatore esprime il proprio giudizio tecnico e amministrativo. Utilizzare un linguaggio chiaro e puntuale.
-                      </div>
                   </div>
                   <textarea disabled={readOnly} className="w-full p-8 border border-slate-200 rounded-3xl h-[450px] text-sm shadow-inner bg-slate-50 focus:bg-white transition-all focus:ring-4 focus:ring-blue-500/10 outline-none" value={currentDoc.observations || ''} onChange={e => handleUpdate({...currentDoc, observations: e.target.value})} placeholder="Esponi qui il parere tecnico e le verifiche condotte..." />
               </div>
